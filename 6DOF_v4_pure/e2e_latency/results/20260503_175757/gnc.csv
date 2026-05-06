@@ -1,0 +1,1 @@
+t_wall_s,time_usec,stage,t_flight,fin1,fin2,fin3,fin4,launched,dt_actual,dt_min,dt_max,mhe_solve_us,mpc_solve_us,cycle_us,mpc_solve_count,mpc_solver_status,mhe_valid

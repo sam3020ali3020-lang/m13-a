@@ -1,0 +1,110 @@
+{
+  "timestamp": "20260501_144756",
+  "port": null,
+  "fs_hz": 200.0,
+  "fb_interval_ms": 5,
+  "fins_tested": [
+    0
+  ],
+  "tests_run": [
+    "step"
+  ],
+  "per_fin": {
+    "0": {
+      "fin": 0,
+      "step": {
+        "tau_s_median": 0.2515528183144767,
+        "tau_s_min": 0.002594065564047179,
+        "tau_s_max": 0.4999999999999998,
+        "delay_s_median": 0.1,
+        "delay_s_min": 0.00250000000000003,
+        "delay_s_max": 0.10116843656176558,
+        "gain_median": 1.0221431226814786,
+        "rmse_median_deg": 0.9526379738825208,
+        "per_amplitude": [
+          {
+            "fit": {
+              "K": 1.0230748319540512,
+              "tau_s": 0.002594065564047179,
+              "delay_s": 0.10116843656176558,
+              "rmse_deg": 0.6596688009812343,
+              "n_samples": 300
+            },
+            "step_metrics": {
+              "amplitude_deg": 5.0,
+              "rise_time_10_90_ms": 74.06311799999999,
+              "settling_time_5pct_ms": 149.450846,
+              "overshoot_pct": 0.9401173878551097,
+              "steady_state_error_deg": 0.21578483381689129,
+              "delay_to_first_motion_ms": 69.43891800000002
+            }
+          },
+          {
+            "fit": {
+              "K": 1.021211413408906,
+              "tau_s": 0.0031056367893365603,
+              "delay_s": 0.1,
+              "rmse_deg": 0.4044651867470665,
+              "n_samples": 300
+            },
+            "step_metrics": {
+              "amplitude_deg": -5.0,
+              "rise_time_10_90_ms": 49.29757200000001,
+              "settling_time_5pct_ms": 166.477714,
+              "overshoot_pct": 1.7711337483476368e-14,
+              "steady_state_error_deg": -0.014745049766813345,
+              "delay_to_first_motion_ms": 123.49623100000001
+            }
+          },
+          {
+            "fit": {
+              "K": 1.2016199220873385,
+              "tau_s": 0.4999999998396168,
+              "delay_s": 0.1,
+              "rmse_deg": 4.059386815167465,
+              "n_samples": 300
+            },
+            "step_metrics": {
+              "amplitude_deg": 15.0,
+              "rise_time_10_90_ms": NaN,
+              "settling_time_5pct_ms": NaN,
+              "overshoot_pct": 0.0,
+              "steady_state_error_deg": -15.0,
+              "delay_to_first_motion_ms": NaN
+            }
+          },
+          {
+            "fit": {
+              "K": 0.8615222701601549,
+              "tau_s": 0.4999999999999998,
+              "delay_s": 0.00250000000000003,
+              "rmse_deg": 1.2456071467838072,
+              "n_samples": 300
+            },
+            "step_metrics": {
+              "amplitude_deg": -15.0,
+              "rise_time_10_90_ms": 1240.028353,
+              "settling_time_5pct_ms": 1489.457783,
+              "overshoot_pct": 6.330617961224077,
+              "steady_state_error_deg": 2.1804718264777563,
+              "delay_to_first_motion_ms": -299.982796
+            }
+          }
+        ]
+      },
+      "chirp": {},
+      "staircase": {},
+      "slew": {},
+      "hysteresis": {},
+      "noise_rms_deg": NaN,
+      "recommended_model": {
+        "type": "first_order_plus_delay",
+        "tau_s": 0.2515528183144767,
+        "delay_s": 0.1,
+        "gain": 1.0221431226814786
+      }
+    }
+  },
+  "noise": {},
+  "crosstalk": {}
+}

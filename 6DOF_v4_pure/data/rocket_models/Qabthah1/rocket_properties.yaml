@@ -1,0 +1,269 @@
+# ============================================================================
+# ملف خصائص الصاروخ - صاروخ باليستي تكتيكي بعيد المدى
+# Rocket Properties Configuration File - Long-Range Tactical Ballistic Missile
+# ============================================================================
+#
+# هذا الملف يحتوي على الخصائص الفيزيائية لصاروخ باليستي تكتيكي
+# المدى: 30000 كم
+# تُستخدم بواسطة حزمة rocket_models لحسابات الديناميكا والتحكم
+#
+# ============================================================================
+
+# ==========================================================================
+# خصائص الكتلة
+# Mass Properties
+# ==========================================================================
+
+# الكتلة الجافة (بدون الوقود) - كجم
+mass_dry_kg: 11.11 #
+
+# كتلة الوقود - كجم
+propellant_mass_kg: 1.63 #
+
+# m_liner : 84.8535
+
+# ==========================================================================
+# مركز الثقل
+# Center of Gravity
+# ==========================================================================
+
+# موقع مركز الثقل الجاف في إطار الجسم [x, y, z] - م
+cg_dry_body_m: [0.5684, 0.0, 0.0] 
+
+# موقع مركز ثقل الوقود في إطار الجسم [x, y, z] - م
+cg_propellant_body_m: [0.5972, 0.0, 0.0]
+
+# ==========================================================================
+# عزوم القصور الذاتي
+# Moments of Inertia
+# ==========================================================================
+
+# عزوم القصور الذاتي الجافة [Ixx, Iyy, Izz] - كجم.م²
+inertia_dry_kgm2: [0.0356 , 1.0789 ,  1.0779]
+
+# عزوم القصور الذاتي الكاملة (مع الوقود) [Ixx, Iyy, Izz] - كجم.م²
+# Full moments of inertia (with propellant) [Ixx, Iyy, Izz] - kg·m²
+# ⚠️ مهم: يجب تحديد هذه القيم من CAD أو الاختبارات للحصول على أفضل دقة
+# ⚠️ IMPORTANT: These values should be specified from CAD or testing for best accuracy
+# إذا لم يتم تحديدها، سيتم تقديرها باستخدام نظرية المحاور المتوازية
+# If not specified, values will be estimated using parallel axis theorem
+inertia_full_kgm2: [0.0389, 1.1651, 1.166]  # TODO: أدخل القيم الفعلية | Enter actual values
+
+# ==========================================================================
+# الأبعاد المرجعية
+# Reference Dimensions
+# ==========================================================================
+
+# القطر المرجعي - م
+ref_diameter_m: 0.13
+
+# الطول المرجعي - م
+ref_length_m: 1.094
+
+# المساحة المرجعية (π × (d/2)²) - م²
+ref_area_m2: 0.01327
+
+# ==========================================================================
+
+# ==========================================================================
+# معاملات الفوهة
+# Nozzle Parameters=========================================
+
+# مساحة خروج الفوهة (Ae) - م²
+nozzle_exit_area_m2: 0.000804247719
+
+# ضغط مستوى سطح البحر القياسي (p_0) - باسكال
+sea_level_pressure_Pa: 76578.0
+
+# ==========================================================================
+# خصائص الدفات
+
+# ==========================================================================
+# هندسة الوقود (اختياري - لتحسين دقة حساب عزم القصور الذاتي)
+# Propellant Geometry (Optional - For Improved Inertia Calculation Accuracy)
+# ==========================================================================
+#
+# ملاحظة: هذه المعاملات اختيارية. إذا لم يتم تحديدها، سيتم تقدير القيم تلقائياً
+# Note: These parameters are optional. If not specified, values will be estimated automatically
+#
+# يُنصح بتحديد هذه القيم للحصول على أفضل دقة في حسابات عزم القصور الذاتي
+# Recommended to specify these values for best accuracy in inertia calculations
+
+# نصف القطر الخارجي لحبة الوقود - م
+# Outer radius of propellant grain - m
+# propellant_outer_radius_m:  # TODO: أدخل القيمة الفعلية | Enter actual value
+
+# طول حبة الوقود - م  
+# Length of propellant grain - m
+# propellant_length_m:  # TODO: أدخل القيمة الفعلية | Enter actual value
+
+# نسبة نصف القطر الداخلي إلى الخارجي (0 = صلب، 0.5 = مجوف نموذجي، <1)
+# Ratio of inner to outer radius (0 = solid, 0.5 = typical hollow, <1)
+# propellant_inner_radius_ratio: 0.5  # TODO: عدّل حسب التصميم | Adjust per design
+
+config_type: "X"              # نوع تكوين الزعانف: "X" أو "+" | Fin configuration type: "X" or "+"
+fin_location: tail          # موقع الزعانف: canard (أمامية) أو tail (خلفية) | Fin location: canard (front) or tail (rear)
+
+# Fin Properties
+# ==========================================================================
+
+# ==========================================================================
+# معاملات المراحل
+# Stage Parameters
+# ==========================================================================
+thrust_multiplier: 1.0
+CA_multiplier: 1
+# عدد المراحل
+num_stages: 1
+
+launcher:
+  enabled: false                # تفعيل/تعطيل نموذج قضيب الإطلاق (Enable/disable launch rail model)
+  rail_length: 1.094          # m - طول القضيب الكلي (total rail length)
+  rail_effective_length: 1.0 # m - الطول الفعال (CG travel distance for rail exit)
+  rail_friction_coefficient: 0.1  # معامل الاحتكاك (friction coefficient)
+  launch_elevation: 65.0        # deg - يجب أن تتطابق مع initial attitude (65°)
+
+# ==========================================================================
+# خصائص المشغلات (Actuator Properties)
+# XQ-BLS8145C (XQ-POWER CAN Brushless Servo)
+# Datasheet: https://www.cnxqpower.com/en-us/productView-65.html
+# Size: 20×40×38mm, Weight: 73g, Gear: Stainless steel, Case: CNC aluminum
+# Torque: 48kg.cm@8.4V / 43kg.cm@7.4V / 37kg.cm@6.0V
+# Speed:  0.106s/60°@8.4V / 0.122s/60°@7.4V / 0.144s/60°@6.0V
+# Interface: CAN bus (CANopen-like, SDO read OD 0x6002, write OD 0x6003)
+# Note: PDO auto-report (OD 0x2200) NOT supported by firmware — use SDO polling
+# ==========================================================================
+actuator:
+  type: "XQ-BLS8145C"            # اسم/موديل السيرفو (CAN version of XQ-BLS8145D)
+  motor: "brushless"              # brushless | brushed
+
+  # نوع النموذج: 1 = first-order | 2 = second-order with delay
+  # MODEL 2 (110ms shift-register delay) was tested but the cascade-of-
+  # first-order-lags MPC augmentation (m130_acados_model.py) cannot
+  # accurately represent that pure-delay shape — score collapsed to
+  # 22-38/100 with 600+ solver MINSTEP errors. Reverting to MODEL 1
+  # (first-order tau_servo=0.020) until either the MPC model uses Padé
+  # approximation or the simulator cascades match the MPC.
+  model: 2   # 1: first-order (no delay_steps). 2: second-order with shift-register delay.
+             # model:2 is REQUIRED for Qabthah1 because it needs delay_steps support.
+
+  # معاملات النموذج من الدرجة الأولى (model: 1)
+  # 0.020 s = estimated from XQ-BLS8145C rated speed (0.122s/60° @7.4V).
+  # In HIL we measured a 120-150 ms `fin_cmd→fin_can` cross-correlation
+  # lag, but a τ=0.130 in the model produced WORSE HIL results (score
+  # dropped 32→23) because the real lag is dominated by *pure transport
+  # delay* (CAN SDO polling + servo MCU latency + encoder discretisation),
+  # NOT first-order filtering.  acados first-order model cannot represent
+  # pure delay; a second-order model with explicit delay would be needed.
+  # MEASURED 2026-05-02 via /direct (PC↔CAN↔servo, post parser-fix):
+  #   Aggregate first-order fit pooling 100 transitions per servo, 4 servos:
+  #     #0 τ=31.78±0.37ms (R²=0.947, N=5032)
+  #     #1 τ=29.22±0.34ms (R²=0.952, N=5087)
+  #     #2 τ=32.82±0.41ms (R²=0.940, N=5025)
+  #     #3 τ=31.57±0.40ms (R²=0.953, N=4307)
+  #   Mean = 31.35 ± 1.5 ms (between-servo std, n=4)
+  #   Previous 0.012 was biased low (single-step fits dominated by 50Hz
+  #   sampling noise). Aggregate fit pools ~5000 fb samples per servo
+  #   → statistically robust. ±5° step amplitude (no rate-limit contamination).
+  #   NOTE: this is the servo dynamics time constant ONLY.
+  #   Transport delay is handled separately via delay_steps (model:2)
+  #   or lookahead_stage (MPC).
+  tau_servo: 0.0314               # s - SCALAR (used by MPC for compensation). Measured τ=31.35±1.5ms.
+
+  # Per-fin τ array (sim-only realism). Each servo has slightly different
+  # dynamics due to manufacturing variance. The MPC still uses scalar
+  # tau_servo — this creates a small model-plant mismatch that tests
+  # robustness to per-fin variation.
+  # MEASURED 2026-05-02 via /direct repeatability × 2 runs (per-servo fit
+  # over 200 transitions × 4 servos = 800 transitions, R²=0.91):
+  #   servo 0: 38.45 ms (sweet spot)
+  #   servo 1: 36.47 ms
+  #   servo 2: 37.12 ms
+  #   servo 3: 37.49 ms
+  # Mean: 37.38 ms (slightly higher than scalar 31.35ms — different fit method).
+  tau_servo_per_fin: [0.0385, 0.0365, 0.0371, 0.0375]   # s — per-fin measurements
+
+  # معاملات النموذج من الدرجة الثانية (model: 2)
+  # DERIVED 2026-05-02 from measured first-order τ=31.35ms (R²=0.95).
+  # Strategy: overdamped 2nd-order with dominant slow pole at -1/τ to mimic
+  # measured first-order response. Solve s² + 2·zeta_wn·s + wn² = 0 for
+  # slow pole = -31.85 rad/s with zeta_wn = 100:
+  #   wn² = 2·zeta_wn/τ - 1/τ² = 6370 - 1014 = 5356 → wn = 73.2 rad/s
+  # Verification:
+  #   slow pole: -100 + √(10000-5356) = -31.85 rad/s ✓ (matches -1/τ)
+  #   fast pole: -100 - 68.15 = -168.15 rad/s (5.3× faster, negligible)
+  #   ζ = 100/73.2 = 1.366 (overdamped)
+  # Previous wn=125, zeta_wn=125 (ζ=1, critically damped) gave true
+  # time-to-63% ≈ 17ms — 2× faster than measured (false confidence).
+  wn: 73.2                        # rad/s - dominant pole at 1/τ (τ=31.35ms measured)
+  zeta_wn: 100.0                  # damping × wn (ζ=1.366 overdamped, mimics first-order)
+  # MEASURED 2026-05-02 via /direct fast-poll validation (152 Hz polling):
+  #   pure_delay = 31.72 ± 0.20 ms (R²=0.960, N=6231 samples, 60 transitions)
+  #   Previous baseline (75 Hz polling) gave 41 ms — inflated by ~9 ms of
+  #   poll-cycle bias. Fast-poll test eliminated that bias.
+  #   PC measurement still includes ~5 ms USB-CAN bridge overhead absent
+  #   on PX4 native CAN, so true PX4 delay is likely 26-30 ms.
+  #   delay_steps = round(31.72 / 10) = 3
+  # MPC: lookahead_stage auto-computed = round(delay_steps × dt_sim/dt_h)
+  #      = round(3 × 0.01/0.02) = round(1.5) = 2 (Python banker's).
+  #      Note: delay_steps ∈ {3, 4, 5} all auto-resolve to lookahead_stage=2,
+  #      so this change does NOT alter MPC command-selection behaviour;
+  #      it only makes the simulator's actuator delay realistic.
+  delay_steps: 3
+  delay_buffer_size: 8
+
+  # الحدود الفيزيائية
+  delta_max: 20.0                 # deg - أقصى انحراف
+  delta_min: -20.0                # deg - أدنى انحراف
+  rate_max: 492.0                 # deg/s - أقصى معدل (rated speed: 0.122s/60° @7.4V)
+
+  # Encoder quantization (fin feedback via CAN SDO read)
+  # MEASURED 2026-05-02: analyzed 966,368 samples across 14 /direct CSV files
+  #   → 196 unique feedback values
+  #   → smallest step = 0.0556° = 1/18 degree exactly
+  #   → equivalent ~12.66 bits over 360° (not a standard power-of-2)
+  # Physics keeps exact state internally; only the feedback signal to MHE/EKF
+  # is quantized (matching what PX4 actually receives via CAN on real flight).
+  # Sanity check: encoder_step (0.0556°) > trim offsets (0.006-0.033°),
+  #   which is why per-fin trim required averaging tens of thousands of samples.
+  encoder_resolution_deg: 0.0556   # = 1/18° measured for XQ-BLS8145C
+
+  # عدد المشغلات وإعداداتها
+  n_actuators: 4
+  # Per-fin trim offsets (deg): each servo has its own mechanical zero.
+  # MEASURED 2026-05-02 via /direct repeatability pattern (high-statistics):
+  #   Method: For each servo, measure mean fb at +5° and -5° (steady-state),
+  #           zero_offset = (mean@+5 + mean@-5) / 2  (cancels backlash).
+  #   2 independent runs × 100 transitions/servo × ~115 samples/transition
+  #     → 23,171 samples per direction per servo (46k total per servo)
+  #
+  #               Run 1      Run 2     Diff      FINAL ± σ
+  #   servo 0:   +0.0066°  +0.0048°  0.002°   +0.006° ± 0.001°
+  #   servo 1:   +0.0340°  +0.0311°  0.003°   +0.033° ± 0.001°
+  #   servo 2:   -0.0309°  -0.0308°  0.000°   -0.031° ± 0.000°
+  #   servo 3:   +0.0293°  +0.0268°  0.002°   +0.028° ± 0.001°
+  #
+  #   Reproducibility: all values agree within ±0.003° between runs ✅
+  #
+  # X-config mixing projection:
+  #   δe_trim = -0.010°   (pitch — negligible)
+  #   δr_trim = -0.008°   (yaw — negligible)
+  #   δa_trim = +0.009°   (roll — negligible)
+  #
+  # NOTE: Real zero offsets are 30× smaller than backlash (1.117°).
+  # Natural roll from servo zeros alone is minimal — XQPOWER XQ-BLS8145C
+  # are exceptionally precise servos. To see significant roll in flight,
+  # must add OTHER asymmetries (fin manufacturing, intentional cant).
+  delta_trim: [0.006, 0.033, -0.031, 0.028]   # deg — HIGH-STAT MEASURED
+  delta_scale: [1.0, 1.0, 1.0, 1.0]
+  # MEASURED 2026-05-02 via /direct (post parser-fix, 2 independent runs):
+  #   Run 1 (06:24): #0=1.112° #1=1.066° #2=1.148° #3=1.128° → mean=1.114°
+  #   Run 2 (07:32): #0=1.140° #1=1.106° #2=1.126° #3=1.112° → mean=1.121°
+  #   Combined: mean=1.117° ± 0.025° (8 measurements, range 1.066-1.148°)
+  #   Reproducibility: Δmean between runs = 0.007° (0.6% relative) — excellent.
+  #   Previous 2.5° was inflated by parser-bug frame-loss artifacts (pre-fix).
+  backlash: 1.117                 # deg - measured 1.117±0.025° (was 2.5)
+
+  # خصائص إضافية (للتوثيق)
+  torque_max_Nm: 4.2              # N.m - أقصى عزم (stalling 43kg.cm @ 7.4V)
+  voltage: 7.4                    # V - الجهد التشغيلي

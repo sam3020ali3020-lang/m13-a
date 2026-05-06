@@ -1,0 +1,7 @@
+VERDICT: GO
+Timestamp: 2026-05-04T08:20:31.542854
+
+[PASS] ekf2
+[PASS] timing
+[PASS] system
+[FAIL] arming

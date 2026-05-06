@@ -1,0 +1,154 @@
+# ==========================================================================
+# /thermal_stress — Long-duration MPC thermal stress test
+# ==========================================================================
+# الغرض: قياس أداء MPC (deadline misses, latency tail) على هاتف ساخن
+#        لمدة طويلة (30+ دقيقة) لمحاكاة سيناريو منصة إطلاق في الصحراء.
+# ==========================================================================
+
+# -------------------------------------------------------------------------
+# الاتصال MAVLink (يفترض adb forward tcp:5760 tcp:5760)
+# -------------------------------------------------------------------------
+connection:
+  host: "127.0.0.1"
+  port: 5760
+  timeout_s: 10.0
+
+# -------------------------------------------------------------------------
+# Streams المطلوبة — نُركِّز على RktGNC للحصول على mpc_solve_us, cycle_us
+# DEBUG_FLOAT_ARRAY عند 100 Hz → RktGNC عند 25 Hz (decimation 4×)
+# يطابق MPC cycle rate = 25 Hz → كل cycle يُلتقط
+# -------------------------------------------------------------------------
+mavlink_streams:
+  debug_float_array:
+    msg_id: 350
+    rate_hz: 100        # 100 Hz → RktGNC 25 Hz (matches MPC cycle)
+    crc_extra: 232
+    purpose: "RktGNC timing + SRV_FB"
+  servo_output_raw:
+    msg_id: 36
+    rate_hz: 10         # خفيف — للتأكيد أن PX4 نشط
+    crc_extra: 222
+  attitude:
+    msg_id: 30
+    rate_hz: 10
+    crc_extra: 39
+
+# -------------------------------------------------------------------------
+# Thermal poller (adb) — telemetry الحرارة من الهاتف
+# -------------------------------------------------------------------------
+thermal:
+  poll_interval_s: 1.0          # كل ثانية
+  adb_device: ""                # فارغ = أي هاتف (إذا > 1 هاتف، حدِّد serial)
+  # ما يُسجَّل
+  read_thermal_zones: true       # /sys/class/thermal/thermal_zone*/temp
+  read_cpufreq: true             # /sys/devices/system/cpu/cpu*/cpufreq/*
+  read_battery: true             # dumpsys battery
+  read_thermalservice: true      # dumpsys thermalservice (HAL status)
+  # تحديد مجموعات الـ zones المهمة
+  zone_groups:
+    cpu_silver: ["cpu0-silver-usr", "cpu1-silver-usr",
+                 "cpu2-silver-usr", "cpu3-silver-usr"]
+    cpu_gold:   ["cpu0-gold-usr", "cpu1-gold-usr",
+                 "cpu2-gold-usr", "cpu3-gold-usr"]
+    gpu:        ["gpu0-usr", "gpu1-usr"]
+    ddr:        ["ddr-usr"]
+    modem:      ["mdm-core-usr", "mdm-dsp-usr"]
+    # إضافي: lmh-dcvs-* تعكس throttling target
+    dcvs:       ["lmh-dcvs-00", "lmh-dcvs-01"]
+
+# -------------------------------------------------------------------------
+# Load driver — كيف نُشغِّل MPC لمدة طويلة
+# -------------------------------------------------------------------------
+load:
+  mode: "passive"               # passive | cpu-stress | pil-loop
+  # passive      : الافتراضي — نفترض أنك تُشغِّل HIL/PIL خارجياً. نحن نراقب فقط.
+  # cpu-stress   : أضف عمّال CPU على الهاتف لتسخينه (بدون MPC خاص بنا).
+  # pil-loop     : نكرِّر pil_runner.py داخل loop لإبقاء MPC نشطاً لـ duration كاملة.
+  
+  # عند mode=cpu-stress: كم عامل yes/md5sum نُشغِّل
+  stress_workers: 8
+  stress_use_md5: true          # md5sum /dev/zero (أثقل من yes) → أسخن
+  
+  # عند mode=pil-loop: path إلى pil_runner.py + config
+  pil_runner: "../pil/pil_runner.py"
+  pil_config: "../pil/pil_config.yaml"
+  # فترة انتظار بين كل pil-run (يسمح للـ reader بإنهاء التحليل)
+  pil_inter_run_sleep_s: 3.0
+  
+  # سخِّن الهاتف قبل بدء القياس — يضمن بداية القياس في حالة حارّة
+  heat_first_s: 0               # 0 = بلا preheat
+  heat_target_C: 65             # يتوقّف preheat إذا وصل لهذا (أسرع من الوقت)
+  heat_workers: 8
+
+# -------------------------------------------------------------------------
+# مدّة الاختبار + presets
+# -------------------------------------------------------------------------
+duration_s: 1800              # 30 دقيقة افتراضياً
+
+presets:
+  quick:                      # 5 دقائق — smoke test
+    duration_s: 300
+    load_mode: "passive"
+  standard:                   # 30 دقيقة — الهدف الرئيسي
+    duration_s: 1800
+    load_mode: "passive"
+  desert:                     # 30 دقيقة مع preheat + cpu-stress (محاكاة صحراء)
+    duration_s: 1800
+    load_mode: "cpu-stress"
+    heat_first_s: 180
+    heat_target_C: 70
+  extreme:                    # 60 دقيقة مع stress مستمر + preheat
+    duration_s: 3600
+    load_mode: "cpu-stress"
+    heat_first_s: 300
+    heat_target_C: 72
+
+# -------------------------------------------------------------------------
+# MPC deadline (من RocketMPC.cpp ScheduleOnInterval)
+# -------------------------------------------------------------------------
+mpc:
+  target_rate_hz: 25.0          # MPC يعمل عند 25 Hz على الهاتف
+  deadline_us: 40000            # = 1/25 = 40ms — deadline لكل cycle
+  warn_us: 25000                # 62% من deadline = تحذير
+  # dt_max > deadline ⇒ deadline miss. نستخدم dt_max من RktGNC لأنه max
+  # على النافذة بين كل رسالة RktGNC (~40ms).
+
+# -------------------------------------------------------------------------
+# عتبات PASS / FAIL
+# -------------------------------------------------------------------------
+thresholds:
+  # MPC solve time — الوقت الحسابي فقط للحلّ
+  mpc_solve_us:
+    p50_max: 8000               # 8ms — الوضع الطبيعي ~3-5ms
+    p95_max: 15000              # 15ms
+    p99_max: 20000              # 20ms
+    p999_max: 30000             # 30ms
+  # MPC cycle (dt_max من RktGNC) — بما فيه scheduler overhead
+  cycle_us:
+    p50_max: 42000              # 42ms (يسمح ±5% من 40ms)
+    p95_max: 50000              # 50ms
+    p99_max: 60000              # 60ms  
+    p999_max: 80000             # 80ms
+  # معدل الـ deadline misses الكلّي (خلال كل الـ run)
+  deadline_miss_rate:
+    warn: 0.05                  # 5% = تحذير
+    fail: 0.20                  # 20% = فشل
+  # تدهور بعد throttling
+  throttle_degradation:
+    solve_us_ratio_max: 2.0     # p99 بعد / p99 قبل < 2× → PASS
+    miss_rate_delta_max: 0.10   # (miss_rate بعد - قبل) < 10pp → PASS
+  # حرارة عند التي نصف الحالة "حارّة" (لقياسات pre/post)
+  hot_threshold_C: 65.0
+  # MPC solver errors — أي solver_status != 0 يُعدّ فشل
+  allow_solver_errors: false
+
+# -------------------------------------------------------------------------
+# Output
+# -------------------------------------------------------------------------
+output:
+  results_dir: "results"
+  save_csv: true
+  save_json: true
+  save_plot: true
+  save_report: true
+  live_progress_s: 10.0         # كل كم ثانية نطبع progress

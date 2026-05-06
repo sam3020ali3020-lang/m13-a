@@ -1,0 +1,4 @@
+cell_id,amp_deg,offset_deg,direction,repeat_idx,delay_ms,tau_ms,overshoot_pct,settling_ms,final_err_deg,samples
+0,1.0000,0.0000,up,0,58.0550,,23.5282,,0.1111,26
+1,1.0000,0.0000,up,1,84.0840,,19.9982,,0.1111,26
+2,1.0000,0.0000,up,2,52.0820,95.9810,9.8029,,-1.1111,29

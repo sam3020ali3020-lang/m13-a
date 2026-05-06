@@ -1,0 +1,206 @@
+# ============================================================================
+# ملف خصائص الصاروخ - صاروخ باليستي تكتيكي بعيد المدى
+# Rocket Properties Configuration File - Long-Range Tactical Ballistic Missile
+# ============================================================================
+#
+# هذا الملف يحتوي على الخصائص الفيزيائية لصاروخ باليستي تكتيكي
+# المدى: 300-500 كم
+# تُستخدم بواسطة حزمة rocket_models لحسابات الديناميكا والتحكم
+#
+# ============================================================================
+
+# ==========================================================================
+# خصائص الكتلة
+# Mass Properties
+# ==========================================================================
+
+# الكتلة الجافة (بدون الوقود) - كجم
+mass_dry_kg: 291
+
+# كتلة الوقود - كجم
+propellant_mass_kg: 285
+
+
+# كتلة المادة العازلة - كجم (اختياري، افتراضي = 0)
+# Insulation mass - kg (optional, default = 0)
+# المادة العازلة تتآكل مع الوقود بنفس النسبة
+# Insulation ablates proportionally with propellant
+insulation_mass_kg: 5
+# ==========================================================================
+# مركز الثقل
+# Center of Gravity
+# ==========================================================================
+
+# موقع مركز الثقل الجاف في إطار الجسم [x, y, z] - م
+cg_dry_body_m: [2.485, 0.0000, 0.00]
+
+# موقع مركز ثقل الوقود في إطار الجسم [x, y, z] - م
+cg_propellant_body_m: [2.90539, 0.000, 0.000]
+
+
+
+# ==========================================================================
+# عزوم القصور الذاتي
+# Moments of Inertia
+# ==========================================================================
+
+# عزوم القصور الذاتي الجافة [Ixx, Iyy, Izz] - كجم.م²
+inertia_dry_kgm2: [4.0458855, 936.08, 936.08]
+
+# عزوم القصور الذاتي الكاملة (مع الوقود) [Ixx, Iyy, Izz] - كجم.م²
+# Full moments of inertia (with propellant) [Ixx, Iyy, Izz] - kg·m²
+# ⚠️ مهم: يجب تحديد هذه القيم من CAD أو الاختبارات للحصول على أفضل دقة
+# ⚠️ IMPORTANT: These values should be specified from CAD or testing for best accuracy
+# إذا لم يتم تحديدها، سيتم تقديرها باستخدام نظرية المحاور المتوازية
+# If not specified, values will be estimated using parallel axis theorem
+inertia_full_kgm2: [ 6.774317, 1290.08,1290.08]              # TODO: أدخل القيم الفعلية | Enter actual values
+
+
+CA_multiplier: 0.9
+# ==========================================================================
+# الأبعاد المرجعية
+# Reference Dimensions
+# ==========================================================================
+
+# القطر المرجعي - م
+ref_diameter_m: 0.273
+
+# الطول المرجعي - م
+ref_length_m: 5.453
+
+# المساحة المرجعية (π × (d/2)²) - م²
+ref_area_m2: 0.05853
+
+# ==========================================================================
+
+# ==========================================================================
+# معاملات الفوهة
+# Nozzle Parameters
+# ==========================================================================
+
+# مساحة خروج الفوهة (Ae) - م²
+nozzle_exit_area_m2: 0.05557
+
+# ضغط مستوى سطح البحر القياسي (p_0) - باسكال
+sea_level_pressure_Pa: 65000.0
+
+# ==========================================================================
+# خصائص الدفات
+
+# ==========================================================================
+# هندسة الوقود (اختياري - لتحسين دقة حساب عزم القصور الذاتي)
+# Propellant Geometry (Optional - For Improved Inertia Calculation Accuracy)
+# ==========================================================================
+#
+# ملاحظة: هذه المعاملات اختيارية. إذا لم يتم تحديدها، سيتم تقدير القيم تلقائياً
+# Note: These parameters are optional. If not specified, values will be estimated automatically
+#
+# يُنصح بتحديد هذه القيم للحصول على أفضل دقة في حسابات عزم القصور الذاتي
+# Recommended to specify these values for best accuracy in inertia calculations
+
+# نصف القطر الخارجي لحبة الوقود - م
+# Outer radius of propellant grain - m
+propellant_outer_radius_m: 0.1325                             # TODO: أدخل القيمة الفعلية | Enter actual value
+
+# طول حبة الوقود - م  
+# Length of propellant grain - m
+propellant_length_m: 3.33                             # TODO: أدخل القيمة الفعلية | Enter actual value
+
+# نسبة نصف القطر الداخلي إلى الخارجي (0 = صلب، 0.5 = مجوف نموذجي، <1)
+# Ratio of inner to outer radius (0 = solid, 0.5 = typical hollow, <1)
+propellant_inner_radius_ratio: 0.2528                         # TODO: عدّل حسب التصميم | Adjust per design
+
+
+# ==========================================================================
+# إعدادات الزعانف والتكوين
+# Fin and Configuration Settings
+# ==========================================================================
+
+config_type: "X"
+fin_location: "canard"
+
+# Fin Properties
+# ==========================================================================
+
+fin:
+  # مساحة الدفة الواحدة - م²
+  S_fin_m2: 0.02273726
+  
+  # طول وتر الدفة - م
+  c_fin_m: 0.150
+  
+  # موقع الدفة x في إطار الجسم - م
+  x_fin_m: 1.106
+  
+  # الحد الأقصى لانحراف الدفة - درجة
+  delta_max_deg: 25.0
+  
+  # الحد الأقصى لمعدل الدفة - درجة/ث
+  delta_dot_max_deg_s: 300.0
+
+# ==========================================================================
+# معاملات المراحل
+# Stage Parameters
+# ==========================================================================
+#burn_time_scale: 1.
+
+
+# معامل مضاعفة الدفع - يضاعف الدفع مع الحفاظ على الزمن والكتلة ثابتين
+# Thrust multiplier - multiplies thrust while keeping time and mass constant
+# هذا يعادل مضاعفة النبضة النوعية (Isp)
+# This effectively multiplies the specific impulse (Isp)
+# القيمة 1.0 = بدون تغيير، > 1.0 = زيادة الدفع/Isp، < 1.0 = تقليل الدفع/Isp
+# Value 1.0 = no change, > 1.0 = increase thrust/Isp, < 1.0 = decrease thrust/Isp
+thrust_multiplier: 1.0
+# عدد المراحل
+num_stages: 1
+
+# نقطة مرجع العزم - المسافة من الأنف إلى نقطة مرجع جداول الديناميكا الهوائية (م)
+# Moment reference point - distance from nose to aero table reference point (m)
+# هذه هي نقطة المرجع المستخدمة في تحليل CFD/نفق الرياح لمعاملات Cm/Cn
+# This is the reference point used in CFD/wind tunnel analysis for Cm/Cn coefficients
+# عندما يختلف CG عن هذه النقطة، يتم تطبيق تصحيح نقل العزم تلقائياً
+# When CG differs from this point, a moment transfer correction is automatically applied
+# ⚠️ مهم: يجب تحديد هذه القيمة من بيانات CFD/نفق الرياح
+# ⚠️ IMPORTANT: This value should be specified from CFD/wind tunnel data
+#moment_reference_point: 3.087  # Example: at 50% of rocket length (ref_length_m / 2)
+
+# ==========================================================================
+# إعدادات منصة الإطلاق (Launcher Settings)
+# ==========================================================================
+# نموذج قضيب الإطلاق يقيد الصاروخ بحركة 1-DOF على طول القضيب
+# حتى يتجاوز مركز ثقل الصاروخ الطول الفعال للقضيب
+# Launch rail model constrains rocket to 1-DOF motion along rail
+# until rocket CG travels beyond effective rail length
+#
+# يجب أن تتطابق زاوية الإطلاق مع الاتجاه الابتدائي (initial attitude)
+# Launch elevation must match initial attitude
+# ==========================================================================
+launcher:
+  enabled: true                # تفعيل/تعطيل نموذج قضيب الإطلاق (Enable/disable launch rail model)
+  rail_length: 5.45          # m - طول القضيب الكلي (total rail length)
+  rail_effective_length: 4.5 # m - الطول الفعال (CG travel distance for rail exit)
+  rail_friction_coefficient: 0.1  # معامل الاحتكاك (friction coefficient)
+  launch_elevation: 65.0        # deg - يجب أن تتطابق مع initial attitude (65°)
+
+# ==========================================================================
+# خصائص المشغلات (Actuator Properties)
+# ==========================================================================
+actuator:
+  type: "Industrial Electric Servo"
+  motor: "brushless"
+  model: 2
+  tau_servo: 0.02
+  wn: 80.0
+  zeta_wn: 80.0
+  delay_steps: 2
+  delay_buffer_size: 6
+  delta_max: 25.0
+  delta_min: -25.0
+  rate_max: 200.0
+  n_actuators: 4
+  delta_trim: [0.0, 0.0, 0.0, 0.0]
+  delta_scale: [1.0, 1.0, 1.0, 1.0]
+  backlash: 0.0
+  torque_max_Nm: 15.0
+  voltage: 28.0

@@ -1,0 +1,27 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — step
+  step: +0.0° → +5.0° → +0.0° → -5.0° → +0.0°  (total 5.80s)
+  csv: direct_step_20260501_150904.csv
+═══════════════════════════════════════════════════════
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 2327   cmd∈[-5.00,+5.00]°   fb∈[-5.17,+5.17]°
+  slew_max: 0.0 °/s
+  step edges: 4
+    edge@2.87s Δ=+4.9°  delay=90.0ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=+0.111°
+    edge@4.37s Δ=-5.1°  delay=39.9ms  τ=9.0ms  OS=3.3%  t_settle=nanms  err=-0.111°
+    edge@5.87s Δ=-4.9°  delay=19.3ms  τ=49.9ms  OS=3.4%  t_settle=nanms  err=-0.111°
+    edge@7.37s Δ=+5.1°  delay=20.1ms  τ=29.7ms  OS=3.2%  t_settle=nanms  err=+0.111°
+  avg transport_delay=42.34ms  avg τ=22.15ms  avg OS=3.33%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 2327   cmd∈[+0.00,+0.00]°   fb∈[-0.06,+0.00]°
+  slew_max: 7.0 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 2327   cmd∈[+0.00,+0.00]°   fb∈[+0.00,+0.06]°
+  slew_max: 0.0 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 2327   cmd∈[+0.00,+0.00]°   fb∈[+0.06,+0.11]°
+  slew_max: 0.0 °/s

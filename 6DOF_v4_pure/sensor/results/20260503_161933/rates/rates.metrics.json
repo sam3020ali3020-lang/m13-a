@@ -1,0 +1,8 @@
+{
+  "imu_rate_hz": 107.5,
+  "imu_jitter_pct": 54.4,
+  "imu_dropouts": 61,
+  "imu_samples": 5988,
+  "baro_rate_hz": 10.0,
+  "baro_samples": 600
+}

@@ -1,0 +1,85 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — rate_limit_verify
+  rate_limit_verify: 5 amps × 2 reps (24.5s, 20 edges)
+  csv: direct_v1_rate_limit_verify_20260502_080206.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 8954   cmd∈[-18.00,+18.00]°   fb∈[-18.11,+18.22]°
+  slew_max: 267.1 °/s
+  step edges: 30
+    edge@4.96s Δ=+1.9°  delay=76.1ms  τ=0.0ms  OS=8.8%  t_settle=nanms  err=-4.167°
+    edge@5.76s Δ=-4.1°  delay=42.8ms  τ=10.0ms  OS=5.4%  t_settle=nanms  err=+2.111°
+    edge@6.56s Δ=+2.2°  delay=106.0ms  τ=0.0ms  OS=238.5%  t_settle=nanms  err=+5.111°
+    edge@7.36s Δ=+4.9°  delay=75.2ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-10.111°
+    edge@8.16s Δ=-10.1°  delay=45.2ms  τ=48.0ms  OS=3.3%  t_settle=nanms  err=+5.111°
+    edge@8.96s Δ=+5.1°  delay=55.1ms  τ=0.0ms  OS=198.9%  t_settle=nanms  err=+10.111°
+    edge@9.76s Δ=+9.9°  delay=76.2ms  τ=58.0ms  OS=1.7%  t_settle=nanms  err=-20.056°
+    edge@10.56s Δ=-20.1°  delay=99.1ms  τ=14.0ms  OS=0.6%  t_settle=nanms  err=+10.056°
+  avg transport_delay=71.95ms  avg τ=16.25ms  avg OS=57.57%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 8954   cmd∈[-18.00,+18.00]°   fb∈[-18.17,+18.06]°
+  slew_max: 313.6 °/s
+  step edges: 30
+    edge@4.96s Δ=+1.9°  delay=74.1ms  τ=0.0ms  OS=17.1%  t_settle=nanms  err=-4.056°
+    edge@5.76s Δ=-4.0°  delay=43.8ms  τ=0.0ms  OS=5.6%  t_settle=nanms  err=+2.056°
+    edge@6.56s Δ=+2.1°  delay=55.0ms  τ=52.0ms  OS=248.6%  t_settle=nanms  err=+5.111°
+    edge@7.36s Δ=+4.9°  delay=73.2ms  τ=0.0ms  OS=2.2%  t_settle=nanms  err=-10.000°
+    edge@8.16s Δ=-10.1°  delay=46.2ms  τ=48.0ms  OS=1.6%  t_settle=nanms  err=+5.056°
+    edge@8.96s Δ=+5.0°  delay=56.0ms  τ=0.0ms  OS=203.7%  t_settle=nanms  err=+10.056°
+    edge@9.76s Δ=+9.9°  delay=74.2ms  τ=54.0ms  OS=2.8%  t_settle=nanms  err=-20.167°
+    edge@10.56s Δ=-20.0°  delay=104.1ms  τ=47.0ms  OS=0.8%  t_settle=nanms  err=+10.111°
+  avg transport_delay=65.82ms  avg τ=25.12ms  avg OS=60.33%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 8954   cmd∈[-18.00,+18.00]°   fb∈[-18.00,+18.22]°
+  slew_max: 319.4 °/s
+  step edges: 30
+    edge@4.96s Δ=+1.9°  delay=67.1ms  τ=0.0ms  OS=11.8%  t_settle=nanms  err=-4.167°
+    edge@5.76s Δ=-4.1°  delay=44.8ms  τ=0.0ms  OS=5.4%  t_settle=nanms  err=+2.056°
+    edge@6.56s Δ=+2.1°  delay=56.0ms  τ=52.0ms  OS=239.5%  t_settle=nanms  err=+5.056°
+    edge@7.36s Δ=+4.9°  delay=74.2ms  τ=0.0ms  OS=1.1%  t_settle=nanms  err=-10.167°
+    edge@8.16s Δ=-10.1°  delay=95.2ms  τ=5.9ms  OS=3.3%  t_settle=nanms  err=+5.056°
+    edge@8.96s Δ=+5.2°  delay=53.1ms  τ=0.0ms  OS=196.1%  t_settle=nanms  err=+10.056°
+    edge@9.76s Δ=+9.9°  delay=78.2ms  τ=2.0ms  OS=1.1%  t_settle=nanms  err=-20.167°
+    edge@10.56s Δ=-20.1°  delay=105.1ms  τ=50.0ms  OS=0.8%  t_settle=nanms  err=+10.056°
+  avg transport_delay=71.70ms  avg τ=13.74ms  avg OS=57.39%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 8954   cmd∈[-18.00,+18.00]°   fb∈[-18.17,+18.39]°
+  slew_max: 317.5 °/s
+  step edges: 30
+    edge@4.96s Δ=+1.9°  delay=73.1ms  τ=0.0ms  OS=14.3%  t_settle=nanms  err=-4.167°
+    edge@5.76s Δ=-4.0°  delay=51.8ms  τ=0.0ms  OS=5.5%  t_settle=nanms  err=+2.056°
+    edge@6.56s Δ=+2.2°  delay=104.9ms  τ=0.0ms  OS=235.9%  t_settle=nanms  err=+5.111°
+    edge@7.36s Δ=+5.0°  delay=78.3ms  τ=0.0ms  OS=2.2%  t_settle=nanms  err=-10.056°
+    edge@8.16s Δ=-10.1°  delay=96.2ms  τ=3.0ms  OS=0.5%  t_settle=nanms  err=+5.056°
+    edge@8.96s Δ=+5.1°  delay=54.0ms  τ=0.0ms  OS=196.7%  t_settle=nanms  err=+9.833°
+    edge@9.76s Δ=+9.9°  delay=75.2ms  τ=61.0ms  OS=-0.6%  t_settle=nanms  err=-20.111°
+    edge@10.56s Δ=-19.8°  delay=106.1ms  τ=6.0ms  OS=0.6%  t_settle=nanms  err=+10.111°
+  avg transport_delay=79.95ms  avg τ=8.75ms  avg OS=56.90%
+
+─── rate_limit_verify breakdown ──────────────────────
+  pattern alignment: csv_t = sched_t + 4.460s
+  servo#0 amp=  2.0°: peak_slew mean=  50.0°/s std= 21.2°/s N=4
+  servo#0 amp=  5.0°: peak_slew mean= 120.8°/s std= 26.6°/s N=4
+  servo#0 amp= 10.0°: peak_slew mean= 250.6°/s std=145.1°/s N=4
+  servo#0 amp= 15.0°: peak_slew mean= 261.9°/s std= 73.1°/s N=4
+  servo#0 amp= 18.0°: peak_slew mean= 378.2°/s std=228.4°/s N=4
+  servo#1 amp=  2.0°: peak_slew mean=  59.6°/s std= 16.4°/s N=4
+  servo#1 amp=  5.0°: peak_slew mean= 108.1°/s std= 17.6°/s N=4
+  servo#1 amp= 10.0°: peak_slew mean= 456.6°/s std=554.2°/s N=4
+  servo#1 amp= 15.0°: peak_slew mean= 245.8°/s std= 68.9°/s N=4
+  servo#1 amp= 18.0°: peak_slew mean= 389.1°/s std=190.3°/s N=4
+  servo#2 amp=  2.0°: peak_slew mean=  89.8°/s std= 24.2°/s N=4
+  servo#2 amp=  5.0°: peak_slew mean= 119.4°/s std= 49.0°/s N=4
+  servo#2 amp= 10.0°: peak_slew mean= 249.4°/s std=138.1°/s N=4
+  servo#2 amp= 15.0°: peak_slew mean= 447.3°/s std=368.0°/s N=4
+  servo#2 amp= 18.0°: peak_slew mean= 257.9°/s std= 67.2°/s N=4
+  servo#3 amp=  2.0°: peak_slew mean=  80.4°/s std= 65.8°/s N=4
+  servo#3 amp=  5.0°: peak_slew mean= 128.8°/s std= 78.6°/s N=4
+  servo#3 amp= 10.0°: peak_slew mean= 280.2°/s std=187.0°/s N=4
+  servo#3 amp= 15.0°: peak_slew mean= 359.9°/s std=278.0°/s N=4
+  servo#3 amp= 18.0°: peak_slew mean= 341.3°/s std=208.9°/s N=4

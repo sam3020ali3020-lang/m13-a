@@ -1,0 +1,42 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — multi_servo
+  multi_servo[cascaded]: each target servo +5.0° window=0.8s, ×1passes (≤6.9s for 4 targets)
+  csv: direct_multi_servo_20260502_044241.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 3355   cmd∈[+0.00,+5.00]°   fb∈[-1.28,+5.17]°
+  slew_max: 0.0 °/s
+  step edges: 2
+    edge@5.01s Δ=+4.9°  delay=335.1ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-5.111°
+    edge@5.81s Δ=-5.1°  delay=18.3ms  τ=58.0ms  OS=3.3%  t_settle=nanms  err=-0.167°
+  avg transport_delay=176.70ms  avg τ=29.00ms  avg OS=3.32%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 3355   cmd∈[+0.00,+5.00]°   fb∈[-1.22,+5.00]°
+  slew_max: 0.0 °/s
+  step edges: 2
+    edge@6.61s Δ=+4.9°  delay=542.9ms  τ=0.0ms  OS=0.0%  t_settle=nanms  err=-5.056°
+    edge@7.41s Δ=-4.9°  delay=205.2ms  τ=0.0ms  OS=1.1%  t_settle=205ms  err=-0.056°
+  avg transport_delay=374.07ms  avg τ=0.00ms  avg OS=0.56%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 3355   cmd∈[+0.00,+5.00]°   fb∈[-1.33,+1.33]°
+  slew_max: 9.4 °/s
+  step edges: 2
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 3355   cmd∈[+0.00,+5.00]°   fb∈[-1.17,+1.22]°
+  slew_max: 0.0 °/s
+  step edges: 2
+
+─── multi_servo breakdown ───────────────────────────
+  detected mode: cascaded
+  pattern alignment: csv_t = sched_t + 4.510s
+  cascaded analysis:
+    window@5.0s..6.6s pos=0: max|fb| → s#0=5.17 s#1=0.11 s#2=0.11 s#3=0.11
+    window@6.6s..8.2s pos=1: max|fb| → s#1=5.00 s#0=0.17 s#2=0.11 s#3=0.06
+    window@8.2s..9.8s pos=2: ⚠ NO FRESH FB (stalled — last fb @ 7.62s)
+    window@9.8s..11.4s pos=3: ⚠ NO FRESH FB (stalled — last fb @ 7.62s)
+  ⚠ 2/4 windows had no fresh feedback — bus or USB stalled.

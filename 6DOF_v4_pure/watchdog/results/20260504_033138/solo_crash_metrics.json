@@ -1,0 +1,213 @@
+{
+  "scenario": "solo_crash",
+  "passed": false,
+  "iterations": [
+    {
+      "target": "native_sensor_reader",
+      "rep": 1,
+      "t_crash_wallclock": 1777854699.1779733,
+      "auto_restart": true,
+      "metrics": {
+        "detection_ms": 106.363,
+        "restart_ms": 51.794,
+        "recovery_ms": 51.555,
+        "dead_t_us": 50107497294,
+        "restart_t_us": 50107549088
+      },
+      "iter_fail": []
+    },
+    {
+      "target": "sensors",
+      "rep": 1,
+      "t_crash_wallclock": 1777854707.3040345,
+      "auto_restart": true,
+      "metrics": {
+        "detection_ms": 70.13,
+        "restart_ms": 53.598,
+        "recovery_ms": 102.339,
+        "dead_t_us": 50115599451,
+        "restart_t_us": 50115653049
+      },
+      "iter_fail": []
+    },
+    {
+      "target": "ekf2",
+      "rep": 1,
+      "t_crash_wallclock": 1777854715.4450648,
+      "auto_restart": true,
+      "metrics": {
+        "detection_ms": 75.629,
+        "restart_ms": 51.973,
+        "recovery_ms": 505.26,
+        "dead_t_us": 50123751748,
+        "restart_t_us": 50123803721
+      },
+      "iter_fail": []
+    },
+    {
+      "target": "rocket_mpc",
+      "rep": 1,
+      "t_crash_wallclock": 1777854723.6020408,
+      "auto_restart": true,
+      "metrics": {
+        "detection_ms": 173.601,
+        "restart_ms": 82.825,
+        "recovery_ms": 100.932,
+        "dead_t_us": 50131998918,
+        "restart_t_us": 50132081743
+      },
+      "iter_fail": []
+    },
+    {
+      "target": "commander",
+      "rep": 1,
+      "t_crash_wallclock": 1777854731.7400656,
+      "auto_restart": true,
+      "metrics": {
+        "detection_ms": 911.21,
+        "restart_ms": 53.466,
+        "recovery_ms": 100.897,
+        "dead_t_us": 50140948798,
+        "restart_t_us": 50141002264
+      },
+      "iter_fail": [
+        "detection 911ms > 600ms"
+      ]
+    },
+    {
+      "target": "control_allocator",
+      "rep": 1,
+      "t_crash_wallclock": 1777854739.9560113,
+      "auto_restart": true,
+      "metrics": {
+        "detection_ms": 469.35,
+        "restart_ms": 52.243,
+        "recovery_ms": 101.397,
+        "dead_t_us": 50148650119,
+        "restart_t_us": 50148702362
+      },
+      "iter_fail": []
+    },
+    {
+      "target": "mavlink_tcp_bridge",
+      "rep": 1,
+      "t_crash_wallclock": 1777854748.1007314,
+      "auto_restart": true,
+      "metrics": {
+        "detection_ms": 1019.964,
+        "restart_ms": 52.395,
+        "recovery_ms": 101.981,
+        "dead_t_us": 50157654682,
+        "restart_t_us": 50157707077
+      },
+      "iter_fail": [
+        "detection 1020ms > 600ms"
+      ]
+    }
+  ],
+  "aggregate": {
+    "native_sensor_reader": {
+      "detection_ms_mean": 106.363,
+      "detection_ms_median": 106.363,
+      "detection_ms_max": 106.363,
+      "detection_ms_count": 1.0,
+      "restart_ms_mean": 51.794,
+      "restart_ms_median": 51.794,
+      "restart_ms_max": 51.794,
+      "restart_ms_count": 1.0,
+      "recovery_ms_mean": 51.555,
+      "recovery_ms_median": 51.555,
+      "recovery_ms_max": 51.555,
+      "recovery_ms_count": 1.0
+    },
+    "sensors": {
+      "detection_ms_mean": 70.13,
+      "detection_ms_median": 70.13,
+      "detection_ms_max": 70.13,
+      "detection_ms_count": 1.0,
+      "restart_ms_mean": 53.598,
+      "restart_ms_median": 53.598,
+      "restart_ms_max": 53.598,
+      "restart_ms_count": 1.0,
+      "recovery_ms_mean": 102.339,
+      "recovery_ms_median": 102.339,
+      "recovery_ms_max": 102.339,
+      "recovery_ms_count": 1.0
+    },
+    "ekf2": {
+      "detection_ms_mean": 75.629,
+      "detection_ms_median": 75.629,
+      "detection_ms_max": 75.629,
+      "detection_ms_count": 1.0,
+      "restart_ms_mean": 51.973,
+      "restart_ms_median": 51.973,
+      "restart_ms_max": 51.973,
+      "restart_ms_count": 1.0,
+      "recovery_ms_mean": 505.26,
+      "recovery_ms_median": 505.26,
+      "recovery_ms_max": 505.26,
+      "recovery_ms_count": 1.0
+    },
+    "rocket_mpc": {
+      "detection_ms_mean": 173.601,
+      "detection_ms_median": 173.601,
+      "detection_ms_max": 173.601,
+      "detection_ms_count": 1.0,
+      "restart_ms_mean": 82.825,
+      "restart_ms_median": 82.825,
+      "restart_ms_max": 82.825,
+      "restart_ms_count": 1.0,
+      "recovery_ms_mean": 100.932,
+      "recovery_ms_median": 100.932,
+      "recovery_ms_max": 100.932,
+      "recovery_ms_count": 1.0
+    },
+    "commander": {
+      "detection_ms_mean": 911.21,
+      "detection_ms_median": 911.21,
+      "detection_ms_max": 911.21,
+      "detection_ms_count": 1.0,
+      "restart_ms_mean": 53.466,
+      "restart_ms_median": 53.466,
+      "restart_ms_max": 53.466,
+      "restart_ms_count": 1.0,
+      "recovery_ms_mean": 100.897,
+      "recovery_ms_median": 100.897,
+      "recovery_ms_max": 100.897,
+      "recovery_ms_count": 1.0
+    },
+    "control_allocator": {
+      "detection_ms_mean": 469.35,
+      "detection_ms_median": 469.35,
+      "detection_ms_max": 469.35,
+      "detection_ms_count": 1.0,
+      "restart_ms_mean": 52.243,
+      "restart_ms_median": 52.243,
+      "restart_ms_max": 52.243,
+      "restart_ms_count": 1.0,
+      "recovery_ms_mean": 101.397,
+      "recovery_ms_median": 101.397,
+      "recovery_ms_max": 101.397,
+      "recovery_ms_count": 1.0
+    },
+    "mavlink_tcp_bridge": {
+      "detection_ms_mean": 1019.964,
+      "detection_ms_median": 1019.964,
+      "detection_ms_max": 1019.964,
+      "detection_ms_count": 1.0,
+      "restart_ms_mean": 52.395,
+      "restart_ms_median": 52.395,
+      "restart_ms_max": 52.395,
+      "restart_ms_count": 1.0,
+      "recovery_ms_mean": 101.981,
+      "recovery_ms_median": 101.981,
+      "recovery_ms_max": 101.981,
+      "recovery_ms_count": 1.0
+    }
+  },
+  "failure_reasons": [
+    "commander#1: detection 911ms > 600ms",
+    "mavlink_tcp_bridge#1: detection 1020ms > 600ms"
+  ],
+  "event_count": 76
+}

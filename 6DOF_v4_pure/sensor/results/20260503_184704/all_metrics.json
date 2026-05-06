@@ -1,0 +1,28 @@
+{
+  "allan": {
+    "passed": true,
+    "failures": [],
+    "metrics": {
+      "gyro_bias_instability_rads": 3.887e-05,
+      "gyro_bias_instability_dph": 8.02,
+      "gyro_bi_worst_axis": "gz",
+      "gyro_bi_per_axis_dph": {
+        "gx": 0.39,
+        "gy": 2.96,
+        "gz": 8.02
+      },
+      "accel_bias_instability_ms2": 0.000464,
+      "accel_bias_instability_mg": 0.047,
+      "accel_bi_worst_axis": "ay",
+      "accel_bi_per_axis_mg": {
+        "ax": 0.038,
+        "ay": 0.047,
+        "az": 0.036
+      },
+      "sample_rate_hz": 99.7,
+      "total_samples": 179787,
+      "duration_s": 1800.0,
+      "allan_results": "(full Allan curves in allan.metrics.json)"
+    }
+  }
+}

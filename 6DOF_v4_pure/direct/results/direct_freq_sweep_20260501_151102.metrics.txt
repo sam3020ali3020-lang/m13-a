@@ -1,0 +1,29 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — freq_sweep
+  chirp log: 0.10→15.00 Hz, amp=3.0°, 30.0s
+  csv: direct_freq_sweep_20260501_151102.csv
+═══════════════════════════════════════════════════════
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 10203   cmd∈[-3.00,+3.00]°   fb∈[+0.06,+0.61]°
+  slew_max: 0.0 °/s
+  step edges: 686
+  bandwidth (-3dB): 0.10 Hz
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 10203   cmd∈[-3.00,+3.00]°   fb∈[+0.06,+0.78]°
+  slew_max: 0.0 °/s
+  step edges: 686
+  bandwidth (-3dB): 0.10 Hz
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 10203   cmd∈[-3.00,+3.00]°   fb∈[+0.06,+0.61]°
+  slew_max: 0.0 °/s
+  step edges: 686
+  bandwidth (-3dB): 0.10 Hz
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 10203   cmd∈[-3.00,+3.00]°   fb∈[+0.06,+0.61]°
+  slew_max: 0.0 °/s
+  step edges: 686
+  bandwidth (-3dB): 0.06 Hz

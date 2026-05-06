@@ -1,0 +1,76 @@
+csv: direct_blverify_backlash_20260502_073240.csv
+timestamp: '20260502_073240'
+pattern: backlash
+pattern_description: 'backlash: ±5.0° step=0.10° dwell=0.10s ×2c (40.4s)'
+pattern_duration_s: 40.400000000000006
+target_servos:
+- 0
+- 1
+- 2
+- 3
+node_ids:
+- 1
+- 2
+- 3
+- 4
+cmd_rate_hz: 100.0
+angle_limit_deg: 10.0
+total_rx_frames: 10832
+fb_per_servo:
+- 2902
+- 2727
+- 2809
+- 2394
+fb_rate_hz_per_servo:
+- 75.7
+- 76.1
+- 73.5
+- 61.0
+config:
+  can:
+    backend: xqpower_bus
+    xqpower_bus:
+      node_ids:
+      - 1
+      - 2
+      - 3
+      - 4
+      poll_interval_us: 5000
+  xqpower:
+    node_ids:
+    - 1
+    - 2
+    - 3
+    - 4
+    angle_limit_deg: 10.0
+    units_per_deg: 18.0
+    report_interval_ms: 10
+    poll_interval_ms: 5
+  safety:
+    zero_before_s: 0.5
+    zero_after_s: 0.5
+    zero_on_exit: true
+    max_angle_abs_deg: 20.0
+    warmup_exercise_s: 2.0
+    warmup_amp_deg: 1.0
+    online_min_samples: 3
+    online_settle_std_deg: 0.1
+    min_fb_rate_hz: 30.0
+  pattern:
+    name: backlash
+    servos:
+    - 0
+    - 1
+    - 2
+    - 3
+    backlash:
+      amplitude_deg: 5.0
+      step_deg: 0.1
+      dwell_s: 0.1
+      cycles: 2
+  output:
+    results_dir: results
+    csv_prefix: direct_blverify
+    html_plot: true
+  loop:
+    cmd_rate_hz: 100

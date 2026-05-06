@@ -1,0 +1,26 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — ramp
+  ramp: ±8.0° @ 30°/s, 3 cycles (3.2s)
+  csv: direct_ramp_20260502_062853.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 2104   cmd∈[+0.00,+0.00]°   fb∈[-1.39,+1.28]°
+  slew_max: 8.1 °/s
+  backlash: 0.000°
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 2104   cmd∈[+0.00,+0.00]°   fb∈[-1.28,+1.28]°
+  slew_max: 0.0 °/s
+  backlash: 0.000°
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 2104   cmd∈[-7.99,+7.99]°   fb∈[-7.89,+8.00]°
+  slew_max: 20.8 °/s
+  backlash: 5.319°
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 2104   cmd∈[+0.00,+0.00]°   fb∈[-1.28,+1.22]°
+  slew_max: 7.2 °/s
+  backlash: 0.000°

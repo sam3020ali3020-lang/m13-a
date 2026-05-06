@@ -1,0 +1,73 @@
+{
+  "result_dir": "/home/yoga/m13/m13/6DOF_v4_pure/thermal_stress/results/20260503_182511",
+  "deadline_us": 40000.0,
+  "mpc": {
+    "error": "no MPC data (mpc_timing.csv missing or empty)",
+    "samples": 0
+  },
+  "thermal": {
+    "samples": 26,
+    "duration_s": 25.0,
+    "cpu_silver_C": {
+      "mean": 43.42,
+      "min": 42.7,
+      "max": 44.0,
+      "final": 43.3
+    },
+    "cpu_gold_C": {
+      "mean": 42.33,
+      "min": 41.7,
+      "max": 45.0,
+      "final": 42.3
+    },
+    "gpu_C": {
+      "mean": 40.34,
+      "min": 40.0,
+      "max": 40.4,
+      "final": 40.4
+    },
+    "ddr_C": {
+      "mean": 40.64,
+      "min": 40.5,
+      "max": 40.9,
+      "final": 40.9
+    },
+    "battery_C": {
+      "mean": 34.6,
+      "min": 34.6,
+      "max": 34.6,
+      "final": 34.6
+    },
+    "skin_C": {
+      "mean": 34.0,
+      "min": 34.0,
+      "max": 34.0,
+      "final": 34.0
+    },
+    "thermal_status_peak": 0,
+    "thermal_status_samples_gt0": 0,
+    "throttle_ratio_gold": {
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0,
+      "final": 1.0
+    },
+    "throttle_ratio_silver": {
+      "mean": 1.0,
+      "min": 1.0,
+      "max": 1.0,
+      "final": 1.0
+    },
+    "throttle_windows_count": 0,
+    "total_throttle_s": 0
+  },
+  "throttle_windows": [],
+  "split_by_throttle": {
+    "no_throttle_observed": true
+  },
+  "pass_fail": {
+    "passed": true,
+    "failures": [],
+    "warnings": []
+  }
+}

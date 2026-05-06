@@ -1,0 +1,19 @@
+{
+  "scenario": "solo_crash",
+  "passed": false,
+  "iterations": [
+    {
+      "target": "rocket_mpc",
+      "rep": 1,
+      "t_crash_wallclock": 1777853584.0338871,
+      "auto_restart": true,
+      "metrics": null,
+      "note": "no crash_complete event in log for this iteration"
+    }
+  ],
+  "aggregate": {},
+  "failure_reasons": [
+    "rocket_mpc: missing crash_complete event (iter 1)"
+  ],
+  "event_count": 0
+}

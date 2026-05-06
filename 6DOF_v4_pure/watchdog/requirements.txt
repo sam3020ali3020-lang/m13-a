@@ -1,0 +1,3 @@
+PyYAML>=6.0
+# Optional — plotly HTML report; skipped gracefully if missing:
+plotly>=5.20

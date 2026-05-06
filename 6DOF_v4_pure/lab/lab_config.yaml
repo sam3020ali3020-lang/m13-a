@@ -1,0 +1,87 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  /lab — PX4 SITL على لابتوب + سيرفوهات حقيقية عبر CAN
+# ═══════════════════════════════════════════════════════════════════════
+#
+#  Architecture:
+#    PC ── PX4 SITL (x86_64) ──MAVLink──▶ /sitl bridge ──┬──▶ dynamics (sim)
+#                                                         │
+#                                                         └──▶ CAN ──▶ servos
+#                                                                      │
+#                                       (اختياري) inject as truth ◀── SRV_FB
+#
+#  لا تعديل على PX4. لا rebuild. يعتمد على /sitl + /direct.
+# ────────────────────────────────────────────────────────────────────────
+
+# ─── إعدادات SITL (تُمرّر إلى /sitl/run_sitl_test.py) ────────────────────
+sitl:
+  # هذا config_path يُستخدم بـ SITLBridge كما هو في /sitl
+  # استخدم نفس config 6DOF الموجود
+  bridge_config: ../sitl/sitl_config.yaml
+  # ملف 6DOF الكامل
+  sim_config: ../config/6dof_config_advanced.yaml
+  # PX4 binary path (relative to project root)
+  px4_binary: ../../AndroidApp/app/src/main/cpp/PX4-Autopilot/build/px4_sitl_default/bin/px4
+  # rcS for SITL (اختياري — يستخدم default إذا فارغ)
+  rcS: ""
+  # عدّل هذا إذا أردت تشغيل PX4 يدوياً
+  auto_launch_px4: true
+  # عدد ثوانٍ انتظار قبل اعتبار PX4 لم يُقلع
+  px4_boot_timeout_s: 30
+
+# ─── إعدادات CAN (مأخوذة كما هي من /direct) ─────────────────────────────
+can:
+  backend: xqpower_bus        # xqpower_bus (proven working in /direct) | socketcan | slcan | serial | virtual
+  xqpower_bus:
+    node_ids: [1, 2, 3, 4]
+    poll_interval_us: 5000
+  socketcan:
+    channel: can0
+    bitrate: 500000
+  slcan:
+    port: /dev/ttyUSB0
+    bitrate: 500000
+    ttyBaudrate: 2000000
+  serial:
+    port: /dev/ttyUSB0
+    tty_baud: 2000000
+    variant: waveshare
+  virtual:
+    channel: vcan0
+
+# ─── XQPOWER protocol (نفس /direct) ────────────────────────────────────
+xqpower:
+  node_ids: [0x01, 0x02, 0x03, 0x04]
+  angle_limit_deg: 20.0
+  units_per_deg: 18.0
+  report_interval_ms: 10
+
+# ─── سلوك الجسر ────────────────────────────────────────────────────────
+bridge:
+  # هل نستخدم servo feedback الحقيقي بدل الـ servo model في الديناميكا؟
+  # true  = closed-loop hardware-in-the-loop (مثل /hil)
+  # false = open-loop (servo model في sim؛ servo حقيقي يحرّك فقط بدون feedback)
+  inject_servo_fb: true
+
+  # حد أقصى للمعدل لأوامر CAN (Hz). PX4 SITL عادة 250Hz؛ نحدّ هنا لتجنب
+  # إغراق USB-Serial. set 0 = no limit (irsalrate نفس HIL_ACTUATOR_CONTROLS).
+  cmd_rate_limit_hz: 100
+
+  # هل نُرسل أوامر السيرفو حتى قبل ARM؟
+  send_when_disarmed: false
+
+  # عند SIGINT أو exit، أرسل 0° لكل السيرفوهات
+  zero_on_exit: true
+
+# ─── output ─────────────────────────────────────────────────────────────
+output:
+  results_dir: results
+  csv_prefix: lab            # lab_<timestamp>.csv
+  log_can_traffic: true       # log كل CAN frame (cmd + fb)
+  enable_html_plot: true
+
+# ─── post-run analysis ──────────────────────────────────────────────────
+# lab_analysis.py يُستدعى تلقائياً بعد انتهاء التشغيل:
+#   - <stem>.metrics.txt  (نص: RMSE, delay, backlash, slew…)
+#   - <stem>.report.html  (Plotly تفاعلي: tracking, hysteresis, flight)
+analysis:
+  open_browser: true          # افتح التقرير في المتصفح بعد إنتاجه

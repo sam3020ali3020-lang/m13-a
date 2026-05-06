@@ -1,0 +1,69 @@
+# === Build artifacts (Android) ===
+AndroidApp/app/.cxx/
+AndroidApp/app/build/
+AndroidApp/build/
+AndroidApp/.gradle/
+AndroidApp/local.properties
+AndroidApp/.idea/
+AndroidApp/captures/
+
+# === Build artifacts (PX4-Autopilot) ===
+AndroidApp/app/src/main/cpp/PX4-Autopilot/build/
+AndroidApp/app/src/main/cpp/PX4-Autopilot/.cache/
+
+# === PX4 upstream git (renamed during our git init) ===
+AndroidApp/app/src/main/cpp/PX4-Autopilot/.git/
+AndroidApp/app/src/main/cpp/PX4-Autopilot/.git_upstream_disabled/
+
+# === acados internal builds ===
+acados-main/build/
+acados-main/lib/*.so
+acados-main/lib/*.a
+acados-main/lib/*.dylib
+
+# === Run artifacts / large logs ===
+logs/
+6DOF_v4_pure/pil/results/
+6DOF_v4_pure/sitl/results/
+6DOF_v4_pure/logs/
+*.log
+/tmp/
+
+# === Backups created during session ===
+*.before_revert
+*.pre_fix_backup
+*.pre_gravity_fix
+*.bak
+*.orig
+
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+
+# === C/C++ object files ===
+*.o
+*.so
+*.a
+*.dylib
+*.dSYM/
+!AndroidApp/app/src/main/cpp/acados_arm64/lib/*.a
+!AndroidApp/app/src/main/cpp/acados_arm64/lib/*.so
+
+# === IDE / Editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === APK / debug outputs ===
+*.apk
+*.aab

@@ -1,0 +1,27 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — step
+  csv: direct_step_20260502_040653.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 2932   cmd∈[+0.00,+0.00]°   fb∈[-1.22,+1.28]°
+  slew_max: 7.1 °/s
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 2932   cmd∈[+0.00,+0.00]°   fb∈[-1.17,+1.44]°
+  slew_max: 0.0 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 2932   cmd∈[+0.00,+0.00]°   fb∈[-1.28,+1.33]°
+  slew_max: 48.0 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 2932   cmd∈[-5.00,+5.00]°   fb∈[-5.11,+5.11]°
+  slew_max: 0.0 °/s
+  step edges: 4
+    edge@4.79s Δ=+4.9°  delay=22.1ms  τ=41.0ms  OS=2.2%  t_settle=nanms  err=+0.111°
+    edge@6.29s Δ=-5.1°  delay=75.2ms  τ=0.0ms  OS=7.6%  t_settle=nanms  err=-0.111°
+    edge@7.79s Δ=-4.9°  delay=49.9ms  τ=49.0ms  OS=2.3%  t_settle=nanms  err=-0.111°
+    edge@9.29s Δ=+5.1°  delay=93.9ms  τ=0.0ms  OS=1.1%  t_settle=145ms  err=+0.056°
+  avg transport_delay=60.27ms  avg τ=22.50ms  avg OS=3.30%

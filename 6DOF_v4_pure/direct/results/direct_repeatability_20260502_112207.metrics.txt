@@ -1,0 +1,85 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — repeatability
+  repeatability: ±5.0° period=2.0s ×50cycles (100.5s, 100 edges)
+  csv: direct_repeatability_20260502_112207.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 29243   cmd∈[-5.00,+5.00]°   fb∈[-5.39,+5.22]°
+  slew_max: 182.2 °/s
+  step edges: 101
+    edge@5.02s Δ=+4.9°  delay=52.1ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-10.111°
+    edge@6.02s Δ=-10.1°  delay=94.1ms  τ=0.0ms  OS=1.1%  t_settle=nanms  err=+10.111°
+    edge@7.02s Δ=+10.1°  delay=49.1ms  τ=46.0ms  OS=1.6%  t_settle=nanms  err=-10.111°
+    edge@8.02s Δ=-10.1°  delay=46.1ms  τ=49.0ms  OS=2.7%  t_settle=nanms  err=+10.111°
+    edge@9.02s Δ=+10.1°  delay=76.9ms  τ=6.0ms  OS=2.2%  t_settle=nanms  err=-10.111°
+    edge@10.02s Δ=-10.1°  delay=66.2ms  τ=48.0ms  OS=2.7%  t_settle=nanms  err=+10.111°
+    edge@11.02s Δ=+10.1°  delay=76.9ms  τ=0.0ms  OS=1.6%  t_settle=nanms  err=-10.111°
+    edge@12.02s Δ=-10.1°  delay=19.3ms  τ=53.0ms  OS=1.6%  t_settle=nanms  err=+10.111°
+  avg transport_delay=60.09ms  avg τ=25.25ms  avg OS=2.14%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 29243   cmd∈[-5.00,+5.00]°   fb∈[-5.17,+5.39]°
+  slew_max: 192.2 °/s
+  step edges: 101
+    edge@5.02s Δ=+4.9°  delay=43.1ms  τ=4.0ms  OS=3.4%  t_settle=nanms  err=-10.056°
+    edge@6.02s Δ=-10.1°  delay=95.1ms  τ=0.0ms  OS=1.1%  t_settle=nanms  err=+10.111°
+    edge@7.02s Δ=+10.1°  delay=50.1ms  τ=46.0ms  OS=1.7%  t_settle=nanms  err=-10.056°
+    edge@8.02s Δ=-10.1°  delay=96.2ms  τ=50.0ms  OS=1.1%  t_settle=nanms  err=+10.111°
+    edge@9.02s Δ=+10.1°  delay=77.8ms  τ=9.0ms  OS=1.7%  t_settle=nanms  err=-10.000°
+    edge@10.02s Δ=-10.1°  delay=64.3ms  τ=51.0ms  OS=0.5%  t_settle=nanms  err=+10.111°
+    edge@11.02s Δ=+9.9°  delay=74.9ms  τ=61.0ms  OS=3.4%  t_settle=nanms  err=-10.000°
+    edge@12.02s Δ=-10.1°  delay=22.3ms  τ=51.0ms  OS=0.5%  t_settle=nanms  err=+10.111°
+  avg transport_delay=65.47ms  avg τ=33.99ms  avg OS=1.67%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 29243   cmd∈[-5.00,+5.00]°   fb∈[-5.33,+5.22]°
+  slew_max: 205.2 °/s
+  step edges: 101
+    edge@5.02s Δ=+4.9°  delay=44.1ms  τ=7.0ms  OS=2.3%  t_settle=nanms  err=-10.111°
+    edge@6.02s Δ=-10.1°  delay=90.1ms  τ=0.0ms  OS=1.7%  t_settle=nanms  err=+10.056°
+    edge@7.02s Δ=+10.1°  delay=48.1ms  τ=45.0ms  OS=1.1%  t_settle=nanms  err=-10.111°
+    edge@8.02s Δ=-10.1°  delay=93.1ms  τ=9.0ms  OS=1.7%  t_settle=nanms  err=+10.111°
+    edge@9.02s Δ=+10.1°  delay=83.9ms  τ=0.0ms  OS=1.6%  t_settle=nanms  err=-10.111°
+    edge@10.02s Δ=-10.1°  delay=62.2ms  τ=51.0ms  OS=2.7%  t_settle=nanms  err=+10.056°
+    edge@11.02s Δ=+10.1°  delay=73.0ms  τ=53.9ms  OS=1.6%  t_settle=nanms  err=-10.111°
+    edge@12.02s Δ=-10.1°  delay=25.2ms  τ=45.1ms  OS=3.3%  t_settle=nanms  err=+10.056°
+  avg transport_delay=64.96ms  avg τ=26.37ms  avg OS=2.01%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 29243   cmd∈[-5.00,+5.00]°   fb∈[-5.17,+5.22]°
+  slew_max: 435.9 °/s
+  step edges: 101
+    edge@5.02s Δ=+4.9°  delay=103.1ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-10.000°
+    edge@6.02s Δ=-10.1°  delay=93.1ms  τ=0.0ms  OS=0.5%  t_settle=nanms  err=+10.111°
+    edge@7.02s Δ=+10.0°  delay=54.1ms  τ=40.0ms  OS=1.7%  t_settle=nanms  err=-10.056°
+    edge@8.02s Δ=-10.1°  delay=94.2ms  τ=3.0ms  OS=1.1%  t_settle=nanms  err=+10.111°
+    edge@9.02s Δ=+10.1°  delay=84.9ms  τ=52.0ms  OS=1.1%  t_settle=nanms  err=-10.056°
+    edge@10.02s Δ=-10.1°  delay=65.2ms  τ=45.0ms  OS=1.1%  t_settle=nanms  err=+10.111°
+    edge@11.02s Δ=+10.1°  delay=73.9ms  τ=54.0ms  OS=1.6%  t_settle=nanms  err=-10.056°
+    edge@12.02s Δ=-10.1°  delay=28.2ms  τ=43.1ms  OS=1.1%  t_settle=nanms  err=+10.111°
+  avg transport_delay=74.59ms  avg τ=29.62ms  avg OS=1.46%
+
+─── repeatability breakdown ──────────────────────────
+  target servo: #0
+  pattern alignment: csv_t = sched_t + 4.521s (edge_0 @ csv 5.021s)
+
+  [up  ] N=50
+    delay (ms): mean=  56.11  std= 24.86  min=  18.19  p50=  53.95  p95=  97.19  max= 107.77  N=50
+    OS    (%) : mean=   1.75  std=  0.30  min=   1.65  p50=   1.65  p95=   2.20  max=   3.40  N=50
+    settle(ms): mean= 148.62  std= 25.03  min= 101.52  p50= 145.31  p95= 198.47  max= 206.54  N=49
+  [down] N=50
+    delay (ms): mean=  59.07  std= 22.02  min=  18.29  p50=  55.66  p95=  96.54  max= 106.55  N=50
+    OS    (%) : mean=   1.72  std=  0.85  min=  -0.00  p50=   1.37  p95=   3.29  max=   3.84  N=50
+    settle(ms): mean= 145.60  std= 23.15  min= 105.56  p50= 144.48  p95= 185.29  max= 201.34  N=49
+  [all ] N=100
+    delay (ms): mean=  57.59  std= 23.41  min=  18.19  p50=  54.40  p95=  97.58  max= 107.77  N=100
+    OS    (%) : mean=   1.74  std=  0.64  min=  -0.00  p50=   1.65  p95=   3.29  max=   3.84  N=100
+    settle(ms): mean= 147.11  std= 24.03  min= 101.52  p50= 144.85  p95= 189.15  max= 206.54  N=98
+  delay drift over cycles: +0.140 ms/cycle [OK]
+
+  ─── aggregate first-order fit (pooled transitions) ───
+    pure delay:   38.41 ± 0.24 ms
+    τ:            30.73 ± 0.34 ms
+    fit R²=0.9478  (N=5112 samples from 100 transitions)

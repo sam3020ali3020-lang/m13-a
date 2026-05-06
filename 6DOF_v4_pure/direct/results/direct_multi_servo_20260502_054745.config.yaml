@@ -1,0 +1,167 @@
+csv: direct_multi_servo_20260502_054745.csv
+timestamp: '20260502_054745'
+pattern: multi_servo
+pattern_description: 'multi_servo[cascaded]: each target servo +5.0° window=0.8s,
+  ×1passes (≤6.9s for 4 targets)'
+pattern_duration_s: 6.9
+target_servos:
+- 0
+- 1
+- 2
+- 3
+node_ids:
+- 1
+- 2
+- 3
+- 4
+cmd_rate_hz: 100.0
+angle_limit_deg: 10.0
+total_rx_frames: 2545
+fb_per_servo:
+- 680
+- 631
+- 654
+- 580
+fb_rate_hz_per_servo:
+- 66.4
+- 53.2
+- 64.4
+- 66.4
+config:
+  can:
+    backend: xqpower_bus
+    socketcan:
+      channel: can0
+      bitrate: 500000
+    slcan:
+      port: /dev/ttyUSB0
+      bitrate: 500000
+      ttyBaudrate: 2000000
+    serial:
+      port: /dev/ttyACM0
+      tty_baud: 2000000
+      variant: canlin
+    virtual:
+      channel: vcan0
+    canlin_usb:
+      vendor_id: 11836
+      product_id: 22352
+      interface: 2
+    xqpower_bus:
+      node_ids:
+      - 1
+      - 2
+      - 3
+      - 4
+      poll_interval_us: 5000
+  xqpower:
+    node_ids:
+    - 1
+    - 2
+    - 3
+    - 4
+    angle_limit_deg: 10.0
+    units_per_deg: 18.0
+    report_interval_ms: 10
+    poll_interval_ms: 5
+  safety:
+    zero_before_s: 0.5
+    zero_after_s: 0.5
+    zero_on_exit: true
+    max_angle_abs_deg: 20.0
+    warmup_exercise_s: 2.0
+    warmup_amp_deg: 1.0
+    online_min_samples: 3
+    online_settle_std_deg: 0.1
+    min_fb_rate_hz: 30.0
+  pattern:
+    name: multi_servo
+    servos: all
+    step:
+      sequence:
+      - - 0.3
+        - 0.0
+      - - 1.5
+        - 5.0
+      - - 1.5
+        - 0.0
+      - - 1.5
+        - -5.0
+      - - 1.0
+        - 0.0
+    freq_sweep:
+      amplitude_deg: 3.0
+      f_start_hz: 0.1
+      f_end_hz: 15.0
+      duration_s: 30.0
+      sweep_type: log
+    ramp:
+      rate_deg_per_s: 30.0
+      amplitude_deg: 8.0
+      cycles: 3
+    backlash:
+      amplitude_deg: 5.0
+      step_deg: 0.1
+      dwell_s: 0.1
+      cycles: 2
+    replay:
+      csv_path: ''
+      cmd_column: fin_cmd_1
+      duration_cap_s: 20.0
+    step_matrix:
+      amplitudes_deg:
+      - 1.0
+      - 3.0
+      - 5.0
+      - 8.0
+      - 10.0
+      offsets_deg:
+      - 0.0
+      - 5.0
+      - -5.0
+      directions: both
+      repeats: 3
+      settle_s: 0.5
+      dwell_s: 0.6
+    repeatability:
+      step_amplitude_deg: 5.0
+      half_period_s: 1.0
+      n_cycles: 50
+      pre_settle_s: 0.5
+    multi_servo:
+      mode: cascaded
+      amplitude_deg: 5.0
+      per_servo_window_s: 0.8
+      n_passes: 1
+      pre_settle_s: 0.5
+  output:
+    results_dir: results
+    csv_prefix: direct
+    html_plot: true
+  loop:
+    cmd_rate_hz: 100
+schedule:
+- pass_idx: 0
+  active_position_in_target: 0
+  t_active_start_s: 0.5
+  t_active_end_s: 1.3
+  t_return_end_s: 2.1
+  cmd_active: 5.0
+- pass_idx: 0
+  active_position_in_target: 1
+  t_active_start_s: 2.1
+  t_active_end_s: 2.9
+  t_return_end_s: 3.7
+  cmd_active: 5.0
+- pass_idx: 0
+  active_position_in_target: 2
+  t_active_start_s: 3.7
+  t_active_end_s: 4.5
+  t_return_end_s: 5.3
+  cmd_active: 5.0
+- pass_idx: 0
+  active_position_in_target: 3
+  t_active_start_s: 5.3
+  t_active_end_s: 6.1
+  t_return_end_s: 6.9
+  cmd_active: 5.0

@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# Post-init for M130 rocket_mpc airframe.
+# Executed AFTER pwm_out_sim starts, AFTER rc.vehicle_setup.
+#
+# pwm_out_sim is started by rcS and grabs actuator_outputs_sim instance 0.
+# simulator_mavlink subscribes to instance 0.  We need rocket_mpc to be
+# the sole publisher so its fin commands reach the sim bridge.
+#
+pwm_out_sim stop

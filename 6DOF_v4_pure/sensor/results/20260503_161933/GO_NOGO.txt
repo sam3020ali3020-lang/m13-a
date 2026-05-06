@@ -1,0 +1,6 @@
+VERDICT: GO
+Timestamp: 2026-05-03T16:22:18.056106
+
+  [PASS] static
+  [PASS] rates
+  [PASS] dynamic_range

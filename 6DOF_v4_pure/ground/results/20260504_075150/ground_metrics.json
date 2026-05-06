@@ -1,0 +1,31 @@
+{
+  "ekf2": {
+    "error": "No ESTIMATOR_STATUS received",
+    "passed": null,
+    "failures": [
+      "No data"
+    ]
+  },
+  "timing": {
+    "error": "No RktGNC timing received (MPC not running?)",
+    "passed": null,
+    "failures": [
+      "No timing data — MPC may not be armed/running"
+    ]
+  },
+  "system": {
+    "cpu_load_mean_pct": 9.2,
+    "cpu_load_max_pct": 38.0,
+    "cpu_load_min_pct": 6.0,
+    "battery_voltage_mV": 65535,
+    "n_sys_status": 104,
+    "passed": true,
+    "failures": []
+  },
+  "arming": {
+    "auto_arm_requested": true,
+    "armed": true,
+    "arm_ack_received": true,
+    "arm_attempts": 1
+  }
+}

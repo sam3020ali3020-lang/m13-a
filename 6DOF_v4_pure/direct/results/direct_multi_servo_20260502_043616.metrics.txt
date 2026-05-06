@@ -1,0 +1,40 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — multi_servo
+  multi_servo[synchronous]: ±4.0° period=1.6s ×4c (6.9s) — all servos in sync
+  csv: direct_multi_servo_20260502_043616.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 3336   cmd∈[-4.00,+4.00]°   fb∈[-1.11,+4.11]°
+  slew_max: 0.0 °/s
+  step edges: 9
+    edge@5.01s Δ=+3.9°  delay=83.1ms  τ=0.0ms  OS=2.9%  t_settle=nanms  err=+0.111°
+  avg transport_delay=83.10ms  avg τ=0.00ms  avg OS=2.86%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 3336   cmd∈[-4.00,+4.00]°   fb∈[-1.17,+3.89]°
+  slew_max: 0.0 °/s
+  step edges: 9
+    edge@5.01s Δ=+3.9°  delay=84.1ms  τ=0.0ms  OS=-2.8%  t_settle=nanms  err=-0.111°
+  avg transport_delay=84.11ms  avg τ=0.00ms  avg OS=-2.82%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 3336   cmd∈[-4.00,+4.00]°   fb∈[-1.11,+4.06]°
+  slew_max: 0.0 °/s
+  step edges: 9
+    edge@5.01s Δ=+3.9°  delay=85.3ms  τ=0.0ms  OS=1.4%  t_settle=133ms  err=+0.000°
+  avg transport_delay=85.28ms  avg τ=0.00ms  avg OS=1.43%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 3336   cmd∈[-4.00,+4.00]°   fb∈[-1.17,+4.06]°
+  slew_max: 0.0 °/s
+  step edges: 9
+    edge@5.01s Δ=+3.9°  delay=86.1ms  τ=0.0ms  OS=1.4%  t_settle=131ms  err=+0.000°
+  avg transport_delay=86.14ms  avg τ=0.00ms  avg OS=1.41%
+
+─── multi_servo breakdown ───────────────────────────
+  detected mode: synchronous
+  pattern alignment: csv_t = sched_t + 4.508s
+  phase spread (max-min delay across servos):
+    spread (ms): mean=   3.04  std=  0.00  min=   3.04  p50=   3.04  p95=   3.04  max=   3.04  N=1

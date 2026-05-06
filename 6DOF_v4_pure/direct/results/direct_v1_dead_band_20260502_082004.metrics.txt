@@ -1,0 +1,101 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — dead_band
+  dead_band: 8 amps × 3 reps (97.0s)
+  csv: direct_v1_dead_band_20260502_082004.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 28789   cmd∈[-1.00,+1.00]°   fb∈[-1.33,+1.28]°
+  slew_max: 46.9 °/s
+  step edges: 12
+    edge@89.51s Δ=+0.9°  delay=63.5ms  τ=0.0ms  OS=24.4%  t_settle=nanms  err=-1.111°
+    edge@90.51s Δ=-1.1°  delay=59.8ms  τ=54.0ms  OS=105.0%  t_settle=nanms  err=-1.111°
+    edge@91.51s Δ=-0.9°  delay=68.4ms  τ=0.0ms  OS=18.8%  t_settle=nanms  err=+1.111°
+    edge@92.51s Δ=+1.1°  delay=26.4ms  τ=26.0ms  OS=115.0%  t_settle=nanms  err=+1.111°
+    edge@93.51s Δ=+0.9°  delay=4.5ms  τ=58.0ms  OS=31.3%  t_settle=nanms  err=-1.056°
+    edge@94.51s Δ=-1.1°  delay=74.6ms  τ=0.0ms  OS=120.0%  t_settle=nanms  err=-1.111°
+    edge@95.51s Δ=-0.9°  delay=8.5ms  τ=56.0ms  OS=37.5%  t_settle=nanms  err=+1.111°
+    edge@96.51s Δ=+1.1°  delay=45.4ms  τ=12.0ms  OS=115.8%  t_settle=nanms  err=+1.111°
+  avg transport_delay=43.89ms  avg τ=25.76ms  avg OS=70.96%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 28789   cmd∈[-1.00,+1.00]°   fb∈[-1.22,+1.33]°
+  slew_max: 49.7 °/s
+  step edges: 12
+    edge@89.51s Δ=+0.9°  delay=39.7ms  τ=27.1ms  OS=11.8%  t_settle=nanms  err=-1.056°
+    edge@90.51s Δ=-1.1°  delay=72.9ms  τ=42.0ms  OS=110.0%  t_settle=nanms  err=-1.056°
+    edge@91.51s Δ=-0.9°  delay=66.4ms  τ=0.0ms  OS=23.5%  t_settle=nanms  err=+1.056°
+    edge@92.51s Δ=+1.1°  delay=22.4ms  τ=19.0ms  OS=120.0%  t_settle=nanms  err=+1.111°
+    edge@93.51s Δ=+0.9°  delay=60.5ms  τ=0.0ms  OS=35.3%  t_settle=nanms  err=-1.056°
+    edge@94.51s Δ=-1.1°  delay=75.5ms  τ=0.0ms  OS=110.0%  t_settle=nanms  err=-1.111°
+    edge@95.51s Δ=-0.9°  delay=3.6ms  τ=62.0ms  OS=23.5%  t_settle=nanms  err=+1.056°
+    edge@96.51s Δ=+1.1°  delay=48.5ms  τ=12.9ms  OS=115.0%  t_settle=nanms  err=+1.056°
+  avg transport_delay=48.68ms  avg τ=20.37ms  avg OS=68.64%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 28789   cmd∈[-1.00,+1.00]°   fb∈[-1.33,+32.61]°
+  slew_max: 55.7 °/s
+  step edges: 12
+    edge@89.51s Δ=+0.9°  delay=52.5ms  τ=5.0ms  OS=37.5%  t_settle=nanms  err=-0.944°
+    edge@90.51s Δ=-1.1°  delay=60.8ms  τ=61.0ms  OS=126.3%  t_settle=nanms  err=-1.111°
+    edge@91.51s Δ=-1.1°  delay=67.6ms  τ=0.0ms  OS=31.6%  t_settle=nanms  err=+1.111°
+    edge@92.51s Δ=+1.1°  delay=4.4ms  τ=41.0ms  OS=115.8%  t_settle=nanms  err=+1.056°
+    edge@93.51s Δ=+0.9°  delay=65.0ms  τ=0.0ms  OS=25.0%  t_settle=nanms  err=-0.944°
+    edge@94.51s Δ=-1.1°  delay=72.5ms  τ=0.0ms  OS=110.5%  t_settle=nanms  err=-1.111°
+    edge@95.51s Δ=-1.1°  delay=59.5ms  τ=0.0ms  OS=15.8%  t_settle=nanms  err=+1.111°
+    edge@96.51s Δ=+1.1°  delay=42.4ms  τ=23.0ms  OS=100.0%  t_settle=nanms  err=+1.056°
+  avg transport_delay=53.11ms  avg τ=16.25ms  avg OS=70.31%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 28789   cmd∈[-1.00,+1.00]°   fb∈[-1.17,+1.22]°
+  slew_max: 64.1 °/s
+  step edges: 12
+    edge@89.51s Δ=+0.9°  delay=53.5ms  τ=0.0ms  OS=17.7%  t_settle=nanms  err=-1.167°
+    edge@90.51s Δ=-1.1°  delay=48.0ms  τ=64.8ms  OS=105.3%  t_settle=nanms  err=-1.056°
+    edge@91.51s Δ=-0.8°  delay=74.4ms  τ=0.0ms  OS=13.3%  t_settle=nanms  err=+1.056°
+    edge@92.51s Δ=+1.1°  delay=36.5ms  τ=11.0ms  OS=115.8%  t_settle=nanms  err=+1.056°
+    edge@93.51s Δ=+0.9°  delay=65.5ms  τ=0.0ms  OS=23.5%  t_settle=nanms  err=-1.167°
+    edge@94.51s Δ=-1.1°  delay=73.6ms  τ=0.0ms  OS=110.5%  t_settle=nanms  err=-1.111°
+    edge@95.51s Δ=-0.9°  delay=11.5ms  τ=55.0ms  OS=18.8%  t_settle=nanms  err=+1.056°
+    edge@96.51s Δ=+1.1°  delay=43.4ms  τ=12.0ms  OS=110.0%  t_settle=nanms  err=+1.111°
+  avg transport_delay=50.80ms  avg τ=17.85ms  avg OS=64.35%
+
+─── dead_band breakdown ──────────────────────────────
+  pattern alignment: csv_t = sched_t + 4.509s
+  servo#0 amp=0.025°: Δfb_mean=+0.0017°  std=0.0041°  N=6  [in-band]
+  servo#0 amp=0.050°: Δfb_mean=+0.0019°  std=0.0087°  N=6  [in-band]
+  servo#0 amp=0.100°: Δfb_mean=+0.0054°  std=0.0031°  N=6  [in-band]
+  servo#0 amp=0.150°: Δfb_mean=+0.0231°  std=0.0264°  N=6  [in-band]
+  servo#0 amp=0.200°: Δfb_mean=+0.0799°  std=0.0819°  N=6  [ABOVE]
+  servo#0 amp=0.300°: Δfb_mean=+0.1355°  std=0.1193°  N=6  [ABOVE]
+  servo#0 amp=0.500°: Δfb_mean=+0.6478°  std=0.1020°  N=6  [ABOVE]
+  servo#0 amp=1.000°: Δfb_mean=+1.1171°  std=0.1134°  N=6  [ABOVE]
+  → servo#0 dead_band ≈ 0.200° (threshold=0.050°)
+  servo#1 amp=0.025°: Δfb_mean=-0.0008°  std=0.0039°  N=6  [in-band]
+  servo#1 amp=0.050°: Δfb_mean=-0.0037°  std=0.0040°  N=6  [in-band]
+  servo#1 amp=0.100°: Δfb_mean=+0.0000°  std=0.0048°  N=6  [in-band]
+  servo#1 amp=0.150°: Δfb_mean=+0.0375°  std=0.0596°  N=6  [in-band]
+  servo#1 amp=0.200°: Δfb_mean=+0.1613°  std=0.1190°  N=6  [ABOVE]
+  servo#1 amp=0.300°: Δfb_mean=+0.2645°  std=0.1112°  N=6  [ABOVE]
+  servo#1 amp=0.500°: Δfb_mean=+0.5827°  std=0.0673°  N=6  [ABOVE]
+  servo#1 amp=1.000°: Δfb_mean=+1.0921°  std=0.0685°  N=6  [ABOVE]
+  → servo#1 dead_band ≈ 0.200° (threshold=0.050°)
+  servo#2 amp=0.025°: Δfb_mean=+0.0001°  std=0.0105°  N=6  [in-band]
+  servo#2 amp=0.050°: Δfb_mean=+0.0004°  std=0.0054°  N=6  [in-band]
+  servo#2 amp=0.100°: Δfb_mean=+0.0002°  std=0.0023°  N=6  [in-band]
+  servo#2 amp=0.150°: Δfb_mean=+0.0185°  std=0.0287°  N=6  [in-band]
+  servo#2 amp=0.200°: Δfb_mean=+0.0667°  std=0.0733°  N=6  [ABOVE]
+  servo#2 amp=0.300°: Δfb_mean=+0.1227°  std=0.1214°  N=6  [ABOVE]
+  servo#2 amp=0.500°: Δfb_mean=+0.6138°  std=0.1116°  N=6  [ABOVE]
+  servo#2 amp=1.000°: Δfb_mean=+1.0115°  std=0.0895°  N=6  [ABOVE]
+  → servo#2 dead_band ≈ 0.200° (threshold=0.050°)
+  servo#3 amp=0.025°: Δfb_mean=+0.0030°  std=0.0094°  N=6  [in-band]
+  servo#3 amp=0.050°: Δfb_mean=+0.0021°  std=0.0018°  N=6  [in-band]
+  servo#3 amp=0.100°: Δfb_mean=-0.0038°  std=0.0033°  N=6  [in-band]
+  servo#3 amp=0.150°: Δfb_mean=+0.0177°  std=0.0263°  N=6  [in-band]
+  servo#3 amp=0.200°: Δfb_mean=+0.1043°  std=0.1000°  N=6  [ABOVE]
+  servo#3 amp=0.300°: Δfb_mean=+0.2289°  std=0.1277°  N=6  [ABOVE]
+  servo#3 amp=0.500°: Δfb_mean=+0.5993°  std=0.0934°  N=6  [ABOVE]
+  servo#3 amp=1.000°: Δfb_mean=+1.1154°  std=0.1148°  N=6  [ABOVE]
+  → servo#3 dead_band ≈ 0.200° (threshold=0.050°)

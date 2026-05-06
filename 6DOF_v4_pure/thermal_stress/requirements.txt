@@ -1,0 +1,5 @@
+# Thermal stress test runtime dependencies
+# Re-uses /e2e_latency reader (which re-uses /sensor reader) — no extra MAVLink deps.
+numpy>=1.21
+pyyaml>=5.4
+plotly>=5.0          # HTML dashboard (optional but strongly recommended)

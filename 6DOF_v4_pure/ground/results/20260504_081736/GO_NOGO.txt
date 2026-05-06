@@ -1,0 +1,9 @@
+VERDICT: NO-GO
+Timestamp: 2026-05-04T08:17:38.518744
+
+[FAIL] ekf2
+  - No data
+[FAIL] timing
+  - No timing data — MPC may not be armed/running
+[PASS] system
+[FAIL] arming

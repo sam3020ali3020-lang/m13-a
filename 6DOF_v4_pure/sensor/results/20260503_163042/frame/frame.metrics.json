@@ -1,0 +1,17 @@
+{
+  "positions": [
+    {
+      "position": "flat_screen_up",
+      "expected_frd": [
+        0.0,
+        0.0,
+        -9.81
+      ],
+      "measured_frd": [
+        0.6467,
+        0.0099,
+        -9.737
+      ],
+      "error_ms2": 0.6509,
+      "tolerance_ms2": 1.0,
+      "passed": 

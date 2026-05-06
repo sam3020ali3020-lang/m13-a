@@ -1,0 +1,7 @@
+{
+  "accel_max_observed_g": 1.0,
+  "gyro_max_observed_dps": 0.2,
+  "note": "Range verification requires sensor API access or datasheet. S23 Ultra (LSM6DSO): accel=\u00b116g, gyro=\u00b12000\u00b0/s.",
+  "expected_accel_range_g": 16.0,
+  "expected_gyro_range_dps": 2000.0
+}

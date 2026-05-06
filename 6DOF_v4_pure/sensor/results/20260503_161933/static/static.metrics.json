@@ -1,0 +1,30 @@
+{
+  "imu_samples": 5991,
+  "rate_hz": 101.8,
+  "jitter_pct": 57.4,
+  "accel_noise_rms_ms2": 0.0093,
+  "accel_std_xyz_ms2": [
+    0.0086,
+    0.008,
+    0.0109
+  ],
+  "accel_mean_xyz_ms2": [
+    0.6385,
+    0.004,
+    -9.7467
+  ],
+  "gyro_noise_rms_rads": 0.000788,
+  "gyro_std_xyz_rads": [
+    0.000812,
+    0.000851,
+    0.000691
+  ],
+  "gyro_mean_xyz_rads": [
+    -0.000111,
+    0.000607,
+    -0.000264
+  ],
+  "temperature_mean_C": 15.0,
+  "temperature_range_C": 0.0,
+  "gravity_magnitude_ms2": 9.7676
+}

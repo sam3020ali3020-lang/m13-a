@@ -1,0 +1,206 @@
+# =============================================================================
+# MSIS Atmosphere Generator Configuration
+# ملف تكوين مولد الغلاف الجوي MSIS
+# =============================================================================
+# This configuration file controls the generation of atmosphere tables using
+# the NRLMSISE-00/MSIS2.1 empirical atmospheric model.
+# هذا الملف يتحكم في توليد جداول الغلاف الجوي باستخدام نموذج MSIS التجريبي.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Location Settings - إعدادات الموقع
+# -----------------------------------------------------------------------------
+location:
+  # Latitude in degrees (positive = North, negative = South)
+  # خط العرض بالدرجات (موجب = شمال، سالب = جنوب)
+  latitude: 14.7909118
+  
+  # Longitude in degrees (positive = East, negative = West)
+  # خط الطول بالدرجات (موجب = شرق، سالب = غرب)
+  longitude: 42.9708838
+  
+  # Ground altitude above sea level in meters
+  # ارتفاع الأرض فوق مستوى سطح البحر بالأمتار
+  ground_altitude_m: 10.0
+
+# -----------------------------------------------------------------------------
+# Date and Time Settings - إعدادات التاريخ والوقت
+# -----------------------------------------------------------------------------
+datetime:
+  # Year (affects solar activity cycle position)
+  # السنة (تؤثر على موقع دورة النشاط الشمسي)
+  year: 2024
+  
+  # Month (1-12, affects seasonal variations)
+  # الشهر (1-12، يؤثر على التغيرات الموسمية)
+  month: 12
+  
+  # Day of month (1-31)
+  # اليوم من الشهر (1-31)
+  day: 25
+  
+  # Hour in UTC (0-23, affects diurnal variations)
+  # الساعة بتوقيت UTC (0-23، يؤثر على التغيرات اليومية)
+  hour: 12
+
+# -----------------------------------------------------------------------------
+# Space Weather Parameters - معاملات الطقس الفضائي
+# -----------------------------------------------------------------------------
+# These parameters significantly affect upper atmosphere density (>100 km)
+# هذه المعاملات تؤثر بشكل كبير على كثافة الغلاف الجوي العلوي (>100 كم)
+space_weather:
+  # F10.7 solar radio flux (solar flux units, SFU)
+  # تدفق الراديو الشمسي F10.7 (وحدات التدفق الشمسي)
+  # Typical values: 70 (solar minimum) to 250 (solar maximum)
+  # القيم النموذجية: 70 (الحد الأدنى الشمسي) إلى 250 (الحد الأقصى الشمسي)
+  # Average: ~150 SFU
+  f107: 150.0
+  
+  # 81-day average of F10.7 (smoothed solar activity indicator)
+  # متوسط 81 يوم من F10.7 (مؤشر النشاط الشمسي الممهد)
+  f107a: 150.0
+  
+  # Ap geomagnetic index (0-400)
+  # مؤشر Ap الجيومغناطيسي (0-400)
+  # Typical values: 4 (quiet) to 100+ (storm)
+  # القيم النموذجية: 4 (هادئ) إلى 100+ (عاصفة)
+  # Average: ~15
+  ap: 15.0
+  
+  # Storm-time Ap mode configuration (optional, for more accurate storm modeling)
+  # تكوين وضع العاصفة Ap (اختياري، لنمذجة عواصف أكثر دقة)
+  # When enabled, uses the 7-index Ap history for disturbed wind calculations
+  # عند التفعيل، يستخدم تاريخ Ap ذو 7 مؤشرات لحسابات الرياح المضطربة
+  storm_time_ap:
+    # Enable storm-time Ap mode (uses geomagnetic_activity=-1 in MSIS)
+    # تفعيل وضع العاصفة Ap (يستخدم geomagnetic_activity=-1 في MSIS)
+    enabled: false
+    
+    # 3-hour Ap indices for storm-time calculations (only used if enabled=true)
+    # مؤشرات Ap لـ 3 ساعات لحسابات وقت العاصفة (تُستخدم فقط إذا enabled=true)
+    # [0] Daily Ap - Ap اليومي
+    # [1] 3hr Ap for current time - Ap لـ 3 ساعات للوقت الحالي
+    # [2] 3hr Ap for 3 hours before - Ap لـ 3 ساعات قبل 3 ساعات
+    # [3] 3hr Ap for 6 hours before - Ap لـ 3 ساعات قبل 6 ساعات
+    # [4] 3hr Ap for 9 hours before - Ap لـ 3 ساعات قبل 9 ساعات
+    # [5] Average of 3hr Ap from 12-33 hours before - متوسط Ap لـ 3 ساعات من 12-33 ساعة قبل
+    # [6] Average of 3hr Ap from 36-57 hours before - متوسط Ap لـ 3 ساعات من 36-57 ساعة قبل
+    ap_history: [15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0]
+
+# -----------------------------------------------------------------------------
+# Altitude Grid Settings - إعدادات شبكة الارتفاع
+# -----------------------------------------------------------------------------
+altitude:
+  # Minimum altitude in meters (usually ground level or slightly above)
+  # الحد الأدنى للارتفاع بالأمتار (عادة مستوى الأرض أو أعلى قليلاً)
+  min_m: 0.0
+  
+  # Maximum altitude in meters
+  # الحد الأقصى للارتفاع بالأمتار
+  # Recommended: 400000 (400 km) for ballistic missiles
+  # موصى به: 400000 (400 كم) للصواريخ الباليستية
+  max_m: 1000000.0
+  
+  # Number of altitude points in the table
+  # عدد نقاط الارتفاع في الجدول
+  # More points = smoother interpolation but larger file
+  # نقاط أكثر = استيفاء أكثر سلاسة لكن ملف أكبر
+  num_points: 10000
+  
+  # Altitude spacing mode: "linear" or "logarithmic"
+  # نمط تباعد الارتفاع: "linear" (خطي) أو "logarithmic" (لوغاريتمي)
+  # "logarithmic" gives more resolution at lower altitudes where gradients are steeper
+  # "logarithmic" يعطي دقة أعلى في الارتفاعات المنخفضة حيث التدرجات أكثر حدة
+  spacing: "logarithmic"
+
+# -----------------------------------------------------------------------------
+# Wind Model Settings - إعدادات نموذج الرياح
+# -----------------------------------------------------------------------------
+wind:
+  # Enable wind calculation
+  # تفعيل حساب الرياح
+  enabled: true
+  
+  # Wind model to use: "hwm14", "simple", or "none"
+  # نموذج الرياح المستخدم: "hwm14"، "simple"، أو "none"
+  # "hwm14" - Horizontal Wind Model 2014 (requires pyhwm14, may not be available)
+  # "simple" - Simple altitude-dependent wind profile
+  # "none" - No wind (all zeros)
+  model: "simple"
+  
+  # Simple wind model parameters (used when model="simple")
+  # معاملات نموذج الرياح البسيط (تُستخدم عندما model="simple")
+  simple:
+    # Surface wind speed in m/s
+    # سرعة الرياح السطحية بـ م/ث
+    surface_speed: 5.0
+    
+    # Surface wind direction in degrees (0=North, 90=East)
+    # اتجاه الرياح السطحية بالدرجات (0=شمال، 90=شرق)
+    surface_direction: 45.0
+    
+    # Jet stream altitude in meters
+    # ارتفاع التيار النفاث بالأمتار
+    jet_stream_altitude: 12000.0
+    
+    # Jet stream peak speed in m/s
+    # سرعة ذروة التيار النفاث بـ م/ث
+    jet_stream_speed: 30.0
+    
+    # Altitude above which wind is negligible (m)
+    # الارتفاع الذي تصبح فوقه الرياح مهملة (م)
+    wind_cutoff_altitude: 100000.0
+  
+  # HWM14 wind model parameters (used when model="hwm14")
+  # معاملات نموذج الرياح HWM14 (تُستخدم عندما model="hwm14")
+  # Note: HWM14 requires pyhwm2014 package which needs a Fortran compiler
+  # ملاحظة: HWM14 يتطلب حزمة pyhwm2014 التي تحتاج مترجم Fortran
+  hwm14:
+    # If true, fall back to simple wind model when pyhwm2014 is not available
+    # إذا كان صحيحاً، الرجوع إلى نموذج الرياح البسيط عندما pyhwm2014 غير متاح
+    # If false, raise an error when pyhwm2014 is not installed
+    # إذا كان خاطئاً، رفع خطأ عندما pyhwm2014 غير مثبت
+    fallback_to_simple: true
+
+# -----------------------------------------------------------------------------
+# Output Settings - إعدادات المخرجات
+# -----------------------------------------------------------------------------
+output:
+  # Output filename (relative to rocket model directory)
+  # اسم ملف المخرجات (نسبي لمجلد نموذج الصاروخ)
+  filename: "atmosphere_table.csv"
+  
+  # Number of decimal places for each column
+  # عدد المنازل العشرية لكل عمود
+  precision:
+    altitude: 1
+    pressure: 6
+    temperature: 4
+    density: 12
+    speed_of_sound: 4
+    wind: 4
+
+# -----------------------------------------------------------------------------
+# MSIS Model Settings - إعدادات نموذج MSIS
+# -----------------------------------------------------------------------------
+msis:
+  # MSIS version to use: "nrlmsise00", "msis2.0", or "msis2.1"
+  # إصدار MSIS المستخدم: "nrlmsise00"، "msis2.0"، أو "msis2.1"
+  # "msis2.1" is the most recent and accurate
+  # "msis2.1" هو الأحدث والأكثر دقة
+  version: "nrlmsise00"
+
+# -----------------------------------------------------------------------------
+# Rocket Models Directory - مجلد نماذج الصواريخ
+# -----------------------------------------------------------------------------
+rockets:
+  # Path to rocket models directory (relative to 6dof directory)
+  # مسار مجلد نماذج الصواريخ (نسبي لمجلد 6dof)
+  models_dir: "data/rocket_models"
+  
+  # Generate for all rockets or specific list
+  # التوليد لجميع الصواريخ أو قائمة محددة
+  # Set to null or empty list to generate for all rockets
+  # اضبط على null أو قائمة فارغة للتوليد لجميع الصواريخ
+  specific_rockets: null
+  # Example: specific_rockets: ["rocket_tail_single_esmail", "rocket_canard_single_Sayer"]

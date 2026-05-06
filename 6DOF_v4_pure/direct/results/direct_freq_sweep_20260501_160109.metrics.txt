@@ -1,0 +1,32 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — freq_sweep
+  chirp log: 0.10→15.00 Hz, amp=3.0°, 30.0s
+  csv: direct_freq_sweep_20260501_160109.csv
+═══════════════════════════════════════════════════════
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 9913   cmd∈[-3.00,+3.00]°   fb∈[-3.17,+3.06]°
+  slew_max: 64.7 °/s
+  step edges: 685
+    edge@20.94s Δ=-3.0°  delay=34.9ms  τ=0.0ms  OS=81.4%  t_settle=nanms  err=+0.930°
+    edge@21.80s Δ=-3.5°  delay=0.0ms  τ=24.1ms  OS=50.7%  t_settle=nanms  err=-1.138°
+    edge@21.99s Δ=+2.8°  delay=0.0ms  τ=49.6ms  OS=103.4%  t_settle=nanms  err=+2.353°
+    edge@22.17s Δ=-2.5°  delay=39.7ms  τ=0.0ms  OS=127.1%  t_settle=nanms  err=-3.035°
+    edge@22.19s Δ=-3.5°  delay=19.9ms  τ=50.1ms  OS=62.0%  t_settle=nanms  err=-2.036°
+    edge@22.36s Δ=+2.4°  delay=0.0ms  τ=59.7ms  OS=123.0%  t_settle=nanms  err=+1.362°
+    edge@22.37s Δ=+2.8°  delay=49.6ms  τ=0.0ms  OS=88.0%  t_settle=nanms  err=+0.839°
+    edge@22.53s Δ=-2.4°  delay=40.9ms  τ=0.0ms  OS=133.4%  t_settle=nanms  err=+1.353°
+  avg transport_delay=23.13ms  avg τ=22.94ms  avg OS=96.13%
+  bandwidth (-3dB): 0.03 Hz
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 9913   cmd∈[+0.00,+0.00]°   fb∈[+0.00,+0.06]°
+  slew_max: 8.1 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 9913   cmd∈[+0.00,+0.00]°   fb∈[+0.06,+0.11]°
+  slew_max: 6.9 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 9913   cmd∈[+0.00,+0.00]°   fb∈[+0.00,+0.11]°
+  slew_max: 46.6 °/s

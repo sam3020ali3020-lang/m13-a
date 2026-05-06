@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — step_matrix
+  step_matrix: amps=[3.0, 8.0]° offsets=[0.0]° dirs=['up', 'down'] ×3reps  (12 cells, 16.8s)
+  csv: direct_step_matrix_20260502_042302.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 6631   cmd∈[+0.00,+0.00]°   fb∈[-1.33,+1.28]°
+  slew_max: 7.1 °/s
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 6631   cmd∈[+0.00,+0.00]°   fb∈[-1.22,+1.33]°
+  slew_max: 8.1 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 6631   cmd∈[+0.00,+0.00]°   fb∈[-1.39,+1.28]°
+  slew_max: 46.6 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 6631   cmd∈[-8.00,+8.00]°   fb∈[-8.11,+8.11]°
+  slew_max: 47.8 °/s
+  step edges: 24
+    edge@4.97s Δ=+2.9°  delay=28.8ms  τ=30.0ms  OS=5.7%  t_settle=nanms  err=-0.722°
+    edge@5.47s Δ=-3.1°  delay=83.2ms  τ=0.0ms  OS=5.5%  t_settle=nanms  err=+2.278°
+    edge@6.37s Δ=+3.2°  delay=45.2ms  τ=23.0ms  OS=1.8%  t_settle=nanms  err=-0.111°
+    edge@6.87s Δ=-3.1°  delay=50.2ms  τ=50.7ms  OS=5.5%  t_settle=nanms  err=+2.278°
+    edge@7.77s Δ=+3.1°  delay=66.2ms  τ=12.0ms  OS=1.8%  t_settle=nanms  err=-6.222°
+    edge@8.27s Δ=-3.1°  delay=99.2ms  τ=48.0ms  OS=105.5%  t_settle=1474ms  err=+0.000°
+    edge@9.17s Δ=-2.9°  delay=81.8ms  τ=0.0ms  OS=7.8%  t_settle=nanms  err=-0.167°
+    edge@9.67s Δ=+3.2°  delay=74.1ms  τ=0.0ms  OS=3.5%  t_settle=nanms  err=-2.944°
+  avg transport_delay=66.07ms  avg τ=20.46ms  avg OS=17.10%
+
+─── step_matrix breakdown ─────────────────────────────
+  target servo: #3
+  pattern alignment: csv_t = sched_t + 4.571s (first edge @ csv 4.971s)
+
+  per (amp, offset, direction):
+    amp= +3.0° off= +0.0° dir=down N= 3  delay= 63.15±24.95ms  OS=  6.85± 1.24%
+    amp= +3.0° off= +0.0° dir=up   N= 3  delay= 46.79±18.54ms  OS=  3.07± 2.24%
+    amp= +8.0° off= +0.0° dir=down N= 2  delay= 45.36±26.16ms  OS=  1.39± 0.02%
+    amp= +8.0° off= +0.0° dir=up   N= 3  delay= 62.17±34.59ms  OS=  0.93± 0.81%
+
+  delay vs amplitude (linearity):
+  direction asymmetry: |up - down| = 1.56ms (up=54.5ms, down=56.0ms)

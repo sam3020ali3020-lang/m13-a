@@ -1,0 +1,13 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — step
+  step: +0.0° → +3.0° → +0.0° → -3.0° → +0.0°  (total 7.50s)
+  csv: direct_step_20260501_142859.csv
+═══════════════════════════════════════════════════════
+
+servo#0 (0x01): insufficient fb (0 samples)
+
+servo#1 (0x02): insufficient fb (0 samples)
+
+servo#2 (0x03): insufficient fb (0 samples)
+
+servo#3 (0x04): insufficient fb (0 samples)

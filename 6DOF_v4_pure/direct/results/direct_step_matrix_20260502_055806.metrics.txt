@@ -1,0 +1,73 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — step_matrix
+  step_matrix: amps=[1.0, 3.0, 5.0, 8.0, 10.0]° offsets=[0.0, 5.0, -5.0]° dirs=['up', 'down'] ×3reps  (90 cells, 153.0s)
+  csv: direct_step_matrix_20260502_055806.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 39423   cmd∈[-10.00,+10.00]°   fb∈[-10.22,+10.28]°
+  slew_max: 194.8 °/s
+  step edges: 183
+    edge@5.01s Δ=+0.9°  delay=7.2ms  τ=24.0ms  OS=17.7%  t_settle=nanms  err=-1.111°
+    edge@5.61s Δ=-1.1°  delay=78.2ms  τ=0.0ms  OS=25.0%  t_settle=nanms  err=+1.111°
+    edge@6.71s Δ=+1.1°  delay=58.1ms  τ=3.0ms  OS=26.0%  t_settle=nanms  err=-1.111°
+    edge@7.31s Δ=-1.1°  delay=76.2ms  τ=7.0ms  OS=20.0%  t_settle=nanms  err=+1.111°
+    edge@8.41s Δ=+1.1°  delay=14.3ms  τ=61.0ms  OS=21.0%  t_settle=nanms  err=-1.111°
+    edge@9.01s Δ=-1.2°  delay=28.1ms  τ=26.1ms  OS=114.3%  t_settle=nanms  err=-1.111°
+    edge@10.11s Δ=-0.9°  delay=73.1ms  τ=0.0ms  OS=37.5%  t_settle=nanms  err=+1.111°
+    edge@10.71s Δ=+1.1°  delay=44.5ms  τ=0.0ms  OS=15.8%  t_settle=nanms  err=-1.056°
+  avg transport_delay=47.46ms  avg τ=15.13ms  avg OS=34.66%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 39423   cmd∈[+0.00,+0.00]°   fb∈[-1.22,+1.28]°
+  slew_max: 8.1 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 39423   cmd∈[+0.00,+0.00]°   fb∈[-1.22,+1.33]°
+  slew_max: 47.9 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 39423   cmd∈[+0.00,+0.00]°   fb∈[-1.17,+1.22]°
+  slew_max: 7.1 °/s
+
+─── step_matrix breakdown ─────────────────────────────
+  target servo: #0
+  pattern alignment: csv_t = sched_t + 4.512s (first edge @ csv 5.012s)
+
+  per (amp, offset, direction):
+    amp= +1.0° off= -5.0° dir=down N= 3  delay= 33.47±18.00ms  OS= 18.38± 5.73%
+    amp= +1.0° off= -5.0° dir=up   N= 3  delay= 53.80±32.03ms  OS= 18.33± 2.88%
+    amp= +1.0° off= +0.0° dir=down N= 3  delay= 52.59±30.74ms  OS= 26.08±14.26%
+    amp= +1.0° off= +0.0° dir=up   N= 3  delay= 50.92±28.72ms  OS= 21.60± 4.02%
+    amp= +1.0° off= +5.0° dir=down N= 3  delay= 26.31±24.92ms  OS= 17.76± 6.11%
+    amp= +1.0° off= +5.0° dir=up   N= 3  delay= 67.87±20.26ms  OS= 22.62± 7.43%
+    amp= +3.0° off= -5.0° dir=down N= 3  delay= 45.80± 7.63ms  OS=  5.50± 0.24%
+    amp= +3.0° off= -5.0° dir=up   N= 3  delay= 71.25±33.08ms  OS=  5.50± 0.24%
+    amp= +3.0° off= +0.0° dir=down N= 3  delay= 68.26±10.42ms  OS=  7.36± 0.19%
+    amp= +3.0° off= +0.0° dir=up   N= 3  delay= 62.27±50.85ms  OS=  4.35± 3.01%
+    amp= +3.0° off= +5.0° dir=down N= 3  delay= 69.18±23.38ms  OS=  5.53± 0.30%
+    amp= +3.0° off= +5.0° dir=up   N= 3  delay= 49.53± 7.25ms  OS=  5.45± 0.30%
+    amp= +5.0° off= -5.0° dir=down N= 3  delay= 61.11±18.33ms  OS=  3.67± 0.59%
+    amp= +5.0° off= -5.0° dir=up   N= 3  delay= 87.51±25.76ms  OS=  2.59± 0.71%
+    amp= +5.0° off= +0.0° dir=down N= 3  delay= 51.24±12.56ms  OS=  4.03± 2.24%
+    amp= +5.0° off= +0.0° dir=up   N= 3  delay= 42.24±16.09ms  OS=  3.69± 0.60%
+    amp= +5.0° off= +5.0° dir=down N= 3  delay= 60.50±15.03ms  OS=  3.70± 1.33%
+    amp= +5.0° off= +5.0° dir=up   N= 3  delay= 70.51±10.28ms  OS=  3.69± 1.82%
+    amp= +8.0° off= -5.0° dir=down N= 3  delay= 70.10± 6.08ms  OS=-35.30± 1.21%
+    amp= +8.0° off= -5.0° dir=up   N= 3  delay= 54.78± 8.61ms  OS=  0.47± 0.81%
+    amp= +8.0° off= +0.0° dir=down N= 3  delay= 68.22±30.42ms  OS=  2.07± 0.02%
+    amp= +8.0° off= +0.0° dir=up   N= 3  delay= 62.89±29.58ms  OS=  1.61± 0.39%
+    amp= +8.0° off= +5.0° dir=down N= 3  delay= 67.95±27.95ms  OS=  2.77± 0.06%
+    amp= +8.0° off= +5.0° dir=up   N= 3  delay= 36.20±15.54ms  OS=-34.65± 1.11%
+    amp=+10.0° off= -5.0° dir=down N= 3  delay= 63.75±39.49ms  OS=-48.55± 1.26%
+    amp=+10.0° off= -5.0° dir=up   N= 3  delay= 51.11± 4.36ms  OS=  1.66± 0.02%
+    amp=+10.0° off= +0.0° dir=down N= 3  delay= 61.87±20.40ms  OS=  0.92± 0.31%
+    amp=+10.0° off= +0.0° dir=up   N= 3  delay= 46.23±34.75ms  OS=  2.22± 0.02%
+    amp=+10.0° off= +5.0° dir=down N= 3  delay= 71.61±22.92ms  OS=  1.86± 1.32%
+    amp=+10.0° off= +5.0° dir=up   N= 3  delay= 65.81± 9.02ms  OS=-48.01± 0.35%
+
+  delay vs amplitude (linearity):
+    delay(amp) ≈ +0.98 ms/° × amp + 52.88 ms
+    OK: independent of amp
+  direction asymmetry: |up - down| = 0.06ms (up=58.2ms, down=58.1ms)

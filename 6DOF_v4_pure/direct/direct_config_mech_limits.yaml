@@ -1,0 +1,63 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  /direct — mech_limits discovery (all 4 servos, extended angle range)
+# ════════════════════════════════════════════════════════════════════════════
+#
+#  ⚠️ هذا الـ config يَسمَح بأَوامِر حَتَّى ±65° لاكتِشاف الحَدّ الميكانيكي
+#     الفِعلي لكلّ سيرفو. استَخدِمه فَقَط عِند تَشغيل `mech_limits`.
+#
+#  يُنتِج لكلّ سيرفو:
+#    pos_limit_deg   = أَقصى زاوية يَصِلها في المُوجَب
+#    neg_limit_deg   = أَقصى زاوية يَصِلها في السالِب
+#    total_travel_deg = pos - neg
+#    midpoint_deg    = (pos + neg) / 2  (= zero offset)
+#    asymmetry_deg   = pos - |neg|      (= عَدَم التَّناظُر)
+#
+#  الاستِخدام:
+#    python3 direct_runner.py --config direct_config_mech_limits.yaml
+# ────────────────────────────────────────────────────────────────────────────
+
+can:
+  backend: xqpower_bus
+  xqpower_bus:
+    node_ids: [1, 2, 3, 4]
+    poll_interval_us: 5000
+
+xqpower:
+  node_ids: [0x01, 0x02, 0x03, 0x04]
+  angle_limit_deg: 60.0     # ⚠️ مَرفوع لاكتِشاف الحَدّ الميكانيكي
+  units_per_deg: 18.0
+  report_interval_ms: 10
+  poll_interval_ms: 5
+
+safety:
+  zero_before_s: 0.5
+  zero_after_s: 0.5
+  zero_on_exit: true
+  max_angle_abs_deg: 65.0   # ⚠️ يَجِب أن يَكون ≥ angle_limit_deg
+  warmup_exercise_s: 2.0
+  warmup_amp_deg: 1.0
+  online_min_samples: 3
+  online_settle_std_deg: 0.10
+  min_fb_rate_hz: 30.0
+
+pattern:
+  name: mech_limits
+  # ⚠️ لقِياس الحُدود الفِعليَّة بدون تَداخُل طاقَة/bus، شَغِّل سيرفو واحِد في
+  #    كلّ مَرَّة. غَيِّر servos إلى [0]، ثُمَّ [1]، ثُمَّ [2]، ثُمَّ [3]،
+  #    وكَرِّر التَّشغيل أَربَع مَرّات.
+  servos: [0]                # سيرفو واحِد فَقَط (غَيِّر بَين التَّشغيلات)
+
+  mech_limits:
+    step_deg: 5.0             # زِيادَة لكلّ خَطوَة
+    dwell_s: 1.2              # وَقت انتِظار بَعد كلّ أَمر
+    max_abs_deg: 60.0         # ≤ safety.max_angle_abs_deg
+    pre_settle_s: 1.0
+    directions: both          # pos | neg | both
+
+output:
+  results_dir: results
+  csv_prefix: direct_mech
+  html_plot: true
+
+loop:
+  cmd_rate_hz: 100

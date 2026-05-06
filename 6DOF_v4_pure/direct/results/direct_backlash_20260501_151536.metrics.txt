@@ -1,0 +1,39 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — backlash
+  backlash: ±5.0° step=0.10° dwell=0.10s ×2c (40.4s)
+  csv: direct_backlash_20260501_151536.csv
+═══════════════════════════════════════════════════════
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 13387   cmd∈[-5.00,+5.00]°   fb∈[-5.00,+4.89]°
+  slew_max: 8.1 °/s
+  step edges: 2
+    edge@2.57s Δ=-5.0°  delay=80.1ms  τ=0.0ms  OS=-0.0%  t_settle=80ms  err=+0.000°
+    edge@42.97s Δ=+4.9°  delay=51.0ms  τ=39.8ms  OS=3.4%  t_settle=nanms  err=+0.111°
+  avg transport_delay=65.55ms  avg τ=19.90ms  avg OS=1.70%
+  backlash: 3.212°
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 13387   cmd∈[-5.00,+5.00]°   fb∈[-4.94,+4.89]°
+  slew_max: 37.1 °/s
+  step edges: 2
+    edge@42.97s Δ=+4.9°  delay=51.0ms  τ=39.8ms  OS=2.2%  t_settle=nanms  err=+0.111°
+  avg transport_delay=50.98ms  avg τ=39.80ms  avg OS=2.25%
+  backlash: 1.958°
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 13387   cmd∈[-5.00,+5.00]°   fb∈[-4.89,+4.94]°
+  slew_max: 39.8 °/s
+  step edges: 2
+    edge@2.57s Δ=-5.0°  delay=80.1ms  τ=0.0ms  OS=-2.2%  t_settle=nanms  err=+0.111°
+    edge@42.97s Δ=+4.8°  delay=90.8ms  τ=0.0ms  OS=1.1%  t_settle=151ms  err=+0.056°
+  avg transport_delay=85.45ms  avg τ=0.00ms  avg OS=-0.54%
+  backlash: 3.190°
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 13387   cmd∈[-5.00,+5.00]°   fb∈[-4.89,+4.89]°
+  slew_max: 4.9 °/s
+  step edges: 2
+    edge@42.97s Δ=+4.9°  delay=90.8ms  τ=0.0ms  OS=2.3%  t_settle=359ms  err=+0.056°
+  avg transport_delay=90.78ms  avg τ=0.00ms  avg OS=2.27%
+  backlash: 2.014°

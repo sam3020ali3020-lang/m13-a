@@ -1,0 +1,43 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — repeatability
+  repeatability: ±5.0° period=2.0s ×30cycles (60.5s, 60 edges)
+  csv: direct_fastpoll_repeatability_20260502_072511.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 46896   cmd∈[-5.00,+5.00]°   fb∈[-5.39,+5.22]°
+  slew_max: 169.5 °/s
+  step edges: 61
+    edge@4.80s Δ=+4.9°  delay=100.1ms  τ=0.0ms  OS=4.5%  t_settle=nanms  err=-10.111°
+    edge@5.80s Δ=-10.1°  delay=69.2ms  τ=0.0ms  OS=2.7%  t_settle=nanms  err=+10.111°
+    edge@6.80s Δ=+10.1°  delay=19.6ms  τ=48.7ms  OS=1.6%  t_settle=nanms  err=-10.111°
+    edge@7.80s Δ=-10.2°  delay=68.1ms  τ=49.9ms  OS=2.2%  t_settle=nanms  err=+10.111°
+    edge@8.80s Δ=+10.1°  delay=50.9ms  τ=52.1ms  OS=1.6%  t_settle=nanms  err=-10.111°
+    edge@9.80s Δ=-10.1°  delay=74.0ms  τ=1.9ms  OS=1.6%  t_settle=nanms  err=+10.111°
+    edge@10.80s Δ=+10.1°  delay=58.0ms  τ=6.0ms  OS=2.2%  t_settle=nanms  err=-10.111°
+    edge@11.80s Δ=-10.1°  delay=67.1ms  τ=0.0ms  OS=2.7%  t_settle=nanms  err=+10.111°
+  avg transport_delay=63.37ms  avg τ=19.83ms  avg OS=2.42%
+
+─── repeatability breakdown ──────────────────────────
+  target servo: #0
+  pattern alignment: csv_t = sched_t + 4.301s (edge_0 @ csv 4.801s)
+
+  [up  ] N=30
+    delay (ms): mean=  41.17  std= 22.89  min=  19.37  p50=  31.76  p95=  82.38  max= 100.08  N=30
+    OS    (%) : mean=   1.86  std=  0.55  min=   1.65  p50=   1.65  p95=   2.20  max=   4.53  N=30
+    settle(ms): mean= 134.48  std= 21.53  min=  98.31  p50= 128.35  p95= 170.93  max= 186.35  N=29
+  [down] N=30
+    delay (ms): mean=  43.02  std= 20.63  min=  18.49  p50=  42.54  p95=  78.31  max=  88.35  N=30
+    OS    (%) : mean=   2.25  std=  1.01  min=  -0.55  p50=   2.47  p95=   3.30  max=   3.85  N=30
+    settle(ms): mean= 153.32  std= 31.19  min= 102.27  p50= 153.46  p95= 205.11  max= 224.24  N=29
+  [all ] N=60
+    delay (ms): mean=  42.10  std= 21.62  min=  18.49  p50=  33.38  p95=  82.62  max= 100.08  N=60
+    OS    (%) : mean=   2.05  std=  0.83  min=  -0.55  p50=   1.65  p95=   3.30  max=   4.53  N=60
+    settle(ms): mean= 143.90  std= 28.21  min=  98.31  p50= 146.32  p95= 187.97  max= 224.24  N=58
+  delay drift over cycles: -0.739 ms/cycle [WARN drift]
+
+  ─── aggregate first-order fit (pooled transitions) ───
+    pure delay:   31.72 ± 0.20 ms
+    τ:            29.32 ± 0.27 ms
+    fit R²=0.9596  (N=6231 samples from 60 transitions)

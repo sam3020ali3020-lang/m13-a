@@ -1,0 +1,75 @@
+# ============================================================================
+# Scheduler Jitter Test — Configuration
+# ============================================================================
+# Purpose: Measure PX4 control loop jitter under varying CPU load scenarios.
+# Validates that nice=-20 + CPU affinity + timerslack is sufficient as a
+# fallback for SCHED_FIFO (which is blocked by Android without root).
+#
+# See README.md for interpretation of results.
+# ============================================================================
+
+# MAVLink connection
+mavlink:
+  host: "127.0.0.1"
+  port: 5760
+  sysid_gcs: 255
+  compid_gcs: 190
+
+# Streams to measure (message IDs and requested rates)
+streams:
+  highres_imu:
+    msg_id: 105
+    rate_hz: 50
+    target_ms: 20.0          # 1000 / rate_hz
+    crc_extra: 93            # for reference
+  debug_float_array:
+    msg_id: 350
+    rate_hz: 40              # requested, actual usually ~25 Hz (PX4 module limit)
+    array_id: 2              # RktGNC
+    target_ms: 40.0          # observed (40 Hz request → 25 Hz actual → 40 ms period)
+    crc_extra: 232
+
+# Test scenarios — each is a duration in seconds
+scenarios:
+  baseline:
+    duration_s: 30
+    description: "Phone idle, no background apps"
+    stress_yes_procs: 0
+  light_load:
+    duration_s: 30
+    description: "WhatsApp/Camera open (user-initiated)"
+    stress_yes_procs: 0      # user opens apps manually
+  heavy_load:
+    duration_s: 15
+    description: "Automated CPU stress via 8 'yes' processes"
+    stress_yes_procs: 8      # auto-spawned via adb
+
+# Pass/fail thresholds — applied to internal PX4 timestamps (not wall-clock)
+thresholds:
+  highres_imu:
+    stddev_ms_max: 8.0       # 40% of target — generous for Android userspace
+    p99_ms_max: 40.0         # 2.0× target
+    p99_9_ms_max: 60.0       # 3.0× target
+    late_2x_pct_max: 1.0     # at most 1% of samples > 2× target
+    late_3x_max: 5           # hard cap — 5 events total
+    dropped_max: 0           # zero tolerance
+  debug_float_array:
+    stddev_ms_max: 15.0
+    p99_ms_max: 80.0         # 2.0× target
+    p99_9_ms_max: 120.0
+    late_2x_pct_max: 2.0
+    late_3x_max: 5
+    dropped_max: 0
+
+# Stress generator (adb + yes)
+stress:
+  adb_path: "adb"            # assumes adb on PATH
+  cleanup_on_exit: true
+
+# Output
+output:
+  results_dir: "results"
+  save_json: true
+  save_csv: false            # optional
+  save_plot: true            # jitter histogram (if matplotlib available)
+  compare_scenarios: true    # produce comparison_report.md across all scenarios

@@ -1,0 +1,11 @@
+VERDICT: GO
+
+  [PASS] allan
+
+  Gyro BI  (worst gz): 8.02 deg/h  (PASS <= 10, FAIL > 50)
+  Accel BI (worst ay): 0.047 mg     (PASS <= 0.5, FAIL > 2.0)
+
+  Per-axis gyro (deg/h): {'gx': 0.39, 'gy': 2.96, 'gz': 8.02}
+  Per-axis accel (mg):  {'ax': 0.038, 'ay': 0.047, 'az': 0.036}
+
+  179,787 samples @ 99.7 Hz over 1800s

@@ -1,0 +1,49 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — stiction
+  stiction: ±1.00° rate=0.200°/s ×3c (43.0s)
+  csv: direct_v1_stiction_20260502_081425.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 14774   cmd∈[+0.00,+1.00]°   fb∈[-1.28,+1.28]°
+  slew_max: 47.8 °/s
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 14774   cmd∈[+0.00,+1.00]°   fb∈[-1.22,+1.33]°
+  slew_max: 44.7 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 14774   cmd∈[+0.00,+1.00]°   fb∈[-1.22,+1.33]°
+  slew_max: 38.1 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 14774   cmd∈[+0.00,+1.00]°   fb∈[-1.22,+1.22]°
+  slew_max: 48.2 °/s
+
+─── stiction breakdown ───────────────────────────────
+  pattern alignment: csv_t = sched_t + 9.467s
+  servo#0 up_from_zero       c=+0.00→+1.00°  breakaway_lag=15.1ms
+  servo#0 down_to_zero       c=+1.00→+0.00°  breakaway_lag=64.1ms
+  servo#0 up_from_zero       c=+0.00→+1.00°  breakaway_lag=4.1ms
+  servo#0 down_to_zero       c=+1.00→+0.00°  breakaway_lag=15.2ms
+  servo#0 up_from_zero       c=+0.00→+1.00°  breakaway_lag=27.4ms
+  servo#0 down_to_zero       c=+1.00→+0.00°  breakaway_lag=24.2ms
+  servo#1 up_from_zero       c=+0.00→+1.00°  breakaway_lag=7.1ms
+  servo#1 down_to_zero       c=+1.00→+0.00°  breakaway_lag=5.1ms
+  servo#1 up_from_zero       c=+0.00→+1.00°  breakaway_lag=1089.1ms
+  servo#1 down_to_zero       c=+1.00→+0.00°  breakaway_lag=11.2ms
+  servo#1 up_from_zero       c=+0.00→+1.00°  breakaway_lag=688.2ms
+  servo#1 down_to_zero       c=+1.00→+0.00°  breakaway_lag=29.2ms
+  servo#2 up_from_zero       c=+0.00→+1.00°  breakaway_lag=4.1ms
+  servo#2 down_to_zero       c=+1.00→+0.00°  breakaway_lag=3.1ms
+  servo#2 up_from_zero       c=+0.00→+1.00°  breakaway_lag=53.1ms
+  servo#2 down_to_zero       c=+1.00→+0.00°  breakaway_lag=8.1ms
+  servo#2 up_from_zero       c=+0.00→+1.00°  breakaway_lag=26.2ms
+  servo#2 down_to_zero       c=+1.00→+0.00°  breakaway_lag=26.2ms
+  servo#3 up_from_zero       c=+0.00→+1.00°  breakaway_lag=5.1ms
+  servo#3 down_to_zero       c=+1.00→+0.00°  breakaway_lag=7.1ms
+  servo#3 up_from_zero       c=+0.00→+1.00°  breakaway_lag=6.1ms
+  servo#3 down_to_zero       c=+1.00→+0.00°  breakaway_lag=9.1ms
+  servo#3 up_from_zero       c=+0.00→+1.00°  breakaway_lag=23.2ms
+  servo#3 down_to_zero       c=+1.00→+0.00°  breakaway_lag=21.2ms

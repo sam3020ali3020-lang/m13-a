@@ -1,0 +1,114 @@
+# ==========================================================================
+# /ground — اختبار أرضي تكاملي (Ground Integration Test)
+# حساسات حقيقية + EKF2 + MPC على الهاتف — بدون طيران
+# ==========================================================================
+
+connection:
+  host: "127.0.0.1"
+  port: 5760
+  protocol: tcp
+  timeout_s: 10.0
+
+# MAVLink streams المطلوبة (بعضها مُبثّ بالفعل، نرفع معدل بعضها)
+mavlink_streams:
+  attitude:                       # msg 30 — EKF2 roll/pitch/yaw
+    msg_id: 30
+    rate_hz: 30
+  highres_imu:                    # msg 105 — بيانات حساسات خام
+    msg_id: 105
+    rate_hz: 50                   # أقل من /sensor — لا نحتاج Allan هنا
+  estimator_status:               # msg 230 — صحة EKF2 + innovations
+    msg_id: 230
+    rate_hz: 2                    # الافتراضي 0.5 Hz — نرفعه
+  sys_status:                     # msg 1 — حمل CPU + voltage
+    msg_id: 1
+    rate_hz: 2
+  heartbeat:                      # msg 0 — arming state + mode
+    msg_id: 0
+    rate_hz: 1                    # لا نطلبه — PX4 يبثّه دائماً
+  debug_float_array:              # msg 350 — RktGNC timing (مُفعّل بالفعل 40 Hz)
+    msg_id: 350
+    rate_hz: 40                   # لا حاجة لتغيير — مُفعّل في px4_jni.cpp
+
+# ==========================================================================
+# إعدادات الاختبار
+# ==========================================================================
+
+test:
+  duration_s: 300                 # 5 دقائق (الافتراضي)
+  warmup_s: 15                    # انتظار تقارب EKF2 الأولي
+  ekf_convergence_timeout_s: 60   # FAIL إذا لم يتقارب خلال 60 ثانية
+  phase_duration_s: 30            # مدة كل مرحلة تحليل (rolling window)
+  auto_arm: false                 # تسليح تلقائي (force-arm) لقياس MPC timing
+                                  # استخدم --arm من CLI أو true هنا
+                                  # بدون هذا: MPC timing = أصفار (لا بيانات)
+
+# ==========================================================================
+# عتبات PASS / FAIL
+# ==========================================================================
+
+thresholds:
+  ekf2:
+    # تقارب EKF2
+    max_convergence_time_s: 30.0      # FAIL إذا EKF2 لم يتقارب خلال 30 ثانية
+    # صحة الابتكارات (innovation test ratios < 1.0 = صحي)
+    max_vel_ratio: 1.0
+    max_pos_horiz_ratio: 1.0
+    max_pos_vert_ratio: 1.0
+    max_mag_ratio: 1.0
+    # دقة الموقع
+    max_pos_horiz_accuracy_m: 5.0
+    max_pos_vert_accuracy_m: 10.0
+    # انجراف الاتجاه (الهاتف ثابت → roll/pitch يجب ≈ 0, yaw ثابت)
+    max_attitude_drift_deg: 2.0       # أقصى انجراف roll/pitch خلال الاختبار
+    max_yaw_drift_deg: 5.0            # yaw drift مسموح أكثر (بدون mag جيد)
+    # solution flags (bitmask)
+    # 0x0F = attitude+vel_horiz+vel_vert+pos_horiz_rel (requires GPS)
+    # 0x25 = attitude+vel_vert+pos_vert_abs (no GPS, baro-only, const_pos_mode)
+    required_flags: 0x25              # baro-only mode (no GPS)
+
+  mpc:
+    # توقيت MPC
+    max_mpc_solve_p99_ms: 15.0        # FAIL إذا p99 > 15ms
+    max_mpc_solve_mean_ms: 8.0        # FAIL إذا mean > 8ms
+    max_cycle_p99_ms: 25.0            # FAIL إذا p99 > 25ms
+    # استقرار أوامر الزعانف (على الأرض يجب ≈ 0)
+    max_fin_cmd_std_deg: 3.0          # FAIL إذا الزعانف "ترتجف"
+    # MHE
+    max_mhe_solve_p99_ms: 10.0
+    max_mhe_solve_mean_ms: 5.0
+
+  system:
+    # CPU
+    # Samsung Galaxy Note 9 (SDM845, 2018) يعمل ~85% مع كل streams بـ 50Hz
+    # للهواتف الأحدث خفّض إلى 80%
+    max_cpu_load_pct: 90.0            # FAIL إذا > 90%
+    # حرارة
+    max_temperature_C: 55.0           # FAIL إذا > 55°C (throttling يبدأ عند ~40-45°C)
+    max_temperature_rise_C: 15.0      # FAIL إذا ارتفعت أكثر من 15°C
+
+  # مقارنة مع PIL (اختياري — إذا وجدت نتائج PIL سابقة)
+  pil_comparison:
+    max_mpc_time_increase_pct: 30.0   # FAIL إذا MPC أبطأ 30% من PIL
+    max_cycle_time_increase_pct: 30.0
+
+# ==========================================================================
+# مجموعات مسبقة
+# ==========================================================================
+
+presets:
+  quick:                          # ~2 دقيقة
+    duration_s: 120
+    warmup_s: 10
+
+  standard:                       # ~5 دقائق
+    duration_s: 300
+    warmup_s: 15
+
+  extended:                       # ~15 دقيقة (لاختبار الحرارة)
+    duration_s: 900
+    warmup_s: 15
+
+  preflight:                      # ~1 دقيقة (فحص سريع قبل الإطلاق)
+    duration_s: 60
+    warmup_s: 5

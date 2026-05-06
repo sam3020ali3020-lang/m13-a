@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — step
+  step: +0.0° → +5.0° → +0.0° → -5.0° → +0.0°  (total 5.80s)
+  csv: direct_step_20260501_151040.csv
+═══════════════════════════════════════════════════════
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 2295   cmd∈[-5.00,+5.00]°   fb∈[-5.17,+5.17]°
+  slew_max: 49.0 °/s
+  step edges: 4
+    edge@2.77s Δ=+4.9°  delay=39.9ms  τ=8.1ms  OS=3.4%  t_settle=nanms  err=+0.111°
+    edge@4.27s Δ=-5.1°  delay=60.1ms  τ=0.0ms  OS=2.2%  t_settle=nanms  err=-0.111°
+    edge@5.77s Δ=-4.9°  delay=80.0ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-0.111°
+    edge@7.27s Δ=+5.1°  delay=39.8ms  τ=10.3ms  OS=3.3%  t_settle=1460ms  err=+0.056°
+  avg transport_delay=54.97ms  avg τ=4.59ms  avg OS=3.06%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 2295   cmd∈[-5.00,+5.00]°   fb∈[-5.06,+5.33]°
+  slew_max: 0.0 °/s
+  step edges: 4
+    edge@2.77s Δ=+5.0°  delay=59.9ms  τ=27.8ms  OS=6.7%  t_settle=nanms  err=+0.111°
+    edge@4.27s Δ=-5.1°  delay=60.1ms  τ=0.0ms  OS=2.2%  t_settle=1160ms  err=-0.056°
+    edge@5.77s Δ=-4.9°  delay=77.8ms  τ=0.0ms  OS=1.1%  t_settle=140ms  err=+0.000°
+    edge@7.27s Δ=+5.0°  delay=39.8ms  τ=8.1ms  OS=6.7%  t_settle=nanms  err=+0.111°
+  avg transport_delay=59.42ms  avg τ=8.97ms  avg OS=4.16%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 2295   cmd∈[-5.00,+5.00]°   fb∈[-5.28,+5.17]°
+  slew_max: 7.3 °/s
+  step edges: 4
+    edge@2.77s Δ=+4.9°  delay=59.9ms  τ=30.0ms  OS=3.4%  t_settle=1220ms  err=+0.000°
+    edge@4.27s Δ=-5.1°  delay=60.1ms  τ=0.0ms  OS=-1.1%  t_settle=nanms  err=+0.111°
+    edge@5.77s Δ=-5.1°  delay=78.9ms  τ=0.0ms  OS=5.4%  t_settle=1499ms  err=-0.056°
+    edge@7.27s Δ=+5.1°  delay=70.1ms  τ=9.8ms  OS=1.1%  t_settle=149ms  err=+0.056°
+  avg transport_delay=67.26ms  avg τ=9.94ms  avg OS=2.20%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 2295   cmd∈[-5.00,+5.00]°   fb∈[-5.06,+5.22]°
+  slew_max: 0.0 °/s
+  step edges: 4
+    edge@2.77s Δ=+4.9°  delay=50.2ms  τ=29.8ms  OS=4.5%  t_settle=nanms  err=+0.111°
+    edge@4.27s Δ=-5.1°  delay=60.1ms  τ=0.0ms  OS=3.3%  t_settle=nanms  err=-0.167°
+    edge@5.77s Δ=-4.8°  delay=135.8ms  τ=0.0ms  OS=1.2%  t_settle=136ms  err=+0.000°
+    edge@7.27s Δ=+5.0°  delay=66.7ms  τ=13.2ms  OS=2.2%  t_settle=1369ms  err=+0.056°
+  avg transport_delay=78.21ms  avg τ=10.74ms  avg OS=2.78%

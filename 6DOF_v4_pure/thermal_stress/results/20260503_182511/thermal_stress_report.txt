@@ -1,0 +1,24 @@
+════════════════════════════════════════════════════════════════════════
+  THERMAL STRESS TEST — REPORT
+════════════════════════════════════════════════════════════════════════
+  MPC: no MPC data (mpc_timing.csv missing or empty)
+
+  Thermal (26 samples, 25s):
+    cpu_silver_C   min= 42.7 mean= 43.4 max= 44.0 final= 43.3 °C
+    cpu_gold_C     min= 41.7 mean= 42.3 max= 45.0 final= 42.3 °C
+    gpu_C          min= 40.0 mean= 40.3 max= 40.4 final= 40.4 °C
+    ddr_C          min= 40.5 mean= 40.6 max= 40.9 final= 40.9 °C
+    battery_C      min= 34.6 mean= 34.6 max= 34.6 final= 34.6 °C
+    skin_C         min= 34.0 mean= 34.0 max= 34.0 final= 34.0 °C
+
+  Thermal status peak:   0 (NONE=0, LIGHT=1, MODERATE=2, SEVERE=3)
+  Samples w/ status>0:   0
+  Throttle ratio gold:   min=1.000 mean=1.000
+  Throttle ratio silver: min=1.000 mean=1.000
+  Throttle windows:      0 (total 0.0s)
+
+────────────────────────────────────────────────────────────────────────
+  VERDICT: ✓ PASS
+────────────────────────────────────────────────────────────────────────
+  No issues detected.
+════════════════════════════════════════════════════════════════════════

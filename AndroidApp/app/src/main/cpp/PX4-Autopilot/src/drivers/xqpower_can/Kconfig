@@ -1,0 +1,7 @@
+menuconfig DRIVERS_XQPOWER_CAN
+	bool "xqpower_can"
+	default n
+	---help---
+		Enable XQPOWER CAN Bus Servo driver.
+		Controls up to 4 XQPOWER servos via CAN bus
+		using CANopen SDO/PDO protocol on MicoAir H743.

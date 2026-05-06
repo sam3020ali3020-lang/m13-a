@@ -1,0 +1,36 @@
+{
+  "static": {
+    "passed": true,
+    "failures": [],
+    "metrics": {
+      "imu_samples": 5993,
+      "rate_hz": 101.4,
+      "jitter_pct": 51.9,
+      "accel_noise_rms_ms2": 0.0083,
+      "accel_std_xyz_ms2": [
+        0.006,
+        0.0093,
+        0.0093
+      ],
+      "accel_mean_xyz_ms2": [
+        -0.0542,
+        0.2805,
+        -9.7698
+      ],
+      "gyro_noise_rms_rads": 0.001588,
+      "gyro_std_xyz_rads": [
+        0.002045,
+        0.001579,
+        0.000944
+      ],
+      "gyro_mean_xyz_rads": [
+        -9.1e-05,
+        0.000634,
+        0.000164
+      ],
+      "temperature_mean_C": 15.0,
+      "temperature_range_C": 0.0,
+      "gravity_magnitude_ms2": 9.774
+    }
+  }
+}

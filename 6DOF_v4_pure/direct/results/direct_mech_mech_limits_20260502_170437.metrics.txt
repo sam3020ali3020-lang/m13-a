@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — mech_limits
+  mech_limits: step=5.0° dwell=1.2s max=±60.0° dir=both (58.9s, 48 steps)
+  csv: direct_mech_mech_limits_20260502_170437.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 19425   cmd∈[-60.00,+60.00]°   fb∈[-54.89,+14.22]°
+  slew_max: 106.5 °/s
+  step edges: 48
+    edge@5.46s Δ=+4.9°  delay=85.2ms  τ=0.0ms  OS=103.4%  t_settle=nanms  err=+5.111°
+    edge@6.66s Δ=+4.9°  delay=43.1ms  τ=3.0ms  OS=86.4%  t_settle=nanms  err=+4.167°
+    edge@7.86s Δ=+4.9°  delay=56.9ms  τ=0.0ms  OS=-15.9%  t_settle=nanms  err=-0.833°
+  avg transport_delay=61.74ms  avg τ=1.00ms  avg OS=57.94%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 19425   cmd∈[+0.00,+0.00]°   fb∈[-1.22,+1.11]°
+  slew_max: 69.5 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 19425   cmd∈[+0.00,+0.00]°   fb∈[-1.00,+1.22]°
+  slew_max: 69.4 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 19425   cmd∈[+0.00,+0.00]°   fb∈[-1.22,+1.06]°
+  slew_max: 51.0 °/s
+
+─── mech_limits breakdown ────────────────────────────
+  pattern alignment: csv_t = sched_t + 4.460s
+  servo#0:  pos=+14.17° (cmd+15)  neg=-54.85° (cmd-55)
+            travel= 69.02°  midpoint=-20.34° 🔴  asymmetry=-40.68° 🔴
+  servo#1:  pos= +0.00° (cmd+0)  neg= +0.00° (cmd+0)
+            travel=  0.00°  midpoint=+0.00° ✅  asymmetry=+0.00° ✅
+  servo#2:  pos= +0.00° (cmd+0)  neg= +0.00° (cmd+0)
+            travel=  0.00°  midpoint=+0.00° ✅  asymmetry=+0.00° ✅
+  servo#3:  pos= +0.00° (cmd+0)  neg= +0.00° (cmd+0)
+            travel=  0.00°  midpoint=+0.00° ✅  asymmetry=+0.00° ✅
+
+  ─── النَّتائج النِّهائيَّة ───
+  servo    pos       neg     travel   midpoint  asymmetry
+  #0    +14.17°  -54.85°   69.02°   -20.34°   -40.68°
+  #1     +0.00°   +0.00°    0.00°    +0.00°    +0.00°
+  #2     +0.00°   +0.00°    0.00°    +0.00°    +0.00°
+  #3     +0.00°   +0.00°    0.00°    +0.00°    +0.00°

@@ -1,0 +1,30 @@
+======================================================================
+  E2E LATENCY REPORT
+======================================================================
+
+### STREAM HEALTH ###
+  IMU (HIGHRES_IMU)            0.0 Hz  (0 samples)
+  ATTITUDE                     0.0 Hz  (0 samples)
+  RktGNC (DEBUG_FLOAT_ARRAY id=2)     0.0 Hz  (0 samples)
+  SRV_FB (DEBUG_FLOAT_ARRAY id=1)     0.0 Hz  (0 samples)
+  SERVO_OUTPUT_RAW             0.0 Hz  (0 samples)
+
+### LATENCY STAGES (ms) ###
+  L_sensor (IMU→ATT)     ERROR: insufficient data
+  L_mpc (solve time)     ERROR: no RktGNC data
+  L_actuator (CMD→FB)    ERROR: insufficient SRV_FB data
+
+### TOTAL TRANSPORT DELAY (estimated) ###
+  ERROR: no stage measurable
+
+### PASS / FAIL ###
+
+  VERDICT: ❌ NO-GO
+
+  Failures:
+    - stream imu_hz=0.0 Hz < 90 Hz
+    - stream attitude_hz=0.0 Hz < 40 Hz
+    - stream rktgnc_hz=0.0 Hz < 30 Hz
+    - stream servo_raw_hz=0.0 Hz < 30 Hz
+
+======================================================================

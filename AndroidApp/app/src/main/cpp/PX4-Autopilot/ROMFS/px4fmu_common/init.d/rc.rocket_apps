@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Standard apps for rockets.
+#
+# NOTE: Script variables are declared/initialized/unset in the rcS script.
+#
+
+#
+# rocket_mpc publishes actuator_servos directly (bypasses control_allocator).
+# control_allocator is NOT started — it would be idle (no torque_setpoint
+# publisher) and waste a thread + RAM on Android.
+#
+
+#
+# Start Land Detector.
+# Required for EKF2 tilt alignment: publishes vehicle_land_detected.at_rest
+# which enables zero-velocity fusion → tilt covariance convergence → attitude.
+#
+land_detector start multicopter
+
+#
+# Start Rocket MPC (acados MPC+MHE controller).
+#
+rocket_mpc start
+
+#
+# Start XQPOWER CAN servo driver (if enabled and available).
+# On HITL: drives physical servos from rocket_gnc fin commands.
+# On SITL: binary not present, command silently ignored.
+#
+if param greater XQCAN_ENABLE 0
+then
+	xqpower_can start
+fi

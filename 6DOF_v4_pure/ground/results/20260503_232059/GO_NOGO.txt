@@ -1,0 +1,8 @@
+VERDICT: NO-GO
+Timestamp: 2026-05-03T23:22:07.278622
+
+[FAIL] ekf2
+  - EKF2 never converged (required flags not set)
+[PASS] timing
+[FAIL] system
+  - CPU load too high: 85% > 80.0%

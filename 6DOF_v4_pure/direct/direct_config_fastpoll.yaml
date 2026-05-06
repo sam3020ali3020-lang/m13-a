@@ -1,0 +1,50 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  /direct — Fast-polling validation test (verify delay measurement)
+# ════════════════════════════════════════════════════════════════════════════
+# الهدف: قياس pure_delay مع polling أعلى لإزالة poll-bias.
+# Single servo + poll_interval_us=2000 (500 Hz polling rate per servo).
+# نُقارن النتيجة بـ baseline (4 servos @ 5ms = 75 Hz observed).
+# ────────────────────────────────────────────────────────────────────────────
+
+can:
+  backend: xqpower_bus
+
+  xqpower_bus:
+    node_ids: [1]              # ⭐ single servo only — max polling per-servo
+    poll_interval_us: 2000     # 2ms polling = 500 Hz (was 5000us=200Hz)
+
+xqpower:
+  node_ids: [0x01]
+  angle_limit_deg: 10.0
+  units_per_deg: 18.0
+  report_interval_ms: 10
+  poll_interval_ms: 2          # legacy fallback if not xqpower_bus
+
+safety:
+  zero_before_s: 0.5
+  zero_after_s: 0.5
+  zero_on_exit: true
+  max_angle_abs_deg: 20.0
+  warmup_exercise_s: 2.0
+  warmup_amp_deg: 1.0
+  online_min_samples: 3
+  online_settle_std_deg: 0.10
+  min_fb_rate_hz: 30.0
+
+pattern:
+  name: repeatability
+  servos: [0]                  # target servo idx 0 (= node_id 1)
+
+  repeatability:
+    step_amplitude_deg: 5.0
+    half_period_s: 1.0
+    n_cycles: 30               # 30 cycles × 2s = 60s (kept short for verification)
+    pre_settle_s: 0.5
+
+output:
+  results_dir: results
+  csv_prefix: direct_fastpoll
+  html_plot: true
+
+loop:
+  cmd_rate_hz: 100

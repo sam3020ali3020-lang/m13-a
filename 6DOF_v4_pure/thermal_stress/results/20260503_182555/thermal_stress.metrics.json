@@ -1,0 +1,21 @@
+{
+  "result_dir": "/home/yoga/m13/m13/6DOF_v4_pure/thermal_stress/results/20260503_182555",
+  "deadline_us": 40000.0,
+  "mpc": {
+    "error": "no MPC data (mpc_timing.csv missing or empty)",
+    "samples": 0
+  },
+  "thermal": {
+    "error": "no thermal data",
+    "samples": 0
+  },
+  "throttle_windows": [],
+  "split_by_throttle": {
+    "no_throttle_observed": true
+  },
+  "pass_fail": {
+    "passed": true,
+    "failures": [],
+    "warnings": []
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "ekf2": {
+    "error": "No ESTIMATOR_STATUS received",
+    "passed": null,
+    "failures": [
+      "No data"
+    ]
+  },
+  "timing": {
+    "error": "No RktGNC timing received (MPC not running?)",
+    "passed": null,
+    "failures": [
+      "No timing data — MPC may not be armed/running"
+    ]
+  },
+  "system": {
+    "n_sys_status": 0,
+    "passed": true,
+    "failures": []
+  },
+  "arming": {
+    "auto_arm_requested": false,
+    "armed": false,
+    "arm_ack_received": false,
+    "arm_attempts": 0
+  }
+}

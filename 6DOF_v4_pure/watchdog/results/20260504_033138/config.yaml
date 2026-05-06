@@ -1,0 +1,164 @@
+# watchdog — config
+# ==========================================================================
+# يختبر WatchdogManager في الهاتف: حقن crashes في modules الـ PX4،
+# قياس زمن الاكتشاف + إعادة التشغيل + التعافي، وتسجيل cascading failures.
+#
+# المتطلبات:
+#   - APK debug مبني ومُنصَّب (release builds ترفض crash injection)
+#   - adb devices يرى الهاتف
+#   - PX4 يعمل (Start PX4 من الواجهة) قبل تشغيل الـ runner
+# ==========================================================================
+
+# ==========================================================================
+# Device — adb / package routing
+# ==========================================================================
+device:
+  package: "com.ardophone.px4v17"
+  # Absolute path on device where the native watchdog writes its JSONL log.
+  # px4_jni.cpp uses getExternalFilesDir(null) + "/px4/watchdog_events.jsonl";
+  # on stock Android this resolves to the path below.
+  log_path: "/sdcard/Android/data/com.ardophone.px4v17/files/px4/watchdog_events.jsonl"
+  # Expected timeout for a single adb broadcast to complete (seconds).
+  broadcast_timeout_s: 5.0
+  # adb device id (empty = use the only connected device)
+  adb_serial: ""
+
+# ==========================================================================
+# Modules under test — must match names in watchdog_native.cpp's registry
+# ==========================================================================
+# For each module we record its nominal publish rate + expected restart
+# feasibility.  Test thresholds auto-scale off these values.
+modules:
+  rocket_mpc:
+    nominal_hz: 50
+    restartable: true           # stateful — loses MHE horizon but can restart
+    flight_critical: true
+  ekf2:
+    nominal_hz: 200
+    restartable: true           # loses position/velocity estimator state
+    flight_critical: true
+  sensors:
+    nominal_hz: 200
+    restartable: true
+    flight_critical: true
+  commander:
+    nominal_hz: 5
+    restartable: true           # loses arming state
+    flight_critical: false
+  control_allocator:
+    nominal_hz: 400
+    restartable: true
+    flight_critical: true
+  navigator:
+    nominal_hz: 1               # publishes on demand — long stale tolerated
+    restartable: true
+    flight_critical: false
+  native_sensor_reader:
+    nominal_hz: 200             # Android IMU callback rate
+    restartable: true
+    flight_critical: true
+  mavlink_tcp_bridge:
+    nominal_hz: 1               # heartbeat per poll iteration
+    restartable: true
+    flight_critical: false
+
+# ==========================================================================
+# Scenarios — each is a sequence of steps the runner executes
+# ==========================================================================
+scenarios:
+
+  # --- Scenario 1: solo ---
+  # Crash one module at a time, observe auto-restart, verify recovery.
+  solo_crash:
+    enabled: true
+    description_ar: "crash كل module منفرداً، تحقق من auto_restart + التعافي"
+    # Which modules to cycle through.  "all" = every module in the registry.
+    targets: ["native_sensor_reader", "sensors", "ekf2", "rocket_mpc",
+              "commander", "control_allocator", "mavlink_tcp_bridge"]
+    auto_restart: true          # enable before crash; observe self-recovery
+    inter_crash_pause_s: 5.0    # rest between iterations
+    post_crash_wait_s: 3.0      # max time to wait for recovery
+    repetitions: 1              # how many times to crash each target
+
+  # --- Scenario 2: repeated ---
+  # Reliability: crash same module N times in a row — does every restart work?
+  repeated_crash:
+    enabled: true
+    description_ar: "crash نفس الـ module مراراً — قياس ثبات recovery"
+    targets: ["rocket_mpc", "ekf2", "native_sensor_reader"]
+    auto_restart: true
+    inter_crash_pause_s: 3.0
+    post_crash_wait_s: 3.0
+    repetitions: 5
+
+  # --- Scenario 3: manual restart ---
+  # With auto-restart OFF, verify that manual wd_restart_module() works.
+  manual_restart:
+    enabled: true
+    description_ar: "crash مع auto_restart=OFF، ثم restart يدوياً"
+    targets: ["rocket_mpc", "ekf2"]
+    auto_restart: false
+    manual_restart_delay_s: 2.0  # wait this long BEFORE issuing restart
+    post_restart_wait_s: 3.0
+    repetitions: 2
+
+  # --- Scenario 4: cascading ---
+  # Crash a module that others depend on; verify dependents survive.
+  # Example: crash sensors; ekf2 should log "dead" then recover with sensors.
+  cascading:
+    enabled: true
+    description_ar: "crash module أساسي، تحقق أن الـ dependents لا تموت بشكل دائم"
+    # Each entry: (victim, bystanders_that_must_recover)
+    cases:
+      - victim: "sensors"
+        bystanders: ["ekf2", "rocket_mpc"]
+      - victim: "native_sensor_reader"
+        bystanders: ["sensors", "ekf2"]
+    auto_restart: true
+    post_crash_wait_s: 5.0
+    repetitions: 1
+
+# ==========================================================================
+# Thresholds — PASS/FAIL
+# ==========================================================================
+thresholds:
+  # Detection: time from crash command → watchdog notices dead edge.
+  # Upper bound = stale_threshold + 1 poll period (50ms).
+  detection_ms_max: 600
+
+  # Restart: stop+start round-trip for a PX4 module main().
+  restart_ms_max: 1500
+
+  # Recovery: from dead edge → fresh signal again (rocket_mpc ~50Hz = 20ms/sample).
+  recovery_ms_max: 2500
+
+  # Bystander death tolerance in cascading scenarios: allowed to go stale
+  # briefly, but must recover within this window.
+  bystander_recovery_ms_max: 3000
+
+  # Every test iteration must ultimately succeed; N failures fails the suite.
+  max_failures_per_scenario: 0
+
+# ==========================================================================
+# Presets
+# ==========================================================================
+presets:
+  quick:
+    scenarios: ["solo_crash"]
+    description: "~2 min — one crash per module"
+  standard:
+    scenarios: ["solo_crash", "manual_restart"]
+    description: "~5 min — includes manual restart path"
+  full:
+    scenarios: ["solo_crash", "repeated_crash", "manual_restart", "cascading"]
+    description: "~15 min — complete reliability sweep"
+
+# ==========================================================================
+# Output
+# ==========================================================================
+output:
+  results_dir: "results"
+  save_report: true
+  save_csv: true
+  save_plot: true               # plotly HTML if installed
+  save_raw_events: true         # copy of watchdog_events.jsonl pulled from device

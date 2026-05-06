@@ -1,0 +1,92 @@
+# PIL Roadmap Progress Tracker
+# =============================
+# Methodology: Diagnose → Hypothesize → Verify → Fix → Test → Validate → Commit gate
+# Rule: Don't proceed to next point until current is ✅ confirmed.
+
+## Fixes already applied (baseline before roadmap):
+- F1: px4_jni.cpp HITL block: ROCKET_USE_GT 1→0
+- F2: px4_jni.cpp HITL block: EKF2_MAG_TYPE 5→6 (init-only)
+- F3: mavlink_bridge_pil.py _body_specific_force: removed -C·g_ned (parity SITL)
+- F4: mavlink_bridge_pil.py warmup: pad_forces correct
+- F5: mavlink_bridge_pil.py warmup: launch_quat real + re-noise per tick
+
+## Run table:
+| Run | Score | Apogee | Range | Max α | Notes |
+|-----|-------|--------|-------|-------|-------|
+| baseline (GT path) | 70 | 3m | 88m | 14° | false-pass via GT |
+| run3 (after F3)    | 70 | 4m | 89m | 11° | EKF2 path, gravity OK |
+| run4 (after F5)    | 70 | 3m | 88m | 7° | warmup parity |
+| run5 (HIL_STATE)   | 25 | 12m | 262m | 180° | tumbling (no yaw) |
+| run6 (after F2)    | 70 | 8m | 290m | 5° | stable, ballistic missing |
+
+## Roadmap status:
+[x] 1. yaw alignment confirmed: estimator flags 0x22e24000043 → tilt=1 yaw=1 at ARM (run6 logcat 22:59:19)
+[x] 2. SITL vs PIL diff: identical at t=0.31, diverge at t=0.45 (omega_y -2.7→-8.9)
+       Root cause: inject_compute_delay_max_ms=80 + phone MPC avg=40ms vs deadline=20ms
+       Verification (run7, delay=0): apogee 8m→74m, range 290m→1044m. Hypothesis CONFIRMED.
+[x] 3. Decision: lower MPC rate (Option A) — RocketMPC.cpp 19_ms→39_ms, pil_config 50→25 Hz
+       Rationale: phone MPC avg=40ms, deadline=20ms → 78% over-deadline.
+       At 25Hz, deadline=40ms → fits avg solve time.
+[x] 4. Verification (run9, MPC@25Hz, inject=80ms):
+       Ascent (0→5.18s): apogee=266m, max α=14°, max fin=11°, NO saturation.
+       Post-apogee tumble is inherent to attitude_mode=none + low post-burnout V (NOT MPC fault).
+[x] 5. LOS rate-limiter bug (F7): set_gamma_natural() لا يحدّث _gamma_ref_prev
+       Symptom: run9 had gref=1.504 (86° vertical!) at first solve → over-vertical climb → 266m apogee + tumble
+       Root cause: at arm, EKF2 attitude transient pitch≈86° → gamma_natural=1.5 → _los.reset() → _gamma_ref_prev=1.5
+                   pre-launch corrected gamma_natural to 0.096 but _gamma_ref_prev stuck at 1.5
+       Fix: los_guidance.h set_gamma_natural now updates _gamma_ref_prev too
+       Verification (run10-12): gref=0.246 at first solve ✓ tracks gamma correctly ✓
+[ ] 6. Phone CPU throttling — root cause of slow MPC (47-58ms vs 40ms deadline)
+       Diagnosis: cpu7 (Cortex-X, 3.36GHz) stuck at 864MHz (26% capacity)
+                  cpu3-6 (A720, 2.8GHz) at 2.19GHz (78% capacity)
+                  Affinity to prime cores ✓, ADPF session created ✓, BUT SCHED_FIFO=FAIL (no root)
+       Why: app lacks CAP_SYS_NICE → no RT priority → governor doesn't boost cpu7
+       Workarounds tried: cmd power set-fixed-performance-mode-enabled (partial effect)
+       Resolution paths: (A) root device, (B) regenerate solver N=80→40, (C) accept hw limit
+       Status: DEFERRED — solver regen requires acados rebuild (~30 min); user prefers postpone
+[x] 7. fin_cmd sign verification (PIL vs SITL) — IDENTICAL signs ✓
+       SITL t=0.5: fins=[0.094, 0.080, -0.095, -0.081] → de=-0.087 (-5.0°)
+       PIL  t=0.5: fins=[0.030, 0.021, -0.030, -0.021] → de=-0.025 (-1.5°)
+       Same sign pattern. Magnitude differs (3×) → not a sign bug.
+
+[x] 8. State divergence ROOT CAUSE — bridge transport lag (NOT a code bug)
+       Apples-to-apples PIL.csv vs SITL.csv at sim_t:
+         t=0.00 → 0.30: IDENTICAL (V, gamma, alpha, alt, mass) within 0.001
+         t=0.40: SITL applies fins; PIL still [0,0,0,0]
+         t=0.50: PIL fins arrive but 3× smaller than SITL
+       Cause: PIL→TCP-USB→Phone→PX4(EKF2+MPC ~50ms)→Phone→USB→PIL ≈ 100-200ms loop.
+       SITL same loop on local Linux ≈ <5ms.
+       Effect: PIL MPC commands are computed for OLD state → small de → small response.
+       Conclusion: Phone+TCP HIL has fundamental phase-lag floor. SITL parity needs:
+         (a) Root device → SCHED_FIFO → cpu7 boost → MPC ~25-30ms (~50ms loop), OR
+         (b) Solver N=80→40 → MPC ~25ms (same effect), OR
+         (c) Smith-predictor in bridge (complex, may break sensor consistency)
+
+[ ] 9. Optional: post-apogee attitude_mode (velocity_aligned) for graceful descent
+
+## Run table addendum:
+| run7 (delay=0,50Hz)| 59 | 74m  | 1044m | 8°   | 9× improvement, MPC catches up |
+| run8 (delay=40)    | 70 | 4m   | 124m  | crash | high run-to-run variance      |
+| run9 (25Hz/d=80)   | 25 | 266m | 1334m | 180° | LOS bug → vertical climb + tumble  |
+| run10 (LOS-fix)    | 70 | 13m  | 473m  | 6°   | gref correct now (0.246 vs 1.504) |
+| run11 (fixed-perf) | 67 | 13m  | 716m  | 5°   | cpu3@2.19GHz, cpu7@864MHz (idle)   |
+| run12 (inject=0)   | 70 | 6m   | 247m  | 5°   | even idealized phone too slow     |
+| run13 (inject=80,wind) | 70 | 4m | 107m  | 6°   | confirms NP8: lag dominates       |
+
+## Active point: ROADMAP COMPLETE on code-side. Hardware decision pending.
+   Code-side fixes done:
+     • F1-F2 (estimator path)        ✓
+     • F3 (gravity)                  ✓
+     • F4-F5 (warmup parity)         ✓
+     • F6 (MPC@25Hz rate budget)     ✓
+     • F7 (LOS rate-limiter bug)     ✓
+     • Sign/mapping verification     ✓ (NP7)
+     • Root cause identified         ✓ (NP8: bridge transport lag, hw-limited)
+
+   Pending (require external decisions):
+     • NP6 path A — root device
+     • NP6 path B — regenerate solver N=80→40 (~30 min acados rebuild)
+     • NP6 path C — accept hw limit, mark PIL as "ground stack validation only"
+     • NP9 — post-apogee attitude_mode (only meaningful AFTER NP6 resolved)
+
+   Next session: decide NP6 path, then re-run baseline → expect SITL parity.

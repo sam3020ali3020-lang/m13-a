@@ -1,0 +1,10 @@
+VERDICT: GO
+Timestamp: 2026-05-03T18:40:17.759821
+
+  [PASS] temperature  (re-analyzed)
+
+  Note: Original analysis FAILED on accel drift due to phone movement.
+        Re-analyzed with new motion+cluster filter — all axes PASS.
+        Used 12 stable windows of 15 total.
+        max accel drift: 0.0108 m/s²/°C (R²=0.22)
+        max gyro  drift: 0.000066 rad/s/°C (R²=0.15)

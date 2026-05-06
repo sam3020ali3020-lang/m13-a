@@ -1,0 +1,127 @@
+# e2e_latency — config
+# ==========================================================================
+# يقيس transport delay من Phone IMU إلى حركة سيرفو فيزيائية.
+# كل الـ timestamps في PX4 HRT (μs منذ تشغيل PX4) — لا يحتاج clock alignment.
+
+# ==========================================================================
+# الاتصال
+# ==========================================================================
+connection:
+  host: "127.0.0.1"     # adb forward tcp:5760 tcp:5760
+  port: 5760
+  timeout_s: 10.0
+
+# ==========================================================================
+# Streams المطلوبة من PX4 عبر MAVLink
+# ==========================================================================
+mavlink_streams:
+  highres_imu:
+    msg_id: 105
+    rate_hz: 100         # max stable مع 40KB/s budget
+    crc_extra: 93
+    purpose: "IMU sample timestamps + raw motion data"
+
+  attitude:
+    msg_id: 30
+    rate_hz: 50          # EKF2 update timing
+    crc_extra: 39
+    purpose: "vehicle_attitude.timestamp — sensor → estimator latency"
+
+  servo_output_raw:
+    msg_id: 36
+    rate_hz: 50          # actuator_outputs publish timing
+    crc_extra: 222
+    purpose: "MPC fin command timestamps"
+
+  debug_float_array:
+    msg_id: 350
+    rate_hz: 50          # SRV_FB (id=1) + RktGNC (id=2 decimated 4×)
+    crc_extra: 232
+    purpose: "Servo CAN feedback (SRV_FB) + GNC timing diagnostics (RktGNC)"
+
+# ==========================================================================
+# Sub-tests
+# ==========================================================================
+tests:
+  # Test 1: Passive — يعمل دائماً
+  passive:
+    enabled: true
+    duration_s: 60
+    description_ar: "تسجيل سلبي لكل streams وحساب latency لكل مرحلة"
+    # حتى لو MPC لا يأمر بشيء، L_sensor قابل للقياس دائماً
+
+  # Test 2: Tap — operator-driven impulse
+  tap:
+    enabled: false        # تفعيل يدوي عبر --test tap
+    duration_s: 30
+    description_ar: "Tap الهاتف بشكل واضح، نلتقط peak في IMU و SRV_FB"
+    num_taps: 10
+    tap_window_s: 3.0
+    accel_peak_threshold_ms2: 5.0   # كاشف tap
+
+  # Test 3: Sweep — manual fin sweep via QGC parameter (advanced)
+  sweep:
+    enabled: false        # advanced — يحتاج معالجة خارجية
+    duration_s: 60
+    description_ar: "Sweep يدوي للسيرفو لقياس actuator pipeline"
+
+# ==========================================================================
+# Presets
+# ==========================================================================
+presets:
+  quick:
+    duration_s: 60
+    tests: ["passive"]
+
+  standard:
+    duration_s: 300
+    tests: ["passive", "tap"]
+
+  full:
+    duration_s: 900
+    tests: ["passive", "tap", "sweep"]
+
+# ==========================================================================
+# Thresholds (PASS/FAIL)
+# ==========================================================================
+thresholds:
+  # IMU → ATTITUDE (sensor → estimator latency)
+  l_sensor:
+    p50_ms_max: 30      # acceptable
+    p99_ms_max: 60      # ممتاز إذا < 30ms
+    samples_min: 100
+
+  # MPC solve time (computational only)
+  l_mpc:
+    p50_ms_max: 10      # MPC dt = 5ms target
+    p99_ms_max: 25
+    samples_min: 50
+
+  # Actuator (CMD → physical fb)
+  l_actuator:
+    p50_ms_max: 80      # حسب servo (XQPOWER ~30ms)
+    p99_ms_max: 150
+    tolerance_deg: 0.5  # كم درجة فرق نعتبر "وصل"
+    samples_min: 10     # قد يكون قليل إذا MPC قليل النشاط
+
+  # Total transport delay
+  l_total:
+    p50_ms_max: 120
+    p99_ms_max: 250
+
+  # Stream health
+  streams:
+    imu_min_rate_hz: 90
+    attitude_min_rate_hz: 40
+    debug_array_min_rate_hz: 30
+    servo_raw_min_rate_hz: 30
+
+# ==========================================================================
+# Output
+# ==========================================================================
+output:
+  results_dir: "results"
+  save_csv: true
+  save_json: true
+  save_plot: true       # plotly HTML (يحتاج plotly مثبَّت)
+  save_report: true

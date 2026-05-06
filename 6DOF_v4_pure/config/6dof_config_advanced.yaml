@@ -1,0 +1,287 @@
+rocket_data:
+  name: "Qabthah1"    # اسم الصاروخ (يتم تحميل جميع البيانات من rocket_models)
+  multi_stage: false          # true = تحميل جميع المراحل تلقائياً، false = مرحلة واحدة
+  stage: null                 # المرحلة للصواريخ متعددة المراحل (null = المرحلة الأولى أو جميع المراحل)
+  base_dir: "data/rocket_models"  # مسار مجلد بيانات الصواريخ
+
+# إعدادات المحاكاة (Simulation Settings)
+simulation:
+  duration: 500                # s
+  dt: 0.01                 # s
+  output_rate: 10.0          # Hz
+  integrator: "rk4"
+  
+  use_actuator_dynamics: true
+  use_error_injection: true   # طَبيعيّ: thrust misalignment, CG offset, etc.
+  
+  damping_coefficients_units: "per_deg"  # "per_rad" | "per_deg"
+
+  fin_channel_mapping: [1, 2, 3, 4]  # [physical_fin_for_δ1, physical_fin_for_δ2, ...] - Default: no remapping
+  
+  # وضع المقذوف الباليستي (Ballistic Mode)
+  ballistic_mode:  false      # true = مقذوف باليستي، false = تحكم نشط
+  # ⚠️ canard: يتم عكس إشارة عزم الميل تلقائياً
+  # Canard X-config: nose-UP [+δ,+δ,-δ,-δ] | nose-DOWN [-δ,-δ,+δ,+δ] | Roll [+δ,+δ,+δ,+δ]
+  ballistic_fin_deflection: [-0.00, 0.00,0.00, -0.00]  # rad [fin1, fin2, fin3, fin4] - nose-DOWN pitch for canard
+  
+  # ==========================================================================
+  # نوع نظام التحكم (Control Type)
+  # ==========================================================================
+  # "none"  : بدون تحكم (باليستي أو control_function خارجي)
+  # "mpc"   : تحكم MPC باستخدام acados (3 محاور)
+  # ==========================================================================
+  control_type: "mpc"          # "none" | "mpc"
+  
+  # قراءة انحراف الزعانف من ملف خارجي (له الأولوية على ballistic_mode)
+  use_fin_deflection_file: false
+  fin_deflection_file: "data/rocket_models/dac.dat"
+  fin_deflection_units: "radians"   # "degrees" | "radians"
+  fin_deflection_time_offset: -0.5  # s
+  
+  # ==========================================================================
+  # وضع التحكم بالاتجاه (Attitude Mode)
+  # ==========================================================================
+  # "none"                 : 6DOF كامل - الصاروخ يتبع الفيزياء
+  # "velocity_aligned"     : محاذاة دائمة مع متجه السرعة
+  # "max_range"            : أثناء الدفع CA فقط + محاذاة، بعده 6DOF حر (لحساب أقصى مدى)
+  # "3dof"                 : نقطة كتلة - CA فقط، بدون دوران أو عزوم
+  # ==========================================================================
+  attitude_mode: "none"  # "none" | "velocity_aligned" | "max_range" | "3dof"
+  
+  liftoff_threshold: 2  # m - الحد الأدنى للارتفاع ليُعتبر الصاروخ أقلع
+  
+  # true: I·ω̇ + İ·ω = M - ω×(I·ω) (أدق) | false: بدون İ·ω (أقل ذبذبة)
+  use_inertia_derivative: false
+  # true: ω_new = I_new⁻¹·I_old·ω_old | false: ω_new = ω_old
+  conserve_angular_momentum: false
+  # تحجيم عطالة المرحلة الجديدة بعد الفصل (1.0 = بدون تحجيم، 1.5-3.0 لتقليل الذبذبة)
+  post_separation_inertia_scale: 1.0
+
+long_range:
+  enabled: true            # ECEF/LLA mode - correct altitude reference (MSL)
+  gravity_model: "j2"   # نموذج الجاذبية: constant, j2, j2_j3_j4
+  include_coriolis: true      # تضمين قوة كوريوليس
+  include_centrifugal: true   # تضمين القوة الطرد مركزية
+  impact_min_ground_range_m: 2000  # بوابة مدى لمنع اصطدام وهمي قرب الإطلاق
+
+# الدفع (Propulsion)
+propulsion:
+  motor_type: "solid"
+  thrust_scale: 1.0         # معامل تحجيم الدفع (1.3 = صاروخ أقوى → apogee أعلى)
+
+# الديناميكا الهوائية (Aerodynamics)
+aerodynamics:
+  use_aero_tables: true
+  CA_motor_multiplier: 1.05    # تأثير عمود اللهب على ضغط القاعدة
+  negate_Cnq: true             # true: -abs(Cnq) لضمان تخميد مستقر | false: القيمة مباشرة من الجداول
+
+  compute_hinge_moments: False
+  compute_fin_drag: False
+  hinge_moment_max: 50.0        # N-m
+  bending_moment_max: 100.0     # N-m
+
+# حقن الأخطاء (Error Injection) - يتطلب simulation.use_error_injection: true
+error_injection:
+  # Fixed seed for deterministic runs — essential for testing PX4 transition.
+  # Each seed = different "rocket realization", but THE SAME run reproduces.
+  # Set to null for true Monte Carlo (each run different).
+  seed: 42                      # deterministic — change for different rocket
+
+  # ── Launch rail tolerances (typical: 1-3 arcmin alignment accuracy) ──
+  sig_elevation: 0.000582       # rad (2 arcmin pitch tilt)
+  sig_elevation_rate: 0.0       # rad/s
+  sig_azimuth: 0.000582         # rad (2 arcmin azimuth tilt)
+  sig_azimuth_rate: 0.0         # rad/s
+
+  # ── Motor tolerances (precision-grade: ±0.15-0.2° thrust misalignment) ──
+  sig_thrust: 0.015             # fraction (1.5% thrust variation, batch-to-batch)
+  sig_thrust_misalignment_pitch: 0.0026  # rad (~0.15°, precision motor)
+  sig_thrust_misalignment_yaw: 0.0026    # rad (~0.15°, precision motor)
+
+  # ── Mass/CG tolerances (precision airframe: 0.3% mass, 1mm CG) ──
+  sig_mass: 0.04                # kg (~0.3% of 12kg)
+  sig_cg: 0.001                 # m (1mm CG offset — precision mfg tolerance)
+
+  # ── Sensor biases (Monte Carlo per-run unit-to-unit variation) ──
+  # NOTE: This is the DC offset variance (manufacturing/calibration), NOT the
+  # bias instability. Allan BI = stability of bias over time (4e-5 rad/s gz);
+  # but DC bias = where that stable bias sits, typically 0.1-1% of full scale
+  # for an uncalibrated MEMS IMU.
+  # Measured Allan BI (informational only): 0.05 mg accel, 8 °/h gyro.
+  sig_accel_bias_x: 0.05         # m/s² (~0.5% full scale, typical MEMS)
+  sig_accel_bias_y: 0.05         # m/s²
+  sig_accel_bias_z: 0.05         # m/s²
+
+  sig_gyro_bias_x: 0.002         # rad/s (~0.1°/s, typical uncal MEMS)
+  sig_gyro_bias_y: 0.002         # rad/s
+  sig_gyro_bias_z: 0.002         # rad/s
+
+  # ── Aerodynamic uncertainty (precision CFD: 2%) ──
+  sig_CA: 0.02                  # fraction (2% axial drag uncertainty)
+  sig_CN: 0.02                  # fraction (2% normal-force uncertainty)
+  sig_CM: 0.02                  # fraction (2% pitching-moment uncertainty)
+
+atmosphere:
+  wind_enabled: true
+  wind_speed: 4.0             # m/s — رياح خفيفة (Beaufort 3) — مخفّفة من 8 m/s
+  wind_direction: 90.0        # deg (90 = شرق، عمودية على مسار الإطلاق)
+  wind_direction_unit: degrees
+
+# ==========================================================================
+# إعدادات MPC (فقط معاملات المحلّل - خصائص الصاروخ تُقرأ تلقائياً)
+# يُفعّل بـ simulation.control_type: "mpc"
+# ==========================================================================
+autopilot:
+  mpc:
+    N_horizon: 80             # N=80 with dt_h=20ms gives 1.6s lookahead — sweet spot for ADPF + Cortex-X4.
+    tf: 1.6                   # horizon 1.6s (dt_h = tf/N = 1.6/80 = 0.020s = control cadence)
+    t_ctrl: 0.3               # s - زمن بدء التحكم بعد الإطلاق
+    dt_solve: 0.02            # s - فترة استدعاء MPC (كل 20ms)
+    delta_rate_limit_dps: 250.0  # deg/s - حد معدل تغيير الزعانف (أقل من actuator.rate_max=492 في Qabthah1)
+    servo_delay_s: 0.0         # disabled — lookahead_stage handles delay compensation
+    # lookahead_stage: auto-computed in m130_mpc_autopilot.py from
+    #   actuator.delay_steps + actuator.tau_servo (rocket_properties.yaml).
+    #   Formula: round((delay_steps × dt_sim + tau_servo) / dt_h)
+    #   For Qabthah1: round((3×0.01 + 0.0314) / 0.02) = round(3.07) = 3.
+    #   Override here only if you need manual control.
+
+# موقع الإطلاق (Launch Site) - المصدر الوحيد لارتفاع موقع الإطلاق
+launch:
+  latitude: 16.457472         # deg (16°27'26.9"N)
+  longitude: 44.115361        # deg (44°06'55.3"E)
+  altitude: 1200.0           # m above sea level (ارتفاع موقع الإطلاق - SINGLE SOURCE)
+
+# ==========================================================================
+# الهدف (Target) - الأولوية 1: range_m+bearing_deg | الأولوية 2: lat+lon
+# ==========================================================================
+target:
+  range_m: 2600          # m
+  bearing_deg: 0              # deg من الشمال
+  altitude: 1200.0            # m above sea level (نفس ارتفاع launch)
+  # latitude: 18.231732       # deg (230 km from launch at bearing 329°)
+  # longitude: 43.001430      # deg (230 km from launch at bearing 329°)
+
+# الشروط الابتدائية (Initial Conditions)
+initial_conditions:
+  position: [0.0, 0.0, 0.0]   # m (NED frame)
+  velocity: [0.0, 0.0, 0.0]   # m/s
+  attitude: [0.0, 0.0, 0.0, 0.0]  # quaternion (65° pitch, 0° yaw = north) - steep launch to minimize drag losses
+  angular_velocity: [0.0, 0.0, 0.0]  # rad/s — yaw rate ~28.6°/s كـ disturbance ابتدائي
+  attitude_degrees: [0, 15, 0]  # roll=0°, pitch=15°, yaw=0°
+
+# ==========================================================================
+# مرحلة الطيران (Flight Phase)
+# ==========================================================================
+flight_phase:
+  auto_arm: true             # true = ARMED مباشرة | false = SAFE_ON_PAD
+
+  # فصل المراحل (يُستخدم فقط عند multi_stage: true)
+  separation_allowed_phases:
+    - "POWERED_ASCENT"
+    - "BURNOUT"
+    - "COAST_ASCENT"
+    - "NEAR_SPACE_ASCENT"
+    - "EXOATM_COAST"
+  
+  # محفز الفصل: 0=BURNOUT | 1=TIME | 2=ALTITUDE | 3=VELOCITY | 4=MANUAL
+  #separation_trigger: 1
+  #separation_delay_s: 0.5
+  #separation_altitude_m: 50000.0
+  #separation_velocity_ms: 1000.0
+  #separation_time_s: 35.0
+
+  ignition_delay_s: 1.0       # s - تأخير اشتعال المرحلة التالية
+
+# ==========================================================================
+# تقدير الحالة (Estimation) — MHE
+# estimation.mode: "off" = بدون تقدير | "mhe" = تقدير MHE
+# ==========================================================================
+estimation:
+  mode: "off"                         # MHE off — تحسين بدون MHE
+  use_estimated_state_for_mpc: false
+
+  sensors:
+    imu_rate_hz: 200.0
+    gps_rate_hz: 5.0
+    baro_rate_hz: 25.0
+    gps_delay_s: 0.200
+    baro_delay_s: 0.03
+    # MHE trust model: noise the estimator EXPECTS to see in flight.
+    # NOT pure-static — includes margin for vibration coupling during burn,
+    # mild thermal drift, and shock transients. Static measured floor is
+    # ~10× lower (0.005 m/s², 0.0008 rad/s) but using static would make MHE
+    # over-confident and reject valid in-flight measurements.
+    accel_noise_std: 0.05         # m/s² (10× static; mild vibration model)
+    gyro_noise_std:  0.005        # rad/s (~6× static; angular-rate coupling)
+    gps_pos_noise_std: 2.5        # m (NEO-M8N CEP — not yet measured)
+    gps_vel_noise_std: 0.6        # m/s
+    baro_noise_std: 1.2           # m altitude (no baro-allan data yet)
+    accel_bias_std: 0.01          # m/s³ (bias random walk — thermal+shock)
+    gyro_bias_std:  0.0005        # rad/s² (bias random walk — ~10× BI)
+
+  mhe:
+    solve_rate_hz: 50.0
+    horizon_steps: 20
+    horizon_dt: 0.02
+    max_qp_iters: 100
+    levenberg_marquardt: 0.1
+    max_consecutive_failures: 10
+    quality_gate_threshold: 0.3
+    process_noise_scale: 1.0
+    process_noise_abs_bound: 5.0
+    arrival_cost_scale: 1.5
+    gyro_trust_factor: 0.3
+    gps_vel_trust_factor: 5.0
+    gps_pos_trust_factor: 1.5
+    accel_trust_factor: 0.3
+
+  compensation:
+    enable_heading_compensation: true
+    chi_correction_max_deg: 8.0
+    chi_correction_lpf_hz: 2.0
+    chi_correction_rate_limit_dps: 15.0
+
+# ==========================================================================
+# أوزان التقييم للتحليل (Analysis Scoring Weights)
+# ==========================================================================
+# المجموع يجب أن يساوي 100
+scoring_weights:
+  range: 30          # دقة المدى
+  impact_angle: 15   # زاوية الاصطدام
+  stability: 20      # استقرار الميل
+  aoa: 15            # زاوية الهجوم
+  sideslip: 10       # الانزلاق الجانبي
+  g_load: 10         # الحمل الديناميكي
+
+# ==========================================================================
+# إعدادات جسر SITL (SITL Bridge Settings)
+# يتحكم في الاتصال بين المحاكاة 6DOF و PX4 عبر MAVLink
+# ==========================================================================
+bridge:
+  protocol: tcp           # tcp | udp
+  host: "127.0.0.1"
+  port: 4560              # PX4 SimulatorMavlink default port
+  timing: lockstep        # lockstep | realtime
+  sensor_rate_hz: 100     # HIL_SENSOR (IMU) rate — ceiling with dt=0.01
+  gps_rate_hz: 5          # HIL_GPS rate — matches real NEO-M8N config
+  state_rate_hz: 50       # HIL_STATE_QUATERNION rate
+  lockstep_timeout_ms: 5000
+
+  # ضوضاء الأجهزة المحاكاة | Simulated hardware noise (SITL/HIL/PIL)
+  # These values feed PX4 EKF2 in HIL_SENSOR — should represent EFFECTIVE
+  # in-flight noise (incl. mild vibration), not pure-static measurement.
+  # Pure-static measured (informational): accel 0.005 m/s², gyro 0.0008 rad/s.
+  noise:
+    accel_std: 0.05       # m/s² (10× static; matches estimation.sensors)
+    gyro_std:  0.005      # rad/s (matches mild-vibration in-flight model)
+    gps_pos_std: 2.5      # m — NEO-M8N CEP (no GPS test yet)
+    gps_vel_std: 0.1      # m/s
+    gps_delay_ms: 100     # ms — typical GPS latency
+    mag_std: 0.005        # Gauss (mag characterization not done)
+    baro_std: 0.5         # m altitude equivalent (no baro-allan yet)
+    accel_bias_std: 0.05  # m/s² — unit-to-unit DC offset (matches MC bias)
+    gyro_bias_std:  0.002 # rad/s — unit-to-unit DC offset (~0.1°/s)
+    # مضاعف الضوضاء العالية (اختبار المتانة)
+    high_noise_enabled: false
+    high_noise_accel_multiplier: 3.0
+    high_noise_gyro_multiplier: 3.0

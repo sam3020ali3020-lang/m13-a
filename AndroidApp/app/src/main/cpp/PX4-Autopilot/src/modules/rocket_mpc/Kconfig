@@ -1,0 +1,5 @@
+menuconfig MODULES_ROCKET_MPC
+	bool "rocket_mpc"
+	default n
+	---help---
+		Enable support for rocket_mpc (M130 MPC+MHE via acados — replaces rocket_gnc)

@@ -1,0 +1,431 @@
+{
+  "pid": 23025,
+  "label": "idle",
+  "duration_s": 15,
+  "samples_taken": 15,
+  "started_at": 1777848115.2269468,
+  "summary": [
+    {
+      "tid": 26281,
+      "name": "wq:manager",
+      "samples": 15,
+      "mean_cpu": 99.53,
+      "max_cpu": 101.0,
+      "stddev_cpu": 0.74,
+      "trend": "steady"
+    },
+    {
+      "tid": 26292,
+      "name": "mavlink_if0",
+      "samples": 15,
+      "mean_cpu": 9.73,
+      "max_cpu": 10.0,
+      "stddev_cpu": 0.46,
+      "trend": "steady"
+    },
+    {
+      "tid": 26244,
+      "name": "rdophone.px4v17",
+      "samples": 15,
+      "mean_cpu": 6.17,
+      "max_cpu": 7.0,
+      "stddev_cpu": 0.37,
+      "trend": "steady"
+    },
+    {
+      "tid": 23025,
+      "name": "rdophone.px4v17",
+      "samples": 15,
+      "mean_cpu": 5.15,
+      "max_cpu": 6.0,
+      "stddev_cpu": 0.68,
+      "trend": "steady"
+    },
+    {
+      "tid": 26254,
+      "name": "px4",
+      "samples": 15,
+      "mean_cpu": 2.42,
+      "max_cpu": 3.3,
+      "stddev_cpu": 0.54,
+      "trend": "steady"
+    },
+    {
+      "tid": 26284,
+      "name": "commander",
+      "samples": 15,
+      "mean_cpu": 1.35,
+      "max_cpu": 3.3,
+      "stddev_cpu": 0.68,
+      "trend": "steady"
+    },
+    {
+      "tid": 26294,
+      "name": "mavlink_rcv_if0",
+      "samples": 15,
+      "mean_cpu": 0.67,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.49,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26214,
+      "name": "DefaultExecutor",
+      "samples": 15,
+      "mean_cpu": 0.4,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.51,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26256,
+      "name": "DefaultDispatch",
+      "samples": 15,
+      "mean_cpu": 0.27,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.46,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26255,
+      "name": "DefaultDispatch",
+      "samples": 15,
+      "mean_cpu": 0.27,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.46,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26313,
+      "name": "px4_watchdog",
+      "samples": 15,
+      "mean_cpu": 0.13,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.35,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26247,
+      "name": "lpwork",
+      "samples": 15,
+      "mean_cpu": 0.13,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.35,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26291,
+      "name": "px4",
+      "samples": 15,
+      "mean_cpu": 0.07,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.26,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26290,
+      "name": "px4",
+      "samples": 15,
+      "mean_cpu": 0.07,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.26,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26286,
+      "name": "navigator",
+      "samples": 15,
+      "mean_cpu": 0.07,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.26,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26258,
+      "name": "DefaultDispatch",
+      "samples": 15,
+      "mean_cpu": 0.07,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.26,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26246,
+      "name": "hpwork",
+      "samples": 15,
+      "mean_cpu": 0.07,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.26,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 26314,
+      "name": "log_writer_file",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26312,
+      "name": "logger",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26293,
+      "name": "px4",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26297,
+      "name": "TcpOptimizer",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26296,
+      "name": "TcpOptimizer",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26289,
+      "name": "wq:rocket_mpc",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26287,
+      "name": "wq:hp_default",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26285,
+      "name": "dataman",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26283,
+      "name": "wq:INS0",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26282,
+      "name": "wq:rate_ctrl",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26250,
+      "name": "wq:lp_default",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26245,
+      "name": "px4",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26248,
+      "name": "wkr_hrt",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26249,
+      "name": "wq:manager",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26243,
+      "name": "ConnectivityThr",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26209,
+      "name": "queued-work-loo",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26205,
+      "name": "RenderThread",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26203,
+      "name": "Profile Saver",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26179,
+      "name": "Binder:23025_3",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26171,
+      "name": "ReferenceQueueD",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26170,
+      "name": "HeapTaskDaemon",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26169,
+      "name": "ADB-JDWP Connec",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26168,
+      "name": "Signal Catcher",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26176,
+      "name": "Binder:23025_2",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26175,
+      "name": "Binder:23025_1",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26174,
+      "name": "Jit thread pool",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26173,
+      "name": "FinalizerWatchd",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 26172,
+      "name": "FinalizerDaemon",
+      "samples": 15,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    }
+  ],
+  "totals_per_frame": [
+    126.49999999999999,
+    125.0,
+    130.0,
+    125.0,
+    126.0,
+    128.0,
+    128.0,
+    126.0,
+    128.0,
+    128.0,
+    125.0,
+    124.0,
+    128.0,
+    125.0,
+    126.0
+  ]
+}

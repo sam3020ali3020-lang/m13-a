@@ -1,0 +1,77 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — hold_drift
+  hold_drift: 5 pos × hold=15s (79.0s total)
+  csv: direct_v1_hold_drift_20260502_080442.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 24345   cmd∈[-10.00,+10.00]°   fb∈[-10.11,+10.17]°
+  slew_max: 102.5 °/s
+  step edges: 6
+    edge@5.52s Δ=-10.1°  delay=94.1ms  τ=0.0ms  OS=1.1%  t_settle=137ms  err=-0.111°
+    edge@21.02s Δ=+5.1°  delay=47.5ms  τ=41.0ms  OS=2.2%  t_settle=nanms  err=+0.111°
+    edge@36.52s Δ=+4.9°  delay=45.4ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=+0.111°
+    edge@52.02s Δ=+4.9°  delay=63.8ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=+0.111°
+    edge@67.52s Δ=+4.9°  delay=58.2ms  τ=0.0ms  OS=2.3%  t_settle=nanms  err=+0.111°
+    edge@83.03s Δ=-10.1°  delay=102.2ms  τ=3.2ms  OS=1.7%  t_settle=156ms  err=-0.111°
+  avg transport_delay=68.55ms  avg τ=7.37ms  avg OS=2.34%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 24345   cmd∈[-10.00,+10.00]°   fb∈[-10.17,+10.00]°
+  slew_max: 86.5 °/s
+  step edges: 6
+    edge@5.52s Δ=-10.1°  delay=88.1ms  τ=7.0ms  OS=1.7%  t_settle=139ms  err=-0.111°
+    edge@21.02s Δ=+5.1°  delay=48.6ms  τ=46.9ms  OS=1.1%  t_settle=146ms  err=+0.000°
+    edge@36.52s Δ=+4.9°  delay=42.4ms  τ=6.0ms  OS=6.7%  t_settle=151ms  err=+0.056°
+    edge@52.02s Δ=+4.9°  delay=22.8ms  τ=42.0ms  OS=3.4%  t_settle=nanms  err=+0.111°
+    edge@67.52s Δ=+4.9°  delay=55.3ms  τ=0.0ms  OS=0.0%  t_settle=116ms  err=+0.000°
+    edge@83.03s Δ=-10.0°  delay=99.2ms  τ=54.0ms  OS=3.9%  t_settle=211ms  err=-0.111°
+  avg transport_delay=59.40ms  avg τ=25.98ms  avg OS=2.79%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 24345   cmd∈[-10.00,+10.00]°   fb∈[-10.17,+10.11]°
+  slew_max: 98.0 °/s
+  step edges: 6
+    edge@5.52s Δ=-10.1°  delay=93.2ms  τ=0.0ms  OS=1.6%  t_settle=141ms  err=-0.111°
+    edge@21.02s Δ=+5.1°  delay=96.5ms  τ=0.0ms  OS=2.2%  t_settle=1016ms  err=+0.056°
+    edge@36.52s Δ=+4.9°  delay=46.4ms  τ=4.0ms  OS=3.4%  t_settle=nanms  err=+0.111°
+    edge@52.02s Δ=+4.9°  delay=65.8ms  τ=0.0ms  OS=2.3%  t_settle=1484ms  err=+0.056°
+    edge@67.52s Δ=+4.9°  delay=56.6ms  τ=0.0ms  OS=2.2%  t_settle=nanms  err=+0.111°
+    edge@83.03s Δ=-10.1°  delay=100.2ms  τ=54.8ms  OS=1.1%  t_settle=155ms  err=-0.111°
+  avg transport_delay=76.45ms  avg τ=9.80ms  avg OS=2.14%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 24345   cmd∈[-10.00,+10.00]°   fb∈[-10.17,+9.83]°
+  slew_max: 92.9 °/s
+  step edges: 6
+    edge@5.52s Δ=-10.1°  delay=96.1ms  τ=0.0ms  OS=1.7%  t_settle=144ms  err=-0.167°
+    edge@21.02s Δ=+5.2°  delay=87.5ms  τ=0.0ms  OS=2.2%  t_settle=1488ms  err=+0.056°
+    edge@36.52s Δ=+4.9°  delay=43.4ms  τ=4.0ms  OS=4.5%  t_settle=1394ms  err=+0.056°
+    edge@52.02s Δ=+4.9°  delay=69.9ms  τ=0.0ms  OS=2.2%  t_settle=nanms  err=+0.111°
+    edge@67.52s Δ=+4.9°  delay=57.2ms  τ=9.0ms  OS=-3.4%  t_settle=nanms  err=-0.222°
+    edge@83.03s Δ=-9.8°  delay=101.2ms  τ=2.9ms  OS=-0.0%  t_settle=161ms  err=+0.000°
+  avg transport_delay=75.89ms  avg τ=2.66ms  avg OS=1.19%
+
+─── hold_drift breakdown ─────────────────────────────
+  pattern alignment: csv_t = sched_t + 4.524s
+  servo#0 @cmd= -10.0°: mean_fb=-10.066° err=-0.066° drift=-0.33m°/s std=0.022° N=745  [OK]
+  servo#0 @cmd=  -5.0°: mean_fb= -4.894° err=+0.106° drift=-0.19m°/s std=0.017° N=806  [OK]
+  servo#0 @cmd=  +0.0°: mean_fb= +0.095° err=+0.095° drift=-0.15m°/s std=0.025° N=791  [OK]
+  servo#0 @cmd=  +5.0°: mean_fb= +5.115° err=+0.115° drift=-0.02m°/s std=0.014° N=713  [OK]
+  servo#0 @cmd= +10.0°: mean_fb=+10.074° err=+0.074° drift=-0.75m°/s std=0.028° N=708  [OK]
+  servo#1 @cmd= -10.0°: mean_fb=-10.109° err=-0.109° drift=+0.00m°/s std=0.013° N=741  [OK]
+  servo#1 @cmd=  -5.0°: mean_fb= -4.945° err=+0.055° drift=+0.10m°/s std=0.006° N=785  [OK]
+  servo#1 @cmd=  +0.0°: mean_fb= +0.053° err=+0.053° drift=+0.27m°/s std=0.014° N=760  [OK]
+  servo#1 @cmd=  +5.0°: mean_fb= +5.106° err=+0.106° drift=-0.31m°/s std=0.019° N=720  [OK]
+  servo#1 @cmd= +10.0°: mean_fb= +9.994° err=-0.006° drift=+0.40m°/s std=0.018° N=698  [OK]
+  servo#2 @cmd= -10.0°: mean_fb=-10.072° err=-0.072° drift=+2.41m°/s std=0.026° N=759  [OK]
+  servo#2 @cmd=  -5.0°: mean_fb= -4.940° err=+0.060° drift=-0.10m°/s std=0.015° N=795  [OK]
+  servo#2 @cmd=  +0.0°: mean_fb= +0.099° err=+0.099° drift=-1.38m°/s std=0.023° N=768  [OK]
+  servo#2 @cmd=  +5.0°: mean_fb= +5.094° err=+0.094° drift=+0.44m°/s std=0.026° N=689  [OK]
+  servo#2 @cmd= +10.0°: mean_fb=+10.079° err=+0.079° drift=-0.30m°/s std=0.027° N=680  [OK]
+  servo#3 @cmd= -10.0°: mean_fb=-10.146° err=-0.146° drift=-0.32m°/s std=0.027° N=689  [OK]
+  servo#3 @cmd=  -5.0°: mean_fb= -4.927° err=+0.073° drift=-0.16m°/s std=0.026° N=715  [OK]
+  servo#3 @cmd=  +0.0°: mean_fb= +0.058° err=+0.058° drift=+0.01m°/s std=0.013° N=703  [OK]
+  servo#3 @cmd=  +5.0°: mean_fb= +5.110° err=+0.110° drift=+0.05m°/s std=0.006° N=679  [OK]
+  servo#3 @cmd= +10.0°: mean_fb= +9.779° err=-0.221° drift=-0.12m°/s std=0.012° N=664  [OK]

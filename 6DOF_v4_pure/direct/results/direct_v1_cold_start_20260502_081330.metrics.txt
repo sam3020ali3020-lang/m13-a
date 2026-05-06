@@ -1,0 +1,73 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — cold_start
+  cold_start: idle=30s + 3 steps@±5.0° (36.5s)
+  csv: direct_v1_cold_start_20260502_081330.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 12674   cmd∈[-5.00,+5.00]°   fb∈[-5.22,+5.17]°
+  slew_max: 87.8 °/s
+  step edges: 6
+    edge@34.96s Δ=+4.9°  delay=19.4ms  τ=45.0ms  OS=3.4%  t_settle=nanms  err=-5.111°
+    edge@35.96s Δ=-5.1°  delay=64.7ms  τ=0.0ms  OS=102.2%  t_settle=nanms  err=-5.111°
+    edge@36.96s Δ=-4.9°  delay=42.3ms  τ=0.0ms  OS=4.5%  t_settle=nanms  err=+5.056°
+    edge@37.96s Δ=+5.1°  delay=42.5ms  τ=4.0ms  OS=101.1%  t_settle=nanms  err=+5.167°
+    edge@38.96s Δ=+4.9°  delay=55.2ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-5.111°
+    edge@39.96s Δ=-5.1°  delay=21.6ms  τ=71.0ms  OS=4.3%  t_settle=nanms  err=-0.111°
+  avg transport_delay=40.97ms  avg τ=20.00ms  avg OS=36.49%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 12674   cmd∈[-5.00,+5.00]°   fb∈[-5.17,+5.17]°
+  slew_max: 85.5 °/s
+  step edges: 6
+    edge@34.96s Δ=+5.0°  delay=21.5ms  τ=44.0ms  OS=3.3%  t_settle=nanms  err=-5.056°
+    edge@35.96s Δ=-5.1°  delay=58.7ms  τ=0.0ms  OS=101.1%  t_settle=nanms  err=-5.000°
+    edge@36.96s Δ=-4.9°  delay=88.2ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=+5.056°
+    edge@37.96s Δ=+5.1°  delay=44.5ms  τ=0.0ms  OS=102.2%  t_settle=nanms  err=+5.056°
+    edge@38.96s Δ=+4.9°  delay=53.4ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-5.111°
+    edge@39.96s Δ=-5.1°  delay=23.6ms  τ=24.0ms  OS=7.6%  t_settle=1497ms  err=-0.056°
+  avg transport_delay=48.31ms  avg τ=11.33ms  avg OS=36.83%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 12674   cmd∈[-5.00,+5.00]°   fb∈[-5.17,+5.11]°
+  slew_max: 97.9 °/s
+  step edges: 6
+    edge@34.96s Δ=+4.9°  delay=59.5ms  τ=0.0ms  OS=2.3%  t_settle=nanms  err=-5.111°
+    edge@35.96s Δ=-5.1°  delay=59.7ms  τ=0.0ms  OS=101.1%  t_settle=nanms  err=-5.111°
+    edge@36.96s Δ=-4.9°  delay=50.2ms  τ=45.0ms  OS=3.4%  t_settle=nanms  err=+5.111°
+    edge@37.96s Δ=+5.1°  delay=45.5ms  τ=19.0ms  OS=99.3%  t_settle=nanms  err=+5.056°
+    edge@38.96s Δ=+4.9°  delay=105.2ms  τ=0.0ms  OS=2.3%  t_settle=nanms  err=-5.111°
+    edge@39.96s Δ=-5.1°  delay=19.6ms  τ=30.0ms  OS=5.5%  t_settle=nanms  err=-0.111°
+  avg transport_delay=56.62ms  avg τ=15.67ms  avg OS=35.65%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 12674   cmd∈[-5.00,+5.00]°   fb∈[-5.06,+5.11]°
+  slew_max: 83.9 °/s
+  step edges: 6
+    edge@34.96s Δ=+4.9°  delay=16.5ms  τ=102.2ms  OS=2.2%  t_settle=nanms  err=-5.111°
+    edge@35.96s Δ=-5.1°  delay=63.7ms  τ=0.0ms  OS=98.9%  t_settle=nanms  err=-5.000°
+    edge@36.96s Δ=-4.9°  delay=92.3ms  τ=0.0ms  OS=1.1%  t_settle=nanms  err=+5.056°
+    edge@37.96s Δ=+5.0°  delay=52.5ms  τ=0.0ms  OS=101.3%  t_settle=nanms  err=+5.111°
+    edge@38.96s Δ=+4.9°  delay=64.2ms  τ=38.0ms  OS=2.2%  t_settle=nanms  err=-5.111°
+    edge@39.96s Δ=-5.1°  delay=40.6ms  τ=51.0ms  OS=3.3%  t_settle=nanms  err=-0.167°
+  avg transport_delay=54.96ms  avg τ=31.87ms  avg OS=34.86%
+
+─── cold_start breakdown ─────────────────────────────
+  pattern alignment: csv_t = sched_t + 4.462s
+  servo#0 [cold]: delay=  19.4ms  τ=  45.0ms  OS=  3.3%
+  servo#0 [warm]: delay=   1.5ms  τ=  41.1ms  OS=  2.2%
+  servo#0 [hot ]: delay=   0.5ms  τ=  55.0ms  OS=  1.7%
+  → servo#0 cold-vs-warm Δdelay=+18.0ms Δτ=+4.0ms [OK]
+  servo#1 [cold]: delay=  21.5ms  τ=  44.0ms  OS=  3.3%
+  servo#1 [warm]: delay=  37.5ms  τ=  51.0ms  OS=  1.7%
+  servo#1 [hot ]: delay=   1.5ms  τ=  52.2ms  OS=  1.7%
+  → servo#1 cold-vs-warm Δdelay=-16.0ms Δτ=-7.0ms [OK]
+  servo#2 [cold]: delay=  59.5ms  τ=   0.0ms  OS=  2.2%
+  servo#2 [warm]: delay=  44.5ms  τ=  51.0ms  OS=  1.7%
+  servo#2 [hot ]: delay=   2.5ms  τ= 103.0ms  OS=  1.1%
+  → servo#2 cold-vs-warm Δdelay=+15.0ms Δτ=-51.0ms [REVIEW]
+  servo#3 [cold]: delay=  16.5ms  τ= 102.2ms  OS=  2.2%
+  servo#3 [warm]: delay=  38.5ms  τ=  54.0ms  OS=  0.6%
+  servo#3 [hot ]: delay=   3.5ms  τ=  99.0ms  OS=  1.1%
+  → servo#3 cold-vs-warm Δdelay=-22.0ms Δτ=+48.2ms [REVIEW]

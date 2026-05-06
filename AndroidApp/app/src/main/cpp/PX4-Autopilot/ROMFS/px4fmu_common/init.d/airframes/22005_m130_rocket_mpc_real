@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# @name M130 Rocket MPC Real Sensors (MicoAir H743 + XQPOWER CAN servos)
+#
+# @type Rocket
+# @class Rocket
+#
+# @maintainer Rocket GNC Team
+#
+# Real-flight setup for MPC+MHE via acados:
+#   IMU  : BMI088 + BMI270 (SPI)
+#   Baro : DPS310 (I2C)
+#   Mag  : IST8310 (I2C)
+#   Servos: XQPOWER CAN
+#
+# Parameters tuned for Qabthah1 rocket model:
+#   mass_full=12.74 kg, mass_dry=11.11 kg
+#   Launch: 16.457°N 44.115°E  alt=1200 m MSL
+#
+
+. ${R}etc/init.d/rc.rocket_defaults
+
+# Real hardware — use onboard sensors, NOT simulation
+param set SYS_HITL 0
+
+# Override simulated sensors from rc.rocket_defaults — use real hardware
+param set SENS_EN_GPSSIM 0
+param set SENS_EN_BAROSIM 0
+param set SENS_EN_MAGSIM 0
+
+# MHE must read real sensor_gps (not EKF2 lpos).  Force 0 even if a previous
+# SITL session left ROCKET_SITL_GPS=1 in saved parameters.
+param set ROCKET_SITL_GPS 0
+
+# ---- Magnetometer — IST8310 on MicoAir H743 ----
+# rc.rocket_defaults sets MAG_TYPE=5 (none).  Real flight uses init-only (6)
+# so EKF2 latches heading from mag at startup then ignores it in flight.
+param set EKF2_MAG_TYPE    6    # init-only (overrides rc.rocket_defaults MAG_TYPE=5)
+
+# ---- Arming checks for rocket (no RC) ----
+# Real flight REQUIRES a GPS fix and a converged EKF2 state estimate before
+# arming.  Without these, rocket_mpc cannot latch a valid launch origin or
+# seed the MHE, and the fins will fly open-loop from a wrong reference.
+#
+# COM_ARM_WO_GPS=0       : deny arming while EKF2 reports any GPS check fail.
+# EKF2_GPS_CHECK (bitmask):
+#     bit 0  = satellite count       (EKF2_REQ_NSATS)
+#     bit 2  = horizontal accuracy   (EKF2_REQ_EPH)
+#     bit 3  = vertical accuracy     (EKF2_REQ_EPV)
+#     bit 10 = GPS fix type (>= 3D)  (EKF2_REQ_FIX)
+#   Sum = 1 + 4 + 8 + 1024 = 1037.  rc.rocket_defaults sets this to 0 to keep
+#   developer-mode HITL/SITL permissive; real flight re-enables it here so
+#   COM_ARM_WO_GPS=0 is actually enforceable (GPS failures set the flag that
+#   estimatorCheck.cpp denies arming on).
+#
+# Lpos/vel/height convergence at arming time is governed by the thresholds
+# COM_POS_FS_EPH (5 m default) and COM_VEL_FS_EVH (1 m/s default); EKF2 must
+# publish vehicle_local_position with .xy_valid / .z_valid / .v_xy_valid /
+# .v_z_valid = true and EPH/EVH under those thresholds for commander's
+# estimatorCheck to pass.  The previously written COM_ARM_EKF_{POS,VEL,HGT}
+# params are not defined in current PX4 (legacy names from an older fork)
+# and were no-ops on this airframe; removed to avoid confusion.
+param set COM_RC_IN_MODE 4
+param set COM_ARM_WO_GPS 0
+param set EKF2_GPS_CHECK 1037
+
+# ---- Battery (6S LiPo, MicoAir H743 voltage divider) ----
+param set BAT1_N_CELLS 6
+param set BAT1_V_DIV 74.74
+
+# ---- XQPOWER CAN servo parameters ----
+param set-default XQCAN_ENABLE     1
+param set-default XQCAN_LIMIT     20.0    # ±20 deg (matches MPC fin limit)
+
+# ---- Rocket MPC parameters ----
+param set-default ROCKET_T_CTRL      0.3
+
+# Target X (downrange, m) uses ROCKET_XTRGT default from rocket_mpc_params.c.
+
+# Fin deflection limit is baked into the acados solver (20° = 0.349 rad).
+# To change it, modify m130_ocp_setup.py::delta_max and regenerate the solver.

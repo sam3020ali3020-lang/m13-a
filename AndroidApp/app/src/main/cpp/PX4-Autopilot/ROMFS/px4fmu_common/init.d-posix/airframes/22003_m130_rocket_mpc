@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+# @name M130 Rocket MPC  (MPC+MHE via acados - SITL)
+#
+# @type Rocket
+#
+# @maintainer Rocket GNC Team
+#
+# Physics engine : 6DOF_v4_pure  (propulsion + aerodynamics + mass model)
+# Controller     : PX4 rocket_mpc  (MPC + MHE + LOS guidance via acados)
+# Protocol       : MAVLink HIL  (HIL_SENSOR / HIL_GPS / HIL_ACTUATOR_CONTROLS)
+# Runner         : 6DOF_v4_pure/rocket_6dof_sim.py
+#
+# Parameters tuned for Qabthah1 rocket model:
+#   mass_full=12.74 kg, mass_dry=11.11 kg
+#   Launch: 16.457°N 44.115°E  alt=1200 m MSL
+#
+
+. ${R}etc/init.d/rc.rocket_defaults
+
+# ---- Select MPC controller ----
+set ROCKET_APP rocket_mpc
+
+# HIL mode - all sensor data comes from 6DOF sim bridge
+param set-default SYS_HITL 1
+
+# GPS simulator is enabled by default for SITL/HITL (SENS_EN_GPSSIM=1).
+# It feeds from EKF2 global position to generate simulated GPS output.
+# The MHE sensor_bridge reads vehicle_gps_position (blended GPS output).
+
+# In SITL we want controller/debug visibility instead of irreversible PX4
+# termination, which otherwise cuts actuator output and ends the TCP session.
+param set CBRK_FLIGHTTERM 121212
+
+# ---- Rocket MPC parameters ----
+# These are the subset of ROCKET_* params used by RocketMPC module.
+# MPC internals (weights, horizons, propulsion model) are hardcoded
+# in mpc_controller.cpp to match the acados OCP code-generated solver.
+
+# Control start delay after launch detection (s)
+param set-default ROCKET_T_CTRL      0.3
+
+# Target X (downrange, m) — sync with 6dof_config_advanced.yaml target.range_m
+param set-default ROCKET_XTRGT       2600.0
+
+# Fin deflection limit is baked into the acados solver (20° = 0.349 rad).
+# To change it, modify m130_ocp_setup.py::delta_max and regenerate the solver.
+
+# SITL GPS fallback — use EKF2 local position as GPS substitute
+param set-default ROCKET_SITL_GPS  1
+
+# Use EKF2 path (ROCKET_USE_GT=0) for apples-to-apples parity with PIL/HITL.
+# PIL airframe (22004) also uses USE_GT=0, so SITL must match for fair comparison.
+# Set to 1 only to isolate MPC from EKF2 errors during specific debugging.
+param set-default ROCKET_USE_GT   0
+
+# HITL: init-only magnetometer alignment — required for ROCKET_USE_GT=0.
+# Mirrors PIL airframe (22004) for parity.
+param set EKF2_MAG_TYPE   6
+
+# EKF2 initial tilt uncertainty: default 0.1 rad (5.7°) causes tilt_align
+# to barely miss the 3° threshold during warm-up (converges to 0.003 vs
+# threshold 0.00274). Setting to 0.01 rad (0.57°) matches the actual
+# accuracy of the accelerometer-based tilt init on a stationary launch rail.
+param set EKF2_ANGERR_INIT 0.01
+
+# EKF2 GPS delay: match bridge's SensorNoise.gps_delay_ms = 100ms.
+param set EKF2_GPS_DELAY   100
+
+# SITL EKF2 tuning to prevent attitude corruption during high-G burn:
+# Root cause: GPS velocity innovations corrupt attitude through Kalman
+# cross-terms. With ACC_NOISE=0.5, EKF2 trusts IMU too much, attributes
+# velocity innovation to attitude error → dpitch=-4.5° → dvz=9 m/s.
+# Fix: high ACC_NOISE → velocity covariance grows fast → GPS innovations
+# are attributed to velocity error (not attitude), preventing corruption.
+param set EKF2_ACC_NOISE    2.0
+param set EKF2_GPS_V_NOISE  0.5
+param set EKF2_GPS_V_GATE   50
+param set EKF2_GPS_P_NOISE  2.5
+param set EKF2_TAU_VEL      0.25
+# Freeze gyro bias: prevent GPS innovations from corrupting gyro bias.
+param set EKF2_GYR_B_NOISE  0.0001
+
+# CPU/IMU rate budget — match PIL (Android) for parity.
+# EKF2 prediction at 100Hz reduces CPU 50% vs default 200Hz; phone needs this.
+param set EKF2_PREDICT_US   10000
+param set IMU_INTEG_RATE    100
+param set IMU_GYRO_RATEMAX  100
+
+# Accel bias clamp — must be <= PX4 max (0.8).
+param set EKF2_ABL_LIM      0.8
+
+# Heading fusion gates — for MAG_TYPE=6 (init-only) at ARM.
+param set EKF2_HDG_GATE     10.0
+param set EKF2_HEAD_NOISE   0.7
+
+# Servo transport delay compensation (matches /direct measurement: 50ms + 40ms safety = 100ms)
+# Auto-computes lookahead_stage = round(0.100 / 0.020) = 5.
+# Used by /lab when running with REAL CAN servos in the loop.
+param set-default RKT_MPC_SVO_DLY  0.100

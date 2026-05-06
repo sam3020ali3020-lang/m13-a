@@ -1,0 +1,6 @@
+VERDICT: NO-GO
+Timestamp: 2026-05-03T16:32:33.417774
+
+  [FAIL] frame
+         - Frame check failed: vertical_top_up
+         - Object of type bool is not JSON serializable

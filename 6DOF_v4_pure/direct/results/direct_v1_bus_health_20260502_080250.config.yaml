@@ -1,0 +1,113 @@
+csv: direct_v1_bus_health_20260502_080250.csv
+timestamp: '20260502_080250'
+pattern: bus_health
+pattern_description: 'bus_health: ±3.0° period=1.0s duration=30s'
+pattern_duration_s: 30.5
+target_servos:
+- 0
+- 1
+- 2
+- 3
+node_ids:
+- 1
+- 2
+- 3
+- 4
+cmd_rate_hz: 100.0
+angle_limit_deg: 20.0
+total_rx_frames: 8352
+fb_per_servo:
+- 2249
+- 2104
+- 2132
+- 1867
+fb_rate_hz_per_servo:
+- 90.4
+- 52.3
+- 69.1
+- 54.0
+config:
+  can:
+    backend: xqpower_bus
+    xqpower_bus:
+      node_ids:
+      - 1
+      - 2
+      - 3
+      - 4
+      poll_interval_us: 5000
+  xqpower:
+    node_ids:
+    - 1
+    - 2
+    - 3
+    - 4
+    angle_limit_deg: 20.0
+    units_per_deg: 18.0
+    report_interval_ms: 10
+    poll_interval_ms: 5
+  safety:
+    zero_before_s: 0.5
+    zero_after_s: 0.5
+    zero_on_exit: true
+    max_angle_abs_deg: 20.0
+    warmup_exercise_s: 2.0
+    warmup_amp_deg: 1.0
+    online_min_samples: 3
+    online_settle_std_deg: 0.1
+    min_fb_rate_hz: 30.0
+  pattern:
+    name: bus_health
+    servos:
+    - 0
+    - 1
+    - 2
+    - 3
+    linearity:
+      max_amp_deg: 18.0
+      step_deg: 1.0
+      dwell_s: 0.6
+      pre_settle_s: 0.5
+      cycles: 1
+    hold_drift:
+      positions_deg:
+      - -10.0
+      - -5.0
+      - 0.0
+      - 5.0
+      - 10.0
+      settle_s: 0.5
+      hold_s: 15.0
+      pre_settle_s: 1.0
+    end_stop:
+      target_deg: 18.0
+      ramp_rate_dps: 30.0
+      hold_s: 2.0
+      pre_settle_s: 0.5
+    bus_health:
+      duration_s: 30.0
+      amp_deg: 3.0
+      period_s: 1.0
+      pre_settle_s: 0.5
+    rate_limit_verify:
+      amplitudes_deg:
+      - 2.0
+      - 5.0
+      - 10.0
+      - 15.0
+      - 18.0
+      dwell_s: 0.8
+      repeats: 2
+      pre_settle_s: 0.5
+  output:
+    results_dir: results
+    csv_prefix: direct_v1
+    html_plot: true
+  loop:
+    cmd_rate_hz: 100
+schedule:
+- phase: active
+  t_start_s: 0.5
+  t_end_s: 30.5
+  amp_deg: 3.0
+  period_s: 1.0

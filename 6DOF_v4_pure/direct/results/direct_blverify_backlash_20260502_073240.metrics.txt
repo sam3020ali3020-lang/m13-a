@@ -1,0 +1,42 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — backlash
+  backlash: ±5.0° step=0.10° dwell=0.10s ×2c (40.4s)
+  csv: direct_blverify_backlash_20260502_073240.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 14036   cmd∈[-5.00,+5.00]°   fb∈[-5.28,+4.83]°
+  slew_max: 55.6 °/s
+  step edges: 2
+    edge@4.52s Δ=-5.1°  delay=48.3ms  τ=6.0ms  OS=5.4%  t_settle=nanms  err=+1.111°
+    edge@44.92s Δ=+4.9°  delay=86.1ms  τ=0.0ms  OS=2.3%  t_settle=nanms  err=+0.111°
+  avg transport_delay=67.24ms  avg τ=3.00ms  avg OS=3.85%
+  backlash: 1.140°
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 14036   cmd∈[-5.00,+5.00]°   fb∈[-5.28,+4.89]°
+  slew_max: 73.3 °/s
+  step edges: 2
+    edge@4.52s Δ=-5.1°  delay=55.4ms  τ=0.0ms  OS=5.5%  t_settle=nanms  err=+1.278°
+    edge@44.92s Δ=+4.9°  delay=84.1ms  τ=0.0ms  OS=1.1%  t_settle=145ms  err=+0.056°
+  avg transport_delay=69.76ms  avg τ=0.00ms  avg OS=3.32%
+  backlash: 1.106°
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 14036   cmd∈[-5.00,+5.00]°   fb∈[-5.33,+4.89]°
+  slew_max: 68.0 °/s
+  step edges: 2
+    edge@4.52s Δ=-5.1°  delay=46.4ms  τ=10.0ms  OS=6.5%  t_settle=nanms  err=+1.167°
+    edge@44.92s Δ=+4.9°  delay=82.2ms  τ=0.0ms  OS=2.3%  t_settle=498ms  err=+0.056°
+  avg transport_delay=64.25ms  avg τ=4.99ms  avg OS=4.40%
+  backlash: 1.126°
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 14036   cmd∈[-5.00,+5.00]°   fb∈[-5.11,+4.89]°
+  slew_max: 72.2 °/s
+  step edges: 2
+    edge@4.52s Δ=-5.1°  delay=47.3ms  τ=10.0ms  OS=2.2%  t_settle=nanms  err=+1.222°
+    edge@44.92s Δ=+4.9°  delay=85.1ms  τ=0.0ms  OS=1.1%  t_settle=143ms  err=+0.056°
+  avg transport_delay=66.23ms  avg τ=5.01ms  avg OS=1.67%
+  backlash: 1.112°

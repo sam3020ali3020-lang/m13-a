@@ -1,0 +1,66 @@
+{
+  "ekf2": {
+    "convergence_time_s": 0.0,
+    "vel_ratio_mean": NaN,
+    "vel_ratio_max": NaN,
+    "pos_horiz_ratio_mean": NaN,
+    "pos_vert_ratio_mean": 0.001,
+    "mag_ratio_mean": NaN,
+    "pos_horiz_accuracy_mean_m": 389.57,
+    "pos_vert_accuracy_mean_m": 1.31,
+    "flags_final": "0x0025",
+    "flags_decoded": [
+      "attitude",
+      "velocity_vert",
+      "pos_vert_abs"
+    ],
+    "roll_mean_deg": -5.73,
+    "pitch_mean_deg": 13.02,
+    "yaw_mean_deg": 43.92,
+    "attitude_drift_deg": 71.22,
+    "yaw_drift_deg": 130.84,
+    "n_samples": 265,
+    "passed": false,
+    "failures": [
+      "Horizontal accuracy poor: 389.6m",
+      "Attitude drift: 71.2° > 2.0°",
+      "Yaw drift: 130.8° > 5.0°"
+    ]
+  },
+  "timing": {
+    "mpc_solve_mean_ms": 0.0,
+    "mpc_solve_p50_ms": 0.0,
+    "mpc_solve_p95_ms": 0.0,
+    "mpc_solve_p99_ms": 0.0,
+    "mpc_solve_max_ms": 0.0,
+    "mhe_solve_mean_ms": 0.0,
+    "mhe_solve_p99_ms": 0.0,
+    "mhe_solve_max_ms": 0.0,
+    "cycle_mean_ms": 0.13,
+    "cycle_p99_ms": 1.05,
+    "cycle_max_ms": 2.12,
+    "n_samples": 3082,
+    "timing_rate_hz": 25.7,
+    "passed": true,
+    "failures": []
+  },
+  "system": {
+    "cpu_load_mean_pct": 80.1,
+    "cpu_load_max_pct": 94.0,
+    "cpu_load_min_pct": 38.0,
+    "battery_voltage_mV": 65535,
+    "temperature_start_C": 41.0,
+    "temperature_end_C": 41.3,
+    "temperature_max_C": 46.3,
+    "temperature_rise_C": 0.3,
+    "n_sys_status": 264,
+    "passed": true,
+    "failures": []
+  },
+  "arming": {
+    "auto_arm_requested": true,
+    "armed": true,
+    "arm_ack_received": true,
+    "arm_attempts": 1
+  }
+}

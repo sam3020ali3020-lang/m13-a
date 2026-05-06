@@ -1,0 +1,8 @@
+# Python deps for /direct servo characterization.
+# Install with: pip install -r requirements.txt
+python-can>=4.2.0
+numpy>=1.24
+scipy>=1.11
+pyyaml>=6.0
+plotly>=5.20
+pyserial>=3.5   # required only when using the 'serial' backend (Waveshare USB_CAN_A)

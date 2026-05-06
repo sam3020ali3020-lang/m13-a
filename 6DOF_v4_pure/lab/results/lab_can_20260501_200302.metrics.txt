@@ -1,0 +1,8 @@
+═══════════════════════════════════════════════════════
+  /lab analysis — lab_can_20260501_200302.csv
+═══════════════════════════════════════════════════════
+
+servo#0: insufficient data (cmd=0, fb=2614) — SKIP
+servo#1: insufficient data (cmd=0, fb=2567) — SKIP
+servo#2: insufficient data (cmd=0, fb=2442) — SKIP
+servo#3: insufficient data (cmd=0, fb=2320) — SKIP

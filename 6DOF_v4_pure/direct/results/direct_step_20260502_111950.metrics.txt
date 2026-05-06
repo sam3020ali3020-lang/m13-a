@@ -1,0 +1,46 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — step
+  step: +0.0° → +5.0° → +0.0° → -5.0° → +0.0°  (total 5.80s)
+  csv: direct_step_20260502_111950.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 2851   cmd∈[-5.00,+5.00]°   fb∈[-5.28,+5.17]°
+  slew_max: 92.5 °/s
+  step edges: 4
+    edge@4.77s Δ=+4.9°  delay=64.2ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=+0.111°
+    edge@6.27s Δ=-5.1°  delay=63.0ms  τ=0.0ms  OS=4.3%  t_settle=nanms  err=-0.111°
+    edge@7.77s Δ=-4.9°  delay=28.1ms  τ=23.0ms  OS=5.7%  t_settle=nanms  err=-0.111°
+    edge@9.27s Δ=+5.1°  delay=64.7ms  τ=0.0ms  OS=2.2%  t_settle=1494ms  err=+0.056°
+  avg transport_delay=54.99ms  avg τ=5.75ms  avg OS=3.89%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 2851   cmd∈[-5.00,+5.00]°   fb∈[-5.11,+5.17]°
+  slew_max: 84.4 °/s
+  step edges: 4
+    edge@4.77s Δ=+4.9°  delay=65.2ms  τ=0.0ms  OS=3.4%  t_settle=1452ms  err=+0.056°
+    edge@6.27s Δ=-5.1°  delay=65.0ms  τ=0.0ms  OS=4.4%  t_settle=nanms  err=-0.111°
+    edge@7.77s Δ=-4.9°  delay=22.1ms  τ=71.0ms  OS=2.3%  t_settle=1468ms  err=-0.056°
+    edge@9.27s Δ=+5.1°  delay=68.7ms  τ=0.0ms  OS=2.2%  t_settle=1474ms  err=+0.056°
+  avg transport_delay=55.25ms  avg τ=17.75ms  avg OS=3.06%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 2851   cmd∈[-5.00,+5.00]°   fb∈[-5.17,+5.11]°
+  slew_max: 72.7 °/s
+  step edges: 4
+    edge@4.77s Δ=+4.9°  delay=66.2ms  τ=0.0ms  OS=2.3%  t_settle=1331ms  err=+0.056°
+    edge@6.27s Δ=-5.1°  delay=66.0ms  τ=0.0ms  OS=3.3%  t_settle=nanms  err=-0.111°
+    edge@7.77s Δ=-4.9°  delay=33.1ms  τ=61.0ms  OS=3.4%  t_settle=nanms  err=-0.111°
+    edge@9.27s Δ=+5.1°  delay=21.7ms  τ=41.0ms  OS=2.2%  t_settle=1475ms  err=+0.056°
+  avg transport_delay=46.74ms  avg τ=25.51ms  avg OS=2.79%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 2851   cmd∈[-5.00,+5.00]°   fb∈[-5.17,+5.17]°
+  slew_max: 96.1 °/s
+  step edges: 4
+    edge@4.77s Δ=+4.9°  delay=63.2ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=+0.111°
+    edge@6.27s Δ=-5.1°  delay=67.0ms  τ=0.0ms  OS=6.5%  t_settle=nanms  err=-0.111°
+    edge@7.77s Δ=-4.9°  delay=25.1ms  τ=23.0ms  OS=3.4%  t_settle=nanms  err=-0.111°
+    edge@9.27s Δ=+5.1°  delay=24.7ms  τ=39.0ms  OS=2.2%  t_settle=1316ms  err=+0.056°
+  avg transport_delay=44.98ms  avg τ=15.50ms  avg OS=3.87%

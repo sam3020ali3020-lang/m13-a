@@ -1,0 +1,76 @@
+{"t_us":50106678765,"event":"auto_restart_set","module":"native_sensor_reader","note":"enabled=1"}
+{"t_us":50106777100,"event":"auto_restart_set","module":"sensors","note":"enabled=1"}
+{"t_us":50106872339,"event":"auto_restart_set","module":"ekf2","note":"enabled=1"}
+{"t_us":50106976001,"event":"auto_restart_set","module":"rocket_mpc","note":"enabled=1"}
+{"t_us":50107074250,"event":"auto_restart_set","module":"commander","note":"enabled=1"}
+{"t_us":50107174641,"event":"auto_restart_set","module":"control_allocator","note":"enabled=1"}
+{"t_us":50107274681,"event":"auto_restart_set","module":"mavlink_tcp_bridge","note":"enabled=1"}
+{"t_us":50107374547,"event":"crash_requested","module":"native_sensor_reader","note":"test_backdoor"}
+{"t_us":50107390931,"event":"crash_complete","module":"native_sensor_reader","note":"rc=0"}
+{"t_us":50107494538,"event":"dead","module":"ekf2","note":"age_us=119759 stale_thr_us=100000"}
+{"t_us":50107495114,"event":"auto_restart_triggered","module":"ekf2","note":""}
+{"t_us":50107495974,"event":"dead","module":"sensors","note":"age_us=123887 stale_thr_us=100000"}
+{"t_us":50107496732,"event":"auto_restart_triggered","module":"sensors","note":""}
+{"t_us":50107497294,"event":"dead","module":"native_sensor_reader","note":"age_us=101340 stale_thr_us=100000"}
+{"t_us":50107497433,"event":"auto_restart_triggered","module":"native_sensor_reader","note":""}
+{"t_us":50107548849,"event":"alive","module":"native_sensor_reader","note":"signal_us=50107548820"}
+{"t_us":50107549088,"event":"auto_restart_complete","module":"native_sensor_reader","note":"rc=0"}
+{"t_us":50107560476,"event":"auto_restart_complete","module":"sensors","note":"rc=0"}
+{"t_us":50107568214,"event":"auto_restart_complete","module":"ekf2","note":"rc=0"}
+{"t_us":50107649738,"event":"dead","module":"native_sensor_reader","note":"age_us=100889 stale_thr_us=100000"}
+{"t_us":50107650132,"event":"auto_restart_triggered","module":"native_sensor_reader","note":""}
+{"t_us":50107723398,"event":"auto_restart_complete","module":"native_sensor_reader","note":"rc=0"}
+{"t_us":50107802228,"event":"dead","module":"rocket_mpc","note":"age_us=241291 stale_thr_us=200000"}
+{"t_us":50107803328,"event":"auto_restart_triggered","module":"rocket_mpc","note":""}
+{"t_us":50107854254,"event":"alive","module":"sensors","note":"signal_us=50107830830"}
+{"t_us":50107854537,"event":"alive","module":"native_sensor_reader","note":"signal_us=50107854226"}
+{"t_us":50107913486,"event":"auto_restart_complete","module":"rocket_mpc","note":"rc=0"}
+{"t_us":50107955328,"event":"alive","module":"rocket_mpc","note":"signal_us=50107949279"}
+{"t_us":50110018947,"event":"alive","module":"ekf2","note":"signal_us=50110017526"}
+{"t_us":50115518928,"event":"crash_requested","module":"sensors","note":"test_backdoor"}
+{"t_us":50115529321,"event":"crash_complete","module":"sensors","note":"rc=0"}
+{"t_us":50115599451,"event":"dead","module":"sensors","note":"age_us=102648 stale_thr_us=100000"}
+{"t_us":50115599834,"event":"auto_restart_triggered","module":"sensors","note":""}
+{"t_us":50115650675,"event":"dead","module":"ekf2","note":"age_us=131693 stale_thr_us=100000"}
+{"t_us":50115651025,"event":"auto_restart_triggered","module":"ekf2","note":""}
+{"t_us":50115653049,"event":"auto_restart_complete","module":"sensors","note":"rc=0"}
+{"t_us":50115701790,"event":"alive","module":"sensors","note":"signal_us=50115697610"}
+{"t_us":50115724028,"event":"auto_restart_complete","module":"ekf2","note":"rc=0"}
+{"t_us":50116155576,"event":"alive","module":"ekf2","note":"signal_us=50116155486"}
+{"t_us":50123655831,"event":"crash_requested","module":"ekf2","note":"test_backdoor"}
+{"t_us":50123676119,"event":"crash_complete","module":"ekf2","note":"rc=0"}
+{"t_us":50123751748,"event":"dead","module":"ekf2","note":"age_us=102696 stale_thr_us=100000"}
+{"t_us":50123752086,"event":"auto_restart_triggered","module":"ekf2","note":""}
+{"t_us":50123803721,"event":"auto_restart_complete","module":"ekf2","note":"rc=0"}
+{"t_us":50124257008,"event":"alive","module":"ekf2","note":"signal_us=50124253546"}
+{"t_us":50131814142,"event":"crash_requested","module":"rocket_mpc","note":"test_backdoor"}
+{"t_us":50131825317,"event":"crash_complete","module":"rocket_mpc","note":"rc=0"}
+{"t_us":50131998918,"event":"dead","module":"rocket_mpc","note":"age_us=201612 stale_thr_us=200000"}
+{"t_us":50131999186,"event":"auto_restart_triggered","module":"rocket_mpc","note":""}
+{"t_us":50132081743,"event":"auto_restart_complete","module":"rocket_mpc","note":"rc=0"}
+{"t_us":50132099850,"event":"alive","module":"rocket_mpc","note":"signal_us=50132097237"}
+{"t_us":50140027339,"event":"crash_requested","module":"commander","note":"test_backdoor"}
+{"t_us":50140037588,"event":"crash_complete","module":"commander","note":"rc=0"}
+{"t_us":50140948798,"event":"dead","module":"commander","note":"age_us=1028134 stale_thr_us=1000000"}
+{"t_us":50140949042,"event":"auto_restart_triggered","module":"commander","note":""}
+{"t_us":50141002264,"event":"auto_restart_complete","module":"commander","note":"rc=0"}
+{"t_us":50141049695,"event":"alive","module":"commander","note":"signal_us=50141002020"}
+{"t_us":50148170525,"event":"crash_requested","module":"control_allocator","note":"test_backdoor"}
+{"t_us":50148180769,"event":"crash_complete","module":"control_allocator","note":"rc=0"}
+{"t_us":50148650119,"event":"dead","module":"control_allocator","note":"age_us=502797 stale_thr_us=500000"}
+{"t_us":50148650614,"event":"auto_restart_triggered","module":"control_allocator","note":""}
+{"t_us":50148702362,"event":"auto_restart_complete","module":"control_allocator","note":"rc=0"}
+{"t_us":50148751516,"event":"alive","module":"control_allocator","note":"signal_us=50148748777"}
+{"t_us":50156322212,"event":"crash_requested","module":"mavlink_tcp_bridge","note":"test_backdoor"}
+{"t_us":50156634718,"event":"crash_complete","module":"mavlink_tcp_bridge","note":"rc=0"}
+{"t_us":50157654682,"event":"dead","module":"mavlink_tcp_bridge","note":"age_us=2021910 stale_thr_us=2000000"}
+{"t_us":50157655404,"event":"auto_restart_triggered","module":"mavlink_tcp_bridge","note":""}
+{"t_us":50157707077,"event":"auto_restart_complete","module":"mavlink_tcp_bridge","note":"rc=0"}
+{"t_us":50157756663,"event":"alive","module":"mavlink_tcp_bridge","note":"signal_us=50157711648"}
+{"t_us":50164775902,"event":"auto_restart_set","module":"native_sensor_reader","note":"enabled=0"}
+{"t_us":50164872501,"event":"auto_restart_set","module":"sensors","note":"enabled=0"}
+{"t_us":50164973889,"event":"auto_restart_set","module":"ekf2","note":"enabled=0"}
+{"t_us":50165073871,"event":"auto_restart_set","module":"rocket_mpc","note":"enabled=0"}
+{"t_us":50165181513,"event":"auto_restart_set","module":"commander","note":"enabled=0"}
+{"t_us":50165278990,"event":"auto_restart_set","module":"control_allocator","note":"enabled=0"}
+{"t_us":50165374530,"event":"auto_restart_set","module":"mavlink_tcp_bridge","note":"enabled=0"}

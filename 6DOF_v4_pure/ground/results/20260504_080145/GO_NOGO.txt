@@ -1,0 +1,10 @@
+VERDICT: NO-GO
+Timestamp: 2026-05-04T08:03:57.579380
+
+[FAIL] ekf2
+  - Horizontal accuracy poor: 151.2m
+  - Attitude drift: 29.1° > 2.0°
+  - Yaw drift: 181.5° > 5.0°
+[PASS] timing
+[PASS] system
+[FAIL] arming

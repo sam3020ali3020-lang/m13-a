@@ -1,0 +1,40 @@
+{
+  "result_dir": "/home/yoga/m13/m13/6DOF_v4_pure/e2e_latency/results/20260503_175757",
+  "streams": {
+    "imu_hz": 0.0,
+    "attitude_hz": 0.0,
+    "rktgnc_hz": 0.0,
+    "srv_fb_hz": 0.0,
+    "servo_raw_hz": 0.0,
+    "imu_samples": 0,
+    "attitude_samples": 0,
+    "rktgnc_samples": 0,
+    "srv_fb_samples": 0,
+    "servo_raw_samples": 0
+  },
+  "l_sensor_ms": {
+    "error": "insufficient data",
+    "latencies_ms": []
+  },
+  "l_mpc_ms": {
+    "error": "no RktGNC data",
+    "latencies_ms": []
+  },
+  "l_actuator_ms": {
+    "error": "insufficient SRV_FB data",
+    "latencies_ms": []
+  },
+  "l_total_estimate_ms": {
+    "error": "no stage measurable"
+  },
+  "pass_fail": {
+    "passed": false,
+    "failures": [
+      "stream imu_hz=0.0 Hz < 90 Hz",
+      "stream attitude_hz=0.0 Hz < 40 Hz",
+      "stream rktgnc_hz=0.0 Hz < 30 Hz",
+      "stream servo_raw_hz=0.0 Hz < 30 Hz"
+    ],
+    "checks": []
+  }
+}

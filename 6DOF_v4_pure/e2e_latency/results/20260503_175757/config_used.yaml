@@ -1,0 +1,85 @@
+connection:
+  host: 127.0.0.1
+  port: 5760
+  timeout_s: 10.0
+mavlink_streams:
+  highres_imu:
+    msg_id: 105
+    rate_hz: 100
+    crc_extra: 93
+    purpose: IMU sample timestamps + raw motion data
+  attitude:
+    msg_id: 30
+    rate_hz: 50
+    crc_extra: 39
+    purpose: vehicle_attitude.timestamp — sensor → estimator latency
+  servo_output_raw:
+    msg_id: 36
+    rate_hz: 50
+    crc_extra: 222
+    purpose: MPC fin command timestamps
+  debug_float_array:
+    msg_id: 350
+    rate_hz: 50
+    crc_extra: 232
+    purpose: Servo CAN feedback (SRV_FB) + GNC timing diagnostics (RktGNC)
+tests:
+  passive:
+    enabled: true
+    duration_s: 60
+    description_ar: تسجيل سلبي لكل streams وحساب latency لكل مرحلة
+  tap:
+    enabled: false
+    duration_s: 30
+    description_ar: Tap الهاتف بشكل واضح، نلتقط peak في IMU و SRV_FB
+    num_taps: 10
+    tap_window_s: 3.0
+    accel_peak_threshold_ms2: 5.0
+  sweep:
+    enabled: false
+    duration_s: 60
+    description_ar: Sweep يدوي للسيرفو لقياس actuator pipeline
+presets:
+  quick:
+    duration_s: 60
+    tests:
+    - passive
+  standard:
+    duration_s: 300
+    tests:
+    - passive
+    - tap
+  full:
+    duration_s: 900
+    tests:
+    - passive
+    - tap
+    - sweep
+thresholds:
+  l_sensor:
+    p50_ms_max: 30
+    p99_ms_max: 60
+    samples_min: 100
+  l_mpc:
+    p50_ms_max: 10
+    p99_ms_max: 25
+    samples_min: 50
+  l_actuator:
+    p50_ms_max: 80
+    p99_ms_max: 150
+    tolerance_deg: 0.5
+    samples_min: 10
+  l_total:
+    p50_ms_max: 120
+    p99_ms_max: 250
+  streams:
+    imu_min_rate_hz: 90
+    attitude_min_rate_hz: 40
+    debug_array_min_rate_hz: 30
+    servo_raw_min_rate_hz: 30
+output:
+  results_dir: results
+  save_csv: true
+  save_json: true
+  save_plot: true
+  save_report: true

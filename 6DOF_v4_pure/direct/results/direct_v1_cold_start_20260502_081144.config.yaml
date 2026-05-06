@@ -1,0 +1,154 @@
+csv: direct_v1_cold_start_20260502_081144.csv
+timestamp: '20260502_081144'
+pattern: cold_start
+pattern_description: 'cold_start: idle=30s + 3 steps@±5.0° (36.5s)'
+pattern_duration_s: 36.5
+target_servos:
+- 0
+- 1
+- 2
+- 3
+node_ids:
+- 1
+- 2
+- 3
+- 4
+cmd_rate_hz: 100.0
+angle_limit_deg: 20.0
+total_rx_frames: 9826
+fb_per_servo:
+- 2658
+- 2482
+- 2468
+- 2218
+fb_rate_hz_per_servo:
+- 98.0
+- 55.8
+- 74.3
+- 56.4
+config:
+  can:
+    backend: xqpower_bus
+    xqpower_bus:
+      node_ids:
+      - 1
+      - 2
+      - 3
+      - 4
+      poll_interval_us: 5000
+  xqpower:
+    node_ids:
+    - 1
+    - 2
+    - 3
+    - 4
+    angle_limit_deg: 20.0
+    units_per_deg: 18.0
+    report_interval_ms: 10
+    poll_interval_ms: 5
+  safety:
+    zero_before_s: 0.5
+    zero_after_s: 0.5
+    zero_on_exit: true
+    max_angle_abs_deg: 20.0
+    warmup_exercise_s: 2.0
+    warmup_amp_deg: 1.0
+    online_min_samples: 3
+    online_settle_std_deg: 0.1
+    min_fb_rate_hz: 30.0
+  pattern:
+    name: cold_start
+    servos:
+    - 0
+    - 1
+    - 2
+    - 3
+    linearity:
+      max_amp_deg: 18.0
+      step_deg: 1.0
+      dwell_s: 0.6
+      pre_settle_s: 0.5
+      cycles: 1
+    hold_drift:
+      positions_deg:
+      - -10.0
+      - -5.0
+      - 0.0
+      - 5.0
+      - 10.0
+      settle_s: 0.5
+      hold_s: 15.0
+      pre_settle_s: 1.0
+    end_stop:
+      target_deg: 18.0
+      ramp_rate_dps: 30.0
+      hold_s: 2.0
+      pre_settle_s: 0.5
+    bus_health:
+      duration_s: 30.0
+      amp_deg: 3.0
+      period_s: 1.0
+      pre_settle_s: 0.5
+    rate_limit_verify:
+      amplitudes_deg:
+      - 2.0
+      - 5.0
+      - 10.0
+      - 15.0
+      - 18.0
+      dwell_s: 0.8
+      repeats: 2
+      pre_settle_s: 0.5
+    dead_band:
+      amplitudes_deg:
+      - 0.025
+      - 0.05
+      - 0.1
+      - 0.15
+      - 0.2
+      - 0.3
+      - 0.5
+      - 1.0
+      dwell_s: 1.0
+      repeats: 3
+      pre_settle_s: 1.0
+    stiction:
+      ramp_amp_deg: 1.0
+      ramp_dur_s: 5.0
+      rest_s: 2.0
+      n_cycles: 3
+      pre_settle_s: 1.0
+    cold_start:
+      idle_s: 30.0
+      step_amp_deg: 5.0
+      step_dwell_s: 1.0
+      n_steps: 3
+      pre_settle_s: 0.5
+    endurance:
+      duration_min: 5.0
+      amp_deg: 8.0
+      period_s: 1.0
+      pre_settle_s: 0.5
+      analysis_window_s: 60.0
+  output:
+    results_dir: results
+    csv_prefix: direct_v1
+    html_plot: true
+  loop:
+    cmd_rate_hz: 100
+schedule:
+- step_idx: 0
+  t_edge_s: 30.5
+  cmd_to: 5.0
+  cmd_from: 0.0
+  label: cold
+- step_idx: 1
+  t_edge_s: 32.5
+  cmd_to: -5.0
+  cmd_from: 5.0
+  label: warm
+- step_idx: 2
+  t_edge_s: 34.5
+  cmd_to: 5.0
+  cmd_from: -5.0
+  label: hot

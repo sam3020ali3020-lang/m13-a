@@ -1,0 +1,75 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — mech_limits
+  mech_limits: step=5.0° dwell=1.2s max=±60.0° dir=both (58.9s, 48 steps)
+  csv: direct_mech_mech_limits_20260502_170211.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 19327   cmd∈[-60.00,+60.00]°   fb∈[-54.89,+14.22]°
+  slew_max: 136.5 °/s
+  step edges: 48
+    edge@5.51s Δ=+4.9°  delay=58.3ms  τ=0.0ms  OS=104.5%  t_settle=nanms  err=+5.111°
+    edge@6.71s Δ=+4.9°  delay=17.2ms  τ=37.9ms  OS=85.4%  t_settle=nanms  err=+4.167°
+    edge@7.91s Δ=+4.9°  delay=88.1ms  τ=0.0ms  OS=-15.9%  t_settle=nanms  err=-0.833°
+  avg transport_delay=54.52ms  avg τ=12.63ms  avg OS=58.01%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 19327   cmd∈[-60.00,+60.00]°   fb∈[-54.83,+46.78]°
+  slew_max: 166.6 °/s
+  step edges: 48
+    edge@5.51s Δ=+4.9°  delay=55.0ms  τ=0.0ms  OS=104.5%  t_settle=nanms  err=+5.056°
+    edge@6.71s Δ=+5.0°  delay=65.1ms  τ=0.0ms  OS=100.7%  t_settle=nanms  err=+5.000°
+    edge@7.91s Δ=+4.9°  delay=50.1ms  τ=42.0ms  OS=102.2%  t_settle=nanms  err=+5.000°
+    edge@9.11s Δ=+5.0°  delay=86.3ms  τ=0.0ms  OS=103.3%  t_settle=nanms  err=+5.056°
+    edge@10.31s Δ=+5.0°  delay=94.1ms  τ=0.0ms  OS=102.2%  t_settle=nanms  err=+5.056°
+    edge@11.51s Δ=+4.9°  delay=54.3ms  τ=26.9ms  OS=104.5%  t_settle=nanms  err=+5.056°
+    edge@12.71s Δ=+4.9°  delay=45.2ms  τ=30.0ms  OS=103.4%  t_settle=nanms  err=+4.722°
+    edge@13.91s Δ=+5.0°  delay=53.9ms  τ=21.0ms  OS=92.8%  t_settle=nanms  err=+4.167°
+  avg transport_delay=63.00ms  avg τ=15.00ms  avg OS=101.73%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 19327   cmd∈[-60.00,+60.00]°   fb∈[-54.83,+39.00]°
+  slew_max: 165.4 °/s
+  step edges: 48
+    edge@5.51s Δ=+5.1°  delay=56.0ms  τ=0.0ms  OS=101.1%  t_settle=nanms  err=+5.111°
+    edge@6.71s Δ=+4.9°  delay=56.1ms  τ=0.0ms  OS=102.7%  t_settle=nanms  err=+5.000°
+    edge@7.91s Δ=+4.9°  delay=93.2ms  τ=0.0ms  OS=101.1%  t_settle=nanms  err=+5.000°
+    edge@9.11s Δ=+5.0°  delay=83.3ms  τ=0.0ms  OS=104.4%  t_settle=nanms  err=+5.000°
+    edge@10.31s Δ=+5.0°  delay=95.2ms  τ=0.0ms  OS=103.3%  t_settle=nanms  err=+5.111°
+    edge@11.51s Δ=+5.0°  delay=55.2ms  τ=29.0ms  OS=98.2%  t_settle=nanms  err=+4.722°
+    edge@12.71s Δ=+4.9°  delay=55.3ms  τ=61.0ms  OS=64.8%  t_settle=nanms  err=+3.167°
+    edge@13.91s Δ=+5.3°  delay=54.9ms  τ=158.0ms  OS=-19.8%  t_settle=nanms  err=-1.056°
+  avg transport_delay=68.63ms  avg τ=31.00ms  avg OS=81.99%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 19327   cmd∈[-60.00,+60.00]°   fb∈[-55.06,+49.89]°
+  slew_max: 159.8 °/s
+  step edges: 48
+    edge@5.51s Δ=+4.9°  delay=57.0ms  τ=0.0ms  OS=104.5%  t_settle=nanms  err=+5.056°
+    edge@6.71s Δ=+5.0°  delay=54.1ms  τ=58.0ms  OS=102.2%  t_settle=nanms  err=+5.056°
+    edge@7.91s Δ=+4.9°  delay=87.1ms  τ=0.0ms  OS=101.1%  t_settle=nanms  err=+4.944°
+    edge@9.11s Δ=+4.9°  delay=81.3ms  τ=0.0ms  OS=106.8%  t_settle=nanms  err=+5.000°
+    edge@10.31s Δ=+5.0°  delay=96.1ms  τ=0.0ms  OS=104.4%  t_settle=nanms  err=+5.000°
+    edge@11.51s Δ=+5.0°  delay=56.2ms  τ=19.0ms  OS=104.0%  t_settle=nanms  err=+5.056°
+    edge@12.71s Δ=+5.0°  delay=46.2ms  τ=23.0ms  OS=103.3%  t_settle=nanms  err=+5.111°
+    edge@13.91s Δ=+4.9°  delay=51.9ms  τ=29.0ms  OS=97.8%  t_settle=nanms  err=+4.833°
+  avg transport_delay=66.25ms  avg τ=16.12ms  avg OS=103.03%
+
+─── mech_limits breakdown ────────────────────────────
+  pattern alignment: csv_t = sched_t + 4.510s
+  servo#0:  pos=+14.17° (cmd+15)  neg=-54.83° (cmd-55)
+            travel= 69.00°  midpoint=-20.33° 🔴  asymmetry=-40.67° 🔴
+  servo#1:  pos=+46.75° (cmd+50)  neg=-54.80° (cmd-55)
+            travel=101.55°  midpoint=-4.03° 🔴  asymmetry=-8.05° 🔴
+  servo#2:  pos=+38.94° (cmd+40)  neg=-54.80° (cmd-55)
+            travel= 93.75°  midpoint=-7.93° 🔴  asymmetry=-15.86° 🔴
+  servo#3:  pos=+49.00° (cmd+50)  neg=-55.00° (cmd-55)
+            travel=104.00°  midpoint=-3.00° ⚠️  asymmetry=-6.00° 🔴
+
+  ─── النَّتائج النِّهائيَّة ───
+  servo    pos       neg     travel   midpoint  asymmetry
+  #0    +14.17°  -54.83°   69.00°   -20.33°   -40.67°
+  #1    +46.75°  -54.80°  101.55°    -4.03°    -8.05°
+  #2    +38.94°  -54.80°   93.75°    -7.93°   -15.86°
+  #3    +49.00°  -55.00°  104.00°    -3.00°    -6.00°

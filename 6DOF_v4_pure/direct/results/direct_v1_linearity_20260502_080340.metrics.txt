@@ -1,0 +1,69 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — linearity
+  linearity: ±18.0° step=1.00° dwell=0.60s ×1c (44.9s, 74 points)
+  csv: direct_v1_linearity_20260502_080340.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 15234   cmd∈[-18.00,+18.00]°   fb∈[-18.28,+18.11]°
+  slew_max: 190.3 °/s
+  step edges: 74
+    edge@4.98s Δ=-18.1°  delay=62.3ms  τ=70.0ms  OS=0.6%  t_settle=nanms  err=+2.056°
+    edge@5.58s Δ=+1.1°  delay=77.2ms  τ=0.0ms  OS=215.8%  t_settle=nanms  err=+2.111°
+    edge@6.18s Δ=+0.9°  delay=55.0ms  τ=0.0ms  OS=250.0%  t_settle=nanms  err=+2.111°
+    edge@6.78s Δ=+0.9°  delay=45.9ms  τ=0.0ms  OS=223.5%  t_settle=nanms  err=+2.111°
+    edge@7.38s Δ=+0.9°  delay=22.2ms  τ=58.1ms  OS=250.0%  t_settle=nanms  err=+2.111°
+    edge@7.98s Δ=+0.9°  delay=19.0ms  τ=55.0ms  OS=256.4%  t_settle=nanms  err=+2.111°
+    edge@8.58s Δ=+0.9°  delay=44.2ms  τ=10.0ms  OS=243.8%  t_settle=nanms  err=+2.111°
+    edge@9.18s Δ=+0.9°  delay=23.1ms  τ=52.0ms  OS=243.8%  t_settle=nanms  err=+2.111°
+  avg transport_delay=43.60ms  avg τ=30.64ms  avg OS=210.48%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 15234   cmd∈[-18.00,+18.00]°   fb∈[-18.22,+18.28]°
+  slew_max: 191.3 °/s
+  step edges: 74
+    edge@4.98s Δ=-18.1°  delay=73.3ms  τ=60.0ms  OS=0.6%  t_settle=nanms  err=+1.944°
+    edge@5.58s Δ=+1.1°  delay=39.2ms  τ=39.0ms  OS=200.0%  t_settle=nanms  err=+2.000°
+    edge@6.18s Δ=+1.1°  delay=62.0ms  τ=51.0ms  OS=205.3%  t_settle=nanms  err=+2.111°
+    edge@6.78s Δ=+1.1°  delay=42.9ms  τ=0.0ms  OS=189.5%  t_settle=nanms  err=+1.944°
+    edge@7.38s Δ=+1.0°  delay=77.2ms  τ=7.0ms  OS=227.8%  t_settle=nanms  err=+1.944°
+    edge@7.98s Δ=+0.9°  delay=22.0ms  τ=53.0ms  OS=235.3%  t_settle=nanms  err=+2.111°
+    edge@8.58s Δ=+1.0°  delay=45.2ms  τ=11.0ms  OS=222.2%  t_settle=nanms  err=+2.056°
+    edge@9.18s Δ=+1.1°  delay=76.1ms  τ=0.0ms  OS=226.3%  t_settle=nanms  err=+1.944°
+  avg transport_delay=54.73ms  avg τ=27.62ms  avg OS=188.37%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 15234   cmd∈[-18.00,+18.00]°   fb∈[-18.06,+18.17]°
+  slew_max: 201.4 °/s
+  step edges: 74
+    edge@4.98s Δ=-18.1°  delay=64.3ms  τ=70.0ms  OS=0.3%  t_settle=nanms  err=+2.056°
+    edge@5.58s Δ=+1.1°  delay=40.2ms  τ=45.0ms  OS=210.5%  t_settle=nanms  err=+2.056°
+    edge@6.18s Δ=+0.9°  delay=62.9ms  τ=51.0ms  OS=241.0%  t_settle=nanms  err=+2.111°
+    edge@6.78s Δ=+0.9°  delay=94.9ms  τ=0.0ms  OS=229.4%  t_settle=nanms  err=+2.111°
+    edge@7.38s Δ=+0.9°  delay=24.2ms  τ=54.0ms  OS=243.8%  t_settle=nanms  err=+2.056°
+    edge@7.98s Δ=+0.9°  delay=14.0ms  τ=62.0ms  OS=250.0%  t_settle=nanms  err=+2.056°
+    edge@8.58s Δ=+0.9°  delay=43.2ms  τ=16.0ms  OS=250.0%  t_settle=nanms  err=+2.111°
+    edge@9.18s Δ=+0.9°  delay=12.1ms  τ=61.0ms  OS=217.7%  t_settle=nanms  err=+2.056°
+  avg transport_delay=44.48ms  avg τ=44.87ms  avg OS=205.33%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 15234   cmd∈[-18.00,+18.00]°   fb∈[-18.28,+18.22]°
+  slew_max: 213.1 °/s
+  step edges: 74
+    edge@4.98s Δ=-18.1°  delay=61.3ms  τ=74.0ms  OS=1.2%  t_settle=nanms  err=+2.111°
+    edge@5.58s Δ=+1.1°  delay=35.2ms  τ=47.0ms  OS=205.3%  t_settle=nanms  err=+2.111°
+    edge@6.18s Δ=+0.9°  delay=2.0ms  τ=112.9ms  OS=243.8%  t_settle=nanms  err=+2.111°
+    edge@6.78s Δ=+0.9°  delay=50.9ms  τ=45.0ms  OS=231.3%  t_settle=nanms  err=+2.056°
+    edge@7.38s Δ=+0.9°  delay=83.2ms  τ=0.0ms  OS=243.8%  t_settle=nanms  err=+2.167°
+    edge@7.98s Δ=+0.9°  delay=17.0ms  τ=60.0ms  OS=243.8%  t_settle=nanms  err=+2.111°
+    edge@8.58s Δ=+0.9°  delay=51.2ms  τ=10.0ms  OS=235.3%  t_settle=nanms  err=+2.111°
+    edge@9.18s Δ=+0.9°  delay=13.1ms  τ=61.0ms  OS=268.7%  t_settle=nanms  err=+2.000°
+  avg transport_delay=39.25ms  avg τ=51.23ms  avg OS=209.13%
+
+─── linearity breakdown ──────────────────────────────
+  pattern alignment: csv_t = sched_t + 4.477s
+  servo#0: slope=+1.0008  intercept=-0.010°  R²=0.99988  max_dev=0.168°  N=74  [OK]
+  servo#1: slope=+1.0012  intercept=-0.036°  R²=0.99996  max_dev=0.142°  N=74  [OK]
+  servo#2: slope=+1.0005  intercept=-0.005°  R²=0.99992  max_dev=0.170°  N=74  [OK]
+  servo#3: slope=+0.9996  intercept=-0.021°  R²=0.99988  max_dev=0.200°  N=74  [OK]

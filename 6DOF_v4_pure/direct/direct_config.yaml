@@ -1,0 +1,349 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  /direct — PC ↔ CAN ↔ Servos (no phone, no simulator)
+# ════════════════════════════════════════════════════════════════════════════
+#
+#  الهدف: قياس خصائص السيرفو الحقيقية بدون أي طبقة إضافية (phone, sim, MPC).
+#  يُنتج baseline نقي يُقارَن لاحقاً بنتائج bench/HIL لفصل phone overhead.
+# ────────────────────────────────────────────────────────────────────────────
+
+can:
+  # backend:
+  #   xqpower_bus ⭐ — يعيد استخدام XqpowerBus من servo_characterization (مُختَبَر يعمل)
+  #   canlin_usb     — CAN_LIN_Tool V6.0 عبر libusb مباشرة (تجريبي)
+  #   socketcan      — Linux SocketCAN (CANable/PCAN/المدمج)
+  #   slcan          — شبه-قياسي USB-Serial (Lawicel/CANtact)
+  #   serial         — Waveshare USB_CAN_A / CAN_LIN_Tool (بروتوكول خام)
+  #   virtual        — vcan للاختبار بدون عتاد
+  backend: xqpower_bus
+
+  socketcan:
+    channel: can0
+    bitrate: 500000          # XQPOWER standard
+
+  slcan:
+    port: /dev/ttyUSB0
+    bitrate: 500000
+    ttyBaudrate: 2000000
+
+  serial:
+    port: /dev/ttyACM0       # CAN_LIN_Tool V6.0 (CDC, VID 0x2E3C)
+    tty_baud: 2000000
+    variant: canlin          # waveshare | canlin
+
+  virtual:
+    channel: vcan0
+
+  canlin_usb:
+    vendor_id: 0x2E3C         # CAN_LIN_Tool V6.0 VID
+    product_id: 0x5750        # CAN_LIN_Tool V6.0 PID
+    interface: 2              # HID interface (bulk endpoints)
+
+  xqpower_bus:
+    node_ids: [1, 2, 3, 4]    # ids as int (هنا وليس في xqpower.node_ids)
+    poll_interval_us: 5000    # 5ms per-node polling
+
+xqpower:
+  node_ids: [0x01, 0x02, 0x03, 0x04]
+  angle_limit_deg: 10.0       # حد آمن لزاوية الأمر
+  units_per_deg: 18.0         # ثابت البروتوكول
+  report_interval_ms: 10      # (مُستخدَم فقط مع auto-report، السيرفو يرفضه)
+  # السيرفو XQPOWER لا يدعم auto-report — نستخدم polling بديلاً.
+  # poll_interval_ms: الفترة بين SDO READ requests (round-robin).
+  # 5ms × 4 servos = كل سيرفو 50Hz. 0 = أطفئ polling (للاختبار بلا عتاد).
+  poll_interval_ms: 5
+
+safety:
+  zero_before_s: 0.5          # استقرار قصير مثل servo_characterization
+  zero_after_s: 0.5
+  zero_on_exit: true          # ctrl-C يُرسل 0° قبل الخروج
+  max_angle_abs_deg: 20.0     # رفع الحد للاختبارات الكاملة
+
+  # ─── Exercise warm-up (يعالج cold-USB transient) ─────────────────────
+  # عند أول تشغيل بعد فترة خمول للـ USB/CAN، fb rate ينزل إلى 13Hz بدلاً
+  # من 60Hz المعتاد. الـ exercise (موجة مربّعة بطيئة ±warmup_amp_deg)
+  # يخرج المحوّل والـ kernel scheduler من cold state قبل القياسات.
+  # ضع 0.0 لتعطيله.
+  warmup_exercise_s: 2.0      # مدّة الـ exercise قبل الـ pattern
+  warmup_amp_deg: 1.0         # سعة الحركة الصغيرة
+
+  # ─── Online verification (أقوى من first-fb-received) ─────────────────
+  # كل سيرفو يجب أن يحقّق هذا قبل بدء أي قياس:
+  #   ≥ online_min_samples من fb مع std<online_settle_std_deg في آخر window.
+  # كذلك بعد warm-up: fb_rate ≥ min_fb_rate_hz (وإلا warning).
+  online_min_samples: 3
+  online_settle_std_deg: 0.10
+  min_fb_rate_hz: 30.0        # 0 = لا فحص
+
+pattern:
+  # اختر واحدة:
+  #   step | freq_sweep | ramp | backlash | replay        (موجودة)
+  #   step_matrix | repeatability | multi_servo           (Phase 1 — مُوسَّعة)
+  #   linearity | hold_drift | end_stop | bus_health |    (Tier-1 validation)
+  #   rate_limit_verify
+  #   dead_band | stiction | cold_start | endurance       (Tier-2 validation)
+  #   staircase | mech_limits | firmware_audit            (Tier-3 cumulative)
+  #   preflight_check | wiring_audit | fault_scan         (Tier-4 fault-detect)
+  name: repeatability
+
+  # أي سيرفو(هات) نختبره. قائمة أرقام 0..3، أو "all"
+  servos: [0, 1, 2, 3]  # كلّ السيرفوهات الأَربَع لِقياس zero offsets (delta_trim)
+
+  # ─── step response ─────────────────────────────────────────────────
+  step:
+    sequence:                 # [dt_s, angle_deg]
+      - [0.3,  0.0]           # settle قصير (مثل servo_characterization)
+      - [1.5,  5.0]           # step up
+      - [1.5,  0.0]
+      - [1.5, -5.0]
+      - [1.0,  0.0]
+
+  # ─── frequency sweep (chirp) ───────────────────────────────────────
+  freq_sweep:
+    amplitude_deg: 3.0
+    f_start_hz: 0.1
+    f_end_hz: 15.0
+    duration_s: 30.0
+    sweep_type: log           # linear | log
+
+  # ─── ramp ──────────────────────────────────────────────────────────
+  ramp:
+    rate_deg_per_s: 30.0
+    amplitude_deg: 8.0
+    cycles: 3
+
+  # ─── backlash hysteresis ────────────────────────────────────────────
+  backlash:
+    amplitude_deg: 5.0
+    step_deg: 0.1
+    dwell_s: 0.10
+    cycles: 2
+
+  # ─── replay (من CSV سابق) ───────────────────────────────────────────
+  replay:
+    csv_path: ""              # مسار ملف fin_cmd_*.csv من HIL/PIL/SITL
+    cmd_column: fin_cmd_1     # العمود المُراد replay له (rad) — سيُحوَّل تلقائياً
+    duration_cap_s: 20.0      # حد أعلى (لتجنب replay كامل رحلة)
+
+  # ═══════════════════ Phase 1 — اختبارات إحصائية موسَّعة ═══════════════
+  # ─── step_matrix: amplitude × offset × direction × repeats ───────────
+  # الكلفة الزمنية: cells × (settle + 2*dwell) ثوانٍ.
+  # المثال أدناه: 5×3×2×3 = 90 cell × 1.7s ≈ 2.5 دقيقة.
+  step_matrix:
+    amplitudes_deg: [1.0, 3.0, 5.0, 8.0, 10.0]
+    offsets_deg: [0.0, 5.0, -5.0]
+    directions: both           # up | down | both
+    repeats: 3                 # تكرار لكل (amp, offset, direction)
+    settle_s: 0.5              # هدوء عند الـ offset قبل الـ edge
+    dwell_s: 0.6               # وقت hold عند الـ target ثم return
+
+  # ─── repeatability: نفس الـ step ×N مرّة لقياس jitter ─────────────────
+  # المثال أدناه: 50 cycle × 2s = 100s.
+  repeatability:
+    step_amplitude_deg: 5.0
+    half_period_s: 1.0         # 1s لكل اتجاه (period = 2s)
+    n_cycles: 50
+    pre_settle_s: 0.5
+
+  # ─── multi_servo: 3 أنماط فرعية لـ contention/cross-talk/cascading ───
+  # الـ servos في pattern يُتحكَّم به من ``pattern.servos``:
+  #   synchronous: يتجاهل ويحرّك كل السيرفوهات.
+  #   single_with_witnesses: يحرّك ``servos`` فقط، يراقب الباقي (witnesses).
+  #   cascaded: يدوّر بين سيرفوهات ``servos`` (واحد في كل window).
+  multi_servo:
+    mode: synchronous          # synchronous | single_with_witnesses | cascaded
+    amplitude_deg: 5.0
+    half_period_s: 1.0         # لـ synchronous و single_with_witnesses
+    n_cycles: 5
+    pre_settle_s: 0.5
+    # خيارات cascaded فقط:
+    per_servo_window_s: 1.0    # كل سيرفو ينشط لـ window_s ثم يستريح window_s
+    n_passes: 2                # تكرار الدورة الكاملة على كل السيرفوهات
+
+  # ─── nokia_tune: نغمة نوكيا لكشف السيرفو المخالف ─────────────────────
+  # كل الدفّات تعزف نفس اللحن. أيّ سيرفو لا يتبع = واضح بالعين فوراً.
+  #   mode: melody = خطوات زاوية مع staccato (مرئي)
+  #   mode: buzz   = اهتزاز بترددات مختلفة (مسموع + مرئي)
+  nokia_tune:
+    mode: melody                 # melody | buzz
+    amplitude_deg: 8.0           # ±8° لـ melody (نطاق الحركة)
+    eighth_note_s: 0.25          # مدة الثامنة (0.2=سريع 0.4=بطيء)
+    repeats: 2                   # عدد تكرارات اللحن
+    gap_between_repeats_s: 0.6   # فاصل بين التكرارات
+    # ── خيارات buzz فقط ──
+    buzz_amplitude_deg: 2.0      # سعة الاهتزاز
+    offset_amplitude_deg: 4.0    # offset ثابت لكل نوتة (لرؤية اللحن بصرياً)
+    base_freq_hz: 12.0           # تردد أخفض نوتة (Hz)
+    wave: square                 # square (أقوى صوت) | sine
+
+  # ═══════════════════════ Tier-1 validation tests ═══════════════════════
+  # ─── linearity: cmd → fb عبر كامل النطاق (slow step-and-hold) ───────
+  # ~74s @ defaults: 1° steps من -18 إلى +18 ذهاباً وعودة، 0.6s/نقطة.
+  linearity:
+    max_amp_deg: 18.0          # أقلّ من angle_limit
+    step_deg: 1.0              # 0.5 لـ resolution أعلى
+    dwell_s: 0.6
+    pre_settle_s: 0.5
+    cycles: 1                  # 2 لإحصائيّات أفضل (×2 وقت)
+
+  # ─── hold_drift: ثَبات السيرفو عند مَواقع لمدّة طويلة ────────────────
+  # ~155s @ defaults: 5 مَواقع × hold 30s.
+  hold_drift:
+    positions_deg: [-10.0, -5.0, 0.0, 5.0, 10.0]
+    settle_s: 0.5              # دع dynamics تَخمد
+    hold_s: 30.0               # نَقيس slope خلالها
+    pre_settle_s: 1.0
+
+  # ─── end_stop: التَحقّق من سلوك الحدّ ±target_deg ────────────────────
+  # ⚠️ target_deg ≤ angle_limit_deg في safety. ramp بطيء لتَجنّب impact.
+  end_stop:
+    target_deg: 18.0           # ضمن angle_limit (=20)
+    ramp_rate_dps: 30.0        # بطيء — لا shock loading
+    hold_s: 2.0
+    pre_settle_s: 0.5
+
+  # ─── bus_health: إحصاءات CAN خلال نشاط طبيعيّ ────────────────────────
+  # square wave صغير لِتَوليد TX/RX traffic. التَّحليل يَستخرج الإحصاءات.
+  bus_health:
+    duration_s: 30.0
+    amp_deg: 3.0
+    period_s: 1.0
+    pre_settle_s: 0.5
+
+  # ─── rate_limit_verify: مسح peak slew vs amplitude ──────────────────
+  # steps متَزايدة لرَسم saturation curve. ~50s @ defaults.
+  rate_limit_verify:
+    amplitudes_deg: [2.0, 5.0, 10.0, 15.0, 18.0]
+    dwell_s: 0.8               # وقت كافٍ لِبلوغ steady state
+    repeats: 2
+    pre_settle_s: 0.5
+
+  # ─── firmware_audit: مُقارَنَة سُلوك firmware لكلّ السيرفوهات ──────────
+  # نَفس قائِمَة cmd بالضَّبط لكلّ السيرفوهات، نُقارِن fb لكلّ سيرفو ونَكشِف:
+  #   - أَقصى fb مُحَقَّق (saturation positive/negative)
+  #   - أَيّ سيرفو لا يَتَّبِع cmd بشَكل صَحيح
+  #   - تَفاوُت داخِلي بَين السيرفوهات (يُؤَكِّد أنَّ الخَلَل في firmware
+  #     السيرفو لا في بروتوكولِنا)
+  #
+  # @defaults: 11 pos × 11 neg + zeroes = 44 step × 1.5 = ~67s.
+  firmware_audit:
+    pos_values_deg: [5, 10, 13, 14, 14.5, 15, 16, 18, 20, 25, 30]
+    neg_values_deg: [-5, -10, -13, -14, -14.5, -15, -16, -18, -20, -25, -30]
+    dwell_s: 1.5
+    pre_settle_s: 1.0
+    return_to_zero_between: true   # 0° بَين كلّ خَطوَتَين
+
+  # ─── mech_limits: اكتِشاف الحَدّ الميكانيكي الفِعلي ──────────────────
+  # يَرفَع الأَمر تَدريجيّاً بـ step_deg حَتَّى max_abs_deg (أَو حَتَّى fb
+  # يَتَوَقَّف عَن التَّقَدُّم). التَّحليل يَستَخرِج:
+  #   - pos_limit_deg, neg_limit_deg  (الحُدود الفِعليَّة)
+  #   - total_travel_deg  (المَدى الكُلّي)
+  #   - midpoint_deg  (= offset الصِّفر، يَجِب أن يَكون 0)
+  #   - asymmetry_deg  (عَدَم تَناظُر الحَدَّين)
+  #
+  # ⚠️ يَلزَم رَفع xqpower.angle_limit_deg و safety.max_angle_abs_deg
+  #    ليَسمَحا بالأَوامِر حَتَّى max_abs_deg، أَو استَخدِم
+  #    direct_config_mech_limits.yaml الَّذي يَضبِطهُما تَلقائيّاً.
+  #
+  # @defaults: 5° step × 1.2s dwell × ±60° = 48 step × 1.2 = ~58s.
+  mech_limits:
+    step_deg: 5.0              # زِيادَة لكلّ خَطوَة
+    dwell_s: 1.2               # وَقت انتِظار بَعد كلّ أَمر
+    max_abs_deg: 60.0          # الحَدّ الأَقصى للبَحث (≤ 70°)
+    pre_settle_s: 1.0
+    directions: both           # pos | neg | both
+
+  # ─── staircase: خَطَوات تَراكُميَّة لكَشف stiction المُتَقَطِّع ───────────
+  # 0° → +max بزيادة step_deg، عودة، ثمّ نفس الشيء سالباً.
+  # @defaults: 20° max × 1° step × 0.8s dwell = 80 step × 0.8 = ~70s.
+  # يَكشف stalls موضعية لا تَظهر في linearity/repeatability المُتَوَسِّطة.
+  staircase:
+    max_amp_deg: 20.0          # نهاية المَدى (≤ angle_limit)
+    step_deg: 1.0              # حجم الخَطوَة التَّراكُمية (1° = حساس)
+    dwell_s: 0.8               # وقت hold لكلّ خَطوَة
+    pre_settle_s: 1.0
+    cycles: 1                  # 2+ لإحصاءات أَفضَل
+    directions: both           # up | down | both
+
+  # ═════════════ Tier-4: fault-detection / pre-flight integrity ═════════════
+  # ─── preflight_check: GO/NO-GO شامل قبل الطيران ─────────────────────
+  # تَسَلسُل من 7 مَراحِل (~25-35s إجمالاً) يَفحَص كلّ سيرفو ويُنتِج verdict
+  # واحِد PASS/FAIL. شَغِّله قَبل كُلّ launch + بَعد أَيّ تَغيير hardware.
+  # المَراحِل:
+  #   1. online_check     — fb_rate ≥ rate_min_hz لكلّ سيرفو
+  #   2. zero_stab        — |mean(fb)|<zero_amp_tol & std<zero_std_tol
+  #   3. direction_sign   — +amp فيُعطي fb+، -amp فيُعطي fb-
+  #   4. wiring_isolation — تَحريك سيرفو واحِد، witnesses لا يَتَحَرَّكون
+  #   5. travel_check     — مُثَلَّث ±travel_amp يُحَقَّق ضِمن travel_tol
+  #   6. step_response    — delay<delay_max_ms & τ<tau_max_ms & OS<os_max
+  #   7. recovery         — العودة إلى 0° ضِمن recovery_tol
+  preflight_check:
+    # مُدَد المَراحِل (ثوانٍ)
+    pre_settle_s: 0.5
+    online_s: 1.5
+    zero_stab_s: 1.5
+    direction_s: 2.0
+    wiring_window_s: 1.2       # لكلّ سيرفو
+    travel_s: 3.0
+    step_s: 1.5
+    recovery_s: 1.0
+    n_servos_hint: 4           # لِحَجم المَرحَلَة 4 (يُطابِق الـ runner)
+    # سَعات الأَوامِر (°)
+    direction_amp_deg: 2.0
+    wiring_amp_deg: 5.0
+    travel_amp_deg: 8.0
+    step_amp_deg: 5.0
+    # ─── Pass/fail thresholds (تُقرَأ من analysis) ───────────────────
+    rate_min_hz: 30.0          # min fb rate per servo
+    zero_amp_tol_deg: 0.30     # |mean(fb)| عِند 0° hold
+    zero_std_tol_deg: 0.20     # std(fb) عِند 0° hold
+    direction_min_frac: 0.5    # fb يَجِب يَصِل ≥ 50% × direction_amp
+    wiring_active_min_frac: 0.5  # fb السيرفو النَّشِط ≥ 50% × wiring_amp
+    wiring_witness_tol_deg: 1.0  # |fb witness| < هذا = OK
+    travel_tol_deg: 1.5        # fb يَجِب يَصِل ضِمن ±travel_tol من travel_amp
+    step_delay_max_ms: 50.0    # transport delay max
+    step_tau_max_ms: 80.0      # τ (63%) max
+    step_os_max_pct: 30.0      # overshoot |%| max
+    recovery_tol_deg: 0.5      # |fb| النِّهائي بَعد العودة لـ 0°
+
+  # ─── wiring_audit: كَشف خَلط أَسلاك بَين السيرفوهات ─────────────────
+  # كلّ سيرفو يَأخُذ موجة جَيبيَّة بتَرَدُّد فَريد في وَقت واحِد. التحليل يُحَلِّل
+  # طَيف fb ويَتَحَقَّق: قِمَّة fb عِند نَفس تَرَدُّد cmd للسيرفو نَفسه.
+  # إذا قِمَّة fb في تَرَدُّد سيرفو آخَر → خَلط أَسلاك أَو خَطأ node ID.
+  # @defaults: 4 freqs × 8s = ~8.5s. مِثالي لِفَحص قَبل التَركيب.
+  wiring_audit:
+    duration_s: 8.0            # ≥ 4.0 (للحُصول على FFT جيد)
+    amp_deg: 4.0               # سَعَة موجة الجَيب لكلّ سيرفو
+    pre_settle_s: 0.5
+    # تَرَدُّدات فَريدَة لكلّ slot (Hz). تَباعُد ≥ 0.5Hz بَين الجِيران.
+    # افتراضيّ: 1.5/2.5/3.5/5.5 (لَيسَت نِسَب صَحيحَة لِمَنع cross-talk
+    # عِند harmonics).
+    freqs_hz: [1.5, 2.5, 3.5, 5.5]
+
+  # ─── fault_scan: راصِد انوماليّات باستِمرار ─────────────────────────
+  # موجَة مُربَّعة بَطيئة ±amp_deg لـ duration_s. التحليل يَكتَشِف:
+  #   - fb gaps      (CAN frame loss)
+  #   - fb jumps     (encoder glitch)
+  #   - saturation   (|fb| > angle_limit بَينَما |cmd| < angle_limit)
+  #   - sign mismatch (cmd+ → fb-)
+  #   - excess overshoot
+  # @defaults: 30s × 1s period = 30 edges. سَريع و حَسّاس.
+  fault_scan:
+    duration_s: 30.0
+    amp_deg: 3.0               # ضِمن angle_limit
+    period_s: 1.0              # دَورَة كامِلَة (نِصف-period لكلّ edge)
+    pre_settle_s: 0.5
+    # ─── thresholds ──────────────────────────────────────────────
+    gap_max_ms: 50.0           # max gap بَين fresh fb arrivals
+    jump_max_deg: 2.0          # max |Δfb| في steady region
+    os_max_pct: 30.0           # max |overshoot| في أَيّ edge
+    sign_mismatch_max: 3       # نَتَسامَح حَتَّى 2 transient mismatches
+
+output:
+  results_dir: results
+  # CSV أعمدة:  t_s,servo_id,cmd_deg,fb_deg
+  csv_prefix: direct          # direct_step_YYYYMMDD_HHMMSS.csv
+  html_plot: true             # Plotly interactive
+
+loop:
+  # معدل إرسال الأوامر (Hz). ≥100 ينصح به لـ step response.
+  cmd_rate_hz: 100

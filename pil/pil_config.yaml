@@ -1,0 +1,50 @@
+target:
+  channel: tcp
+  tcp:
+    host: 0.0.0.0
+    port: 4560
+    timeout_s: 600.0
+  # قناة MAVLink الكاملة (port 5760) لالتقاط DEBUG_VECT/NAMED_VALUE_FLOAT
+  mavlink_tcp:
+    host: 127.0.0.1
+    port: 5760
+  serial:
+    device: /dev/ttyACM0
+    baud: 921600
+clock:
+  # "lockstep" (recommended): ننتظر HIL_ACTUATOR_CONTROLS من PX4 قبل تقدّم
+  # الديناميكا. يُزيل TCP/scheduler jitter، يطابق سلوك Gazebo SITL، ويعطي
+  # نتائج قابلة للتكرار مستقلاً عن أداء realtime للجهاز.
+  # "realtime": pacing بـ wall-clock (قد يفشل إذا MPC latency > dt).
+  mode: lockstep
+  # MPC cycle rate للـ sync (يجب أن يطابق rate في RocketMPC.cpp ScheduleOnInterval).
+  mpc_cycle_hz: 25.0
+  # timeout لكل sync point — إذا MPC لم يرد، نتابع بـ last actuator.
+  lockstep_timeout_s: 1.0
+  max_dropped_msgs: 10
+timing:
+  enabled: true
+  deadline_us: 20000
+  warn_us: 10000
+  sample_hz: 50
+warmup:
+  # المدة القصوى لانتظار تسليم PX4 ووصول أول HIL_ACTUATOR_CONTROLS.
+  duration_s: 30.0
+  # مهلة استقرار إضافية بعد أول actuator msg قبل بدء حلقة الرحلة.
+  # اختُبِر warmup 40s ولم يُقرّب trajectory من SITL (بل زاد الاختلاف):
+  # فرق peak altitude بين SITL و PIL ليس EKF2 transient، بل numerical
+  # differences بين ARM64 NEON و x86_64 SSE في MPC/MHE solver iterations.
+  # هذا فرق واقعي بين architectures لا يمكن إصلاحه عبر config.
+  settle_after_arm_s: 15.0
+  # إذا لم تصل أي HIL_ACTUATOR_CONTROLS خلال warm-up، أفشل صراحةً بدلاً من
+  # المتابعة بأصفار (SYS_HITL=0 أو simulator_mavlink غير متصل هي الأسباب الشائعة).
+  abort_on_no_actuator: true
+scenario:
+  sim_config: config/6dof_config_advanced.yaml
+  duration_s: 500.0
+  dt_s: 0.01
+  random_seed: 42
+output:
+  results_dir: 6DOF_v4_pure/pil/results
+  csv_name: pil_flight.csv
+  timing_csv: pil_timing.csv

@@ -1,0 +1,20 @@
+═══════════════════════════════════════════════════════
+  /lab analysis — lab_can_20260501_194040.csv
+═══════════════════════════════════════════════════════
+
+servo#0 (0x01)  N(cmd/fb)=7622/5871  fb_rate= 53.9Hz  gap_p99=124.2ms
+   cmd range: [ -2.70,  +4.99]°  RMSE=0.154°  max|err|=2.499°  bias=-0.115°
+   delay=+75.0ms  backlash=2.640°  slew_max=93°/s
+
+servo#1 (0x02)  N(cmd/fb)=7622/5316  fb_rate= 49.9Hz  gap_p99=156.9ms
+   cmd range: [ -1.52,  +5.43]°  RMSE=0.109°  max|err|=2.085°  bias=+0.067°
+   delay=+60.0ms  backlash=2.226°  slew_max=37°/s
+
+servo#2 (0x03)  N(cmd/fb)=7622/5360  fb_rate= 50.0Hz  gap_p99=150.9ms
+   cmd range: [ -4.78,  +2.77]°  RMSE=0.121°  max|err|=1.911°  bias=+0.066°
+   delay=+65.0ms  backlash=1.164°  slew_max=30°/s
+
+servo#3 (0x04)  N(cmd/fb)=7622/5115  fb_rate= 47.7Hz  gap_p99=173.3ms
+   cmd range: [ -5.22,  +1.60]°  RMSE=0.144°  max|err|=2.151°  bias=-0.116°
+   delay=+65.0ms  backlash=2.378°  slew_max=56°/s
+

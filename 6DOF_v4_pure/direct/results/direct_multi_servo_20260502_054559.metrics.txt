@@ -1,0 +1,47 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — multi_servo
+  multi_servo[cascaded]: each target servo +5.0° window=0.8s, ×1passes (≤6.9s for 4 targets)
+  csv: direct_multi_servo_20260502_054559.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 3320   cmd∈[+0.00,+5.00]°   fb∈[-1.28,+5.17]°
+  slew_max: 0.0 °/s
+  step edges: 2
+    edge@5.02s Δ=+4.9°  delay=75.2ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-5.056°
+    edge@5.82s Δ=-5.2°  delay=38.2ms  τ=26.0ms  OS=4.3%  t_settle=nanms  err=-0.111°
+  avg transport_delay=56.71ms  avg τ=13.00ms  avg OS=3.84%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 3320   cmd∈[+0.00,+5.00]°   fb∈[-1.22,+5.06]°
+  slew_max: 0.0 °/s
+  step edges: 2
+    edge@6.62s Δ=+4.9°  delay=106.1ms  τ=0.0ms  OS=1.1%  t_settle=nanms  err=-5.111°
+    edge@7.42s Δ=-5.0°  delay=76.1ms  τ=0.0ms  OS=2.2%  t_settle=1420ms  err=-0.056°
+  avg transport_delay=91.09ms  avg τ=0.00ms  avg OS=1.67%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 3320   cmd∈[+0.00,+5.00]°   fb∈[-1.39,+5.11]°
+  slew_max: 7.4 °/s
+  step edges: 2
+    edge@8.22s Δ=+4.9°  delay=98.1ms  τ=0.0ms  OS=2.2%  t_settle=nanms  err=-5.111°
+    edge@9.02s Δ=-5.1°  delay=63.8ms  τ=23.9ms  OS=2.2%  t_settle=nanms  err=-0.111°
+  avg transport_delay=80.94ms  avg τ=11.97ms  avg OS=2.21%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 3320   cmd∈[+0.00,+5.00]°   fb∈[-1.22,+5.17]°
+  slew_max: 0.0 °/s
+  step edges: 2
+    edge@9.82s Δ=+4.9°  delay=83.1ms  τ=0.0ms  OS=3.4%  t_settle=nanms  err=-5.111°
+    edge@10.62s Δ=-5.1°  delay=102.7ms  τ=0.0ms  OS=3.3%  t_settle=nanms  err=-0.111°
+  avg transport_delay=92.91ms  avg τ=0.00ms  avg OS=3.32%
+
+─── multi_servo breakdown ───────────────────────────
+  detected mode: cascaded
+  pattern alignment: csv_t = sched_t + 4.516s
+  cascaded analysis:
+    window@5.0s..6.6s pos=0: max|fb| → s#0=5.17 s#2=0.11 s#3=0.11 s#1=0.06
+    window@6.6s..8.2s pos=1: max|fb| → s#1=5.06 s#0=0.11 s#2=0.11 s#3=0.11
+    window@8.2s..9.8s pos=2: max|fb| → s#2=5.11 s#0=0.11 s#1=0.11 s#3=0.11
+    window@9.8s..11.4s pos=3: max|fb| → s#3=5.17 s#0=0.11 s#1=0.11 s#2=0.11

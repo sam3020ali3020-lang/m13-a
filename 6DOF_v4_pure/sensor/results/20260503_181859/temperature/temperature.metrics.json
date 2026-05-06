@@ -1,0 +1,39 @@
+{
+  "temperature_range_C": 1.59,
+  "temperature_start_C": 41.29,
+  "temperature_end_C": 40.93,
+  "temperature_std_C": 0.417,
+  "gyro_drift_rads_per_C": {
+    "gx": -1.3e-05,
+    "gy": 6.6e-05,
+    "gz": 5e-05
+  },
+  "gyro_drift_R2": {
+    "gx": 0.019,
+    "gy": 0.154,
+    "gz": 0.102
+  },
+  "accel_drift_ms2_per_C": {
+    "ax": -0.0108,
+    "ay": 0.0015,
+    "az": -0.0039
+  },
+  "accel_drift_R2": {
+    "ax": 0.216,
+    "ay": 0.057,
+    "az": 0.052
+  },
+  "max_gyro_drift_rads_per_C": 6.6e-05,
+  "max_gyro_drift_axis": "gy",
+  "max_gyro_drift_R2": 0.154,
+  "max_gyro_drift_reliable": false,
+  "max_accel_drift_ms2_per_C": 0.0108,
+  "max_accel_drift_axis": "ax",
+  "max_accel_drift_R2": 0.216,
+  "max_accel_drift_reliable": false,
+  "n_windows_total": 15,
+  "n_windows_motion_dropped": 1,
+  "n_windows_cluster_dropped": 2,
+  "n_windows_used": 12,
+  "motion_std_threshold_ms2": 0.05
+}

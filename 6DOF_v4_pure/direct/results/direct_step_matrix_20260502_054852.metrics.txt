@@ -1,0 +1,39 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — step_matrix
+  step_matrix: amps=[1.0, 3.0, 5.0, 8.0, 10.0]° offsets=[0.0, 5.0, -5.0]° dirs=['up', 'down'] ×3reps  (90 cells, 153.0s)
+  csv: direct_step_matrix_20260502_054852.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 2452   cmd∈[+0.00,+0.00]°   fb∈[-1.39,+1.11]°
+  slew_max: 0.0 °/s
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 2452   cmd∈[+0.00,+0.00]°   fb∈[-1.22,+1.28]°
+  slew_max: 49.5 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 2452   cmd∈[+0.00,+0.00]°   fb∈[-1.44,+1.11]°
+  slew_max: 7.1 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 2452   cmd∈[+0.00,+1.00]°   fb∈[-1.28,+1.22]°
+  slew_max: 0.0 °/s
+  step edges: 6
+    edge@5.05s Δ=+0.9°  delay=58.1ms  τ=0.0ms  OS=23.5%  t_settle=nanms  err=-1.111°
+    edge@5.65s Δ=-1.1°  delay=94.0ms  τ=0.0ms  OS=25.0%  t_settle=nanms  err=+1.056°
+    edge@6.75s Δ=+1.1°  delay=84.2ms  τ=0.0ms  OS=20.0%  t_settle=nanms  err=-1.111°
+    edge@7.35s Δ=-1.1°  delay=55.3ms  τ=0.0ms  OS=35.0%  t_settle=nanms  err=-0.167°
+    edge@8.45s Δ=+1.1°  delay=51.9ms  τ=96.0ms  OS=9.9%  t_settle=nanms  err=-1.111°
+    edge@8.76s Δ=-1.1°  delay=21.2ms  τ=43.0ms  OS=21.0%  t_settle=nanms  err=-0.111°
+  avg transport_delay=60.76ms  avg τ=23.17ms  avg OS=22.41%
+
+─── step_matrix breakdown ─────────────────────────────
+  target servo: #3
+  pattern alignment: csv_t = sched_t + 4.553s (first edge @ csv 5.053s)
+
+  per (amp, offset, direction):
+    amp= +1.0° off= +0.0° dir=up   N= 3  delay= 64.74±17.02ms  OS= 17.78± 7.13%
+
+  delay vs amplitude (linearity):

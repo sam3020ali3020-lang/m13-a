@@ -1,0 +1,192 @@
+# watchdog — config
+# ==========================================================================
+# يختبر WatchdogManager في الهاتف: حقن crashes في modules الـ PX4،
+# قياس زمن الاكتشاف + إعادة التشغيل + التعافي، وتسجيل cascading failures.
+#
+# المتطلبات:
+#   - APK debug مبني ومُنصَّب (release builds ترفض crash injection)
+#   - adb devices يرى الهاتف
+#   - PX4 يعمل (Start PX4 من الواجهة) قبل تشغيل الـ runner
+# ==========================================================================
+
+# ==========================================================================
+# Device — adb / package routing
+# ==========================================================================
+device:
+  package: "com.ardophone.px4v17"
+  # Absolute path on device where the native watchdog writes its JSONL log.
+  # px4_jni.cpp uses getExternalFilesDir(null) + "/px4/watchdog_events.jsonl";
+  # on stock Android this resolves to the path below.
+  log_path: "/sdcard/Android/data/com.ardophone.px4v17/files/px4/watchdog_events.jsonl"
+  # Expected timeout for a single adb broadcast to complete (seconds).
+  broadcast_timeout_s: 5.0
+  # adb device id (empty = use the only connected device)
+  adb_serial: ""
+
+# ==========================================================================
+# Modules under test — must match names in watchdog_native.cpp's registry
+# ==========================================================================
+# For each module we record its nominal publish rate + expected restart
+# feasibility.  Test thresholds auto-scale off these values.
+modules:
+  # Each entry must mirror the corresponding new_px4_module()/
+  # new_native_module() registration in cpp/watchdog_native.cpp.
+  # `stale_ms` is the on-device dead threshold; the analysis uses
+  # `stale_ms + detection_safety_ms` as the effective detection cap
+  # (see thresholds.detection_safety_ms below).  Keep these in sync.
+  rocket_mpc:
+    nominal_hz: 50
+    stale_ms: 200
+    restartable: true           # stateful — loses MHE horizon but can restart
+    flight_critical: true
+  ekf2:
+    nominal_hz: 200
+    stale_ms: 100
+    restartable: true           # loses position/velocity estimator state
+    flight_critical: true
+  sensors:
+    nominal_hz: 200
+    stale_ms: 100
+    restartable: true
+    flight_critical: true
+  commander:
+    nominal_hz: 5
+    stale_ms: 1000              # widened from 500ms to absorb scheduler hiccups
+    restartable: true           # loses arming state
+    flight_critical: false
+  control_allocator:
+    nominal_hz: 400
+    stale_ms: 500
+    restartable: true
+    flight_critical: true
+  navigator:
+    nominal_hz: 1               # publishes on demand — long stale tolerated
+    stale_ms: 5000
+    restartable: true
+    flight_critical: false
+  native_sensor_reader:
+    nominal_hz: 200             # Android IMU callback rate
+    stale_ms: 100
+    restartable: true
+    flight_critical: true
+  mavlink_tcp_bridge:
+    nominal_hz: 1               # heartbeat per poll iteration
+    stale_ms: 2000
+    restartable: true
+    flight_critical: false
+
+# ==========================================================================
+# Scenarios — each is a sequence of steps the runner executes
+# ==========================================================================
+scenarios:
+
+  # --- Scenario 1: solo ---
+  # Crash one module at a time, observe auto-restart, verify recovery.
+  solo_crash:
+    enabled: true
+    description_ar: "crash كل module منفرداً، تحقق من auto_restart + التعافي"
+    # Which modules to cycle through.  "all" = every module in the registry.
+    targets: ["native_sensor_reader", "sensors", "ekf2", "rocket_mpc",
+              "commander", "control_allocator", "mavlink_tcp_bridge"]
+    auto_restart: true          # enable before crash; observe self-recovery
+    inter_crash_pause_s: 5.0    # rest between iterations
+    post_crash_wait_s: 3.0      # max time to wait for recovery
+    repetitions: 1              # how many times to crash each target
+
+  # --- Scenario 2: repeated ---
+  # Reliability: crash same module N times in a row — does every restart work?
+  repeated_crash:
+    enabled: true
+    description_ar: "crash نفس الـ module مراراً — قياس ثبات recovery"
+    targets: ["rocket_mpc", "ekf2", "native_sensor_reader"]
+    auto_restart: true
+    inter_crash_pause_s: 3.0
+    post_crash_wait_s: 3.0
+    repetitions: 5
+
+  # --- Scenario 3: manual restart ---
+  # With auto-restart OFF, verify that manual wd_restart_module() works.
+  manual_restart:
+    enabled: true
+    description_ar: "crash مع auto_restart=OFF، ثم restart يدوياً"
+    targets: ["rocket_mpc", "ekf2"]
+    auto_restart: false
+    manual_restart_delay_s: 2.0  # wait this long BEFORE issuing restart
+    post_restart_wait_s: 3.0
+    repetitions: 2
+
+  # --- Scenario 4: cascading ---
+  # Crash a module that others depend on; verify dependents survive.
+  # Example: crash sensors; ekf2 should log "dead" then recover with sensors.
+  cascading:
+    enabled: true
+    description_ar: "crash module أساسي، تحقق أن الـ dependents لا تموت بشكل دائم"
+    # Each entry: (victim, bystanders_that_must_recover)
+    cases:
+      - victim: "sensors"
+        bystanders: ["ekf2", "rocket_mpc"]
+      - victim: "native_sensor_reader"
+        bystanders: ["sensors", "ekf2"]
+    auto_restart: true
+    post_crash_wait_s: 5.0
+    repetitions: 1
+
+# ==========================================================================
+# Thresholds — PASS/FAIL
+# ==========================================================================
+thresholds:
+  # Detection threshold is computed PER MODULE as:
+  #     module.stale_ms + detection_safety_ms
+  # so a module with stale=2000ms (mavlink_tcp_bridge) is judged against
+  # ~2250ms, not the same fixed cap as a 100ms-stale module.  Without
+  # this scaling the test produced spurious "FAIL: detection 1020 > 600"
+  # for slow-cadence modules whose minimum possible detection time
+  # legitimately exceeds the old fixed 600ms cap.
+  #
+  # 250ms covers: 1 poll period (50ms) + thread spawn overhead +
+  # auto_restart latch + scheduler jitter on a contended CPU.
+  detection_safety_ms: 250
+
+  # Optional hard ceiling on detection (regardless of stale_ms).  Set to
+  # null/-1 to disable — useful when navigator (stale=5000ms) is included.
+  detection_ms_absolute_max: -1
+
+  # Restart: stop+start round-trip for a PX4 module main().  Same for
+  # all modules — there is no per-module reason to scale this.
+  restart_ms_max: 1500
+
+  # Recovery: from dead edge → first new publish.  Includes the restart
+  # plus one nominal cycle (e.g. 20ms for rocket_mpc, 200ms for commander).
+  # 2500ms is generous enough for all flight-critical modules.
+  recovery_ms_max: 2500
+
+  # Bystander death tolerance in cascading scenarios: allowed to go stale
+  # briefly, but must recover within this window.
+  bystander_recovery_ms_max: 3000
+
+  # Every test iteration must ultimately succeed; N failures fails the suite.
+  max_failures_per_scenario: 0
+
+# ==========================================================================
+# Presets
+# ==========================================================================
+presets:
+  quick:
+    scenarios: ["solo_crash"]
+    description: "~2 min — one crash per module"
+  standard:
+    scenarios: ["solo_crash", "manual_restart"]
+    description: "~5 min — includes manual restart path"
+  full:
+    scenarios: ["solo_crash", "repeated_crash", "manual_restart", "cascading"]
+    description: "~15 min — complete reliability sweep"
+
+# ==========================================================================
+# Output
+# ==========================================================================
+output:
+  results_dir: "results"
+  save_report: true
+  save_csv: true
+  save_plot: true               # plotly HTML if installed
+  save_raw_events: true         # copy of watchdog_events.jsonl pulled from device

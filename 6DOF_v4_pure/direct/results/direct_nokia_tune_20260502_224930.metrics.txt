@@ -1,0 +1,62 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — nokia_tune
+  nokia_tune[melody]: ±8.0° 8th=0.25s staccato=80% ×2 (11.6s)
+  csv: direct_nokia_tune_20260502_224930.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 4860   cmd∈[-8.00,+8.00]°   fb∈[-8.11,+8.22]°
+  slew_max: 138.9 °/s
+  step edges: 52
+    edge@4.47s Δ=+7.9°  delay=78.3ms  τ=57.2ms  OS=2.1%  t_settle=nanms  err=-7.833°
+    edge@4.67s Δ=-7.9°  delay=57.1ms  τ=0.0ms  OS=35.8%  t_settle=nanms  err=+4.889°
+    edge@4.72s Δ=-2.3°  delay=7.1ms  τ=0.0ms  OS=378.3%  t_settle=nanms  err=-1.033°
+    edge@4.92s Δ=-6.0°  delay=70.3ms  τ=0.0ms  OS=47.2%  t_settle=nanms  err=+2.722°
+    edge@4.97s Δ=-8.7°  delay=20.1ms  τ=54.0ms  OS=1.9%  t_settle=nanms  err=+5.111°
+    edge@5.37s Δ=+2.8°  delay=23.1ms  τ=22.0ms  OS=174.6%  t_settle=nanms  err=-6.889°
+    edge@5.47s Δ=+0.1°  delay=4.2ms  τ=0.0ms  OS=4064.6%  t_settle=nanms  err=-0.467°
+    edge@5.87s Δ=+0.7°  delay=47.2ms  τ=16.0ms  OS=733.3%  t_settle=nanms  err=-4.944°
+  avg transport_delay=38.42ms  avg τ=18.66ms  avg OS=679.73%
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 4860   cmd∈[-8.00,+8.00]°   fb∈[-8.28,+8.17]°
+  slew_max: 138.9 °/s
+  step edges: 52
+    edge@4.47s Δ=+7.9°  delay=84.3ms  τ=52.1ms  OS=1.4%  t_settle=nanms  err=-7.889°
+    edge@4.67s Δ=-7.9°  delay=58.1ms  τ=6.0ms  OS=35.3%  t_settle=nanms  err=+4.889°
+    edge@4.72s Δ=-2.2°  delay=8.1ms  τ=0.0ms  OS=385.2%  t_settle=nanms  err=-0.978°
+    edge@4.92s Δ=-6.0°  delay=74.3ms  τ=0.0ms  OS=46.3%  t_settle=nanms  err=+2.722°
+    edge@4.97s Δ=-8.6°  delay=24.1ms  τ=54.0ms  OS=1.3%  t_settle=nanms  err=+5.389°
+    edge@5.37s Δ=+2.7°  delay=25.1ms  τ=22.9ms  OS=179.6%  t_settle=nanms  err=-7.000°
+    edge@5.47s Δ=+0.1°  delay=1.2ms  τ=0.0ms  OS=6969.4%  t_settle=nanms  err=-0.245°
+    edge@5.87s Δ=+0.7°  delay=48.2ms  τ=16.0ms  OS=676.9%  t_settle=nanms  err=-4.778°
+  avg transport_delay=40.43ms  avg τ=18.88ms  avg OS=1036.92%
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 4860   cmd∈[-8.00,+8.00]°   fb∈[-8.22,+8.22]°
+  slew_max: 138.8 °/s
+  step edges: 52
+    edge@4.47s Δ=+8.1°  delay=85.4ms  τ=48.1ms  OS=0.7%  t_settle=nanms  err=-7.778°
+    edge@4.67s Δ=-7.5°  delay=4.1ms  τ=61.0ms  OS=37.0%  t_settle=nanms  err=+4.889°
+    edge@4.72s Δ=-2.2°  delay=15.1ms  τ=0.0ms  OS=394.9%  t_settle=nanms  err=-1.200°
+    edge@4.92s Δ=-6.0°  delay=75.3ms  τ=0.0ms  OS=46.3%  t_settle=nanms  err=+2.722°
+    edge@4.97s Δ=-8.7°  delay=25.1ms  τ=50.0ms  OS=1.3%  t_settle=nanms  err=+5.278°
+    edge@5.37s Δ=+2.7°  delay=28.0ms  τ=11.0ms  OS=179.6%  t_settle=nanms  err=-6.944°
+    edge@5.47s Δ=-0.1°  delay=2.2ms  τ=64.9ms  OS=4555.3%  t_settle=nanms  err=-0.411°
+    edge@5.87s Δ=+0.5°  delay=46.2ms  τ=19.0ms  OS=977.8%  t_settle=nanms  err=-4.778°
+  avg transport_delay=35.18ms  avg τ=31.75ms  avg OS=774.11%
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 4860   cmd∈[-8.00,+8.00]°   fb∈[-8.17,+8.17]°
+  slew_max: 149.5 °/s
+  step edges: 52
+    edge@4.47s Δ=+7.9°  delay=86.3ms  τ=48.0ms  OS=1.4%  t_settle=nanms  err=-7.722°
+    edge@4.67s Δ=-7.8°  delay=66.1ms  τ=0.0ms  OS=37.5%  t_settle=nanms  err=+4.833°
+    edge@4.72s Δ=-2.2°  delay=16.1ms  τ=0.0ms  OS=392.6%  t_settle=nanms  err=-1.200°
+    edge@4.92s Δ=-5.9°  delay=76.3ms  τ=0.0ms  OS=49.5%  t_settle=nanms  err=+2.778°
+    edge@4.97s Δ=-8.6°  delay=26.1ms  τ=50.0ms  OS=3.2%  t_settle=nanms  err=+5.444°
+    edge@5.37s Δ=+2.7°  delay=22.1ms  τ=20.0ms  OS=177.6%  t_settle=nanms  err=-6.944°
+    edge@5.47s Δ=+0.5°  delay=3.2ms  τ=0.0ms  OS=1149.9%  t_settle=nanms  err=-0.633°
+    edge@5.87s Δ=+0.7°  delay=36.2ms  τ=30.0ms  OS=725.0%  t_settle=nanms  err=-4.889°
+  avg transport_delay=41.55ms  avg τ=18.50ms  avg OS=317.09%

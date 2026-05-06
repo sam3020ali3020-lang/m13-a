@@ -1,0 +1,37 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — multi_servo
+  multi_servo[witnesses]: ±8.0° target only, others held at 0°  (5.3s)
+  csv: direct_multi_servo_20260502_044211.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 2751   cmd∈[+0.00,+0.00]°   fb∈[-1.39,+1.28]°
+  slew_max: 8.1 °/s
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 2751   cmd∈[+0.00,+0.00]°   fb∈[-1.28,+1.33]°
+  slew_max: 8.1 °/s
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 2751   cmd∈[+0.00,+0.00]°   fb∈[-1.39,+1.39]°
+  slew_max: 0.0 °/s
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 2751   cmd∈[-8.00,+8.00]°   fb∈[-8.22,+8.06]°
+  slew_max: 90.1 °/s
+  step edges: 7
+    edge@5.07s Δ=+7.9°  delay=26.0ms  τ=58.0ms  OS=0.0%  t_settle=206ms  err=+0.000°
+    edge@7.47s Δ=-16.0°  delay=118.2ms  τ=0.0ms  OS=1.4%  t_settle=nanms  err=+16.000°
+    edge@8.27s Δ=+16.1°  delay=65.3ms  τ=19.8ms  OS=0.3%  t_settle=nanms  err=-16.111°
+    edge@9.07s Δ=-16.0°  delay=56.4ms  τ=50.7ms  OS=1.4%  t_settle=nanms  err=+8.056°
+    edge@9.87s Δ=+8.1°  delay=56.9ms  τ=51.0ms  OS=4.1%  t_settle=172ms  err=+0.056°
+  avg transport_delay=64.55ms  avg τ=35.90ms  avg OS=1.45%
+
+─── multi_servo breakdown ───────────────────────────
+  detected mode: single_with_witnesses
+  pattern alignment: csv_t = sched_t + 4.566s
+  target: servo#3, witnesses: [0, 1, 2]
+    witness servo#0: fb range [-1.389, +1.278]°  max|fb|=1.389°
+    witness servo#1: fb range [-1.278, +1.333]°  max|fb|=1.333°
+    witness servo#2: fb range [-1.389, +1.389]°  max|fb|=1.389°

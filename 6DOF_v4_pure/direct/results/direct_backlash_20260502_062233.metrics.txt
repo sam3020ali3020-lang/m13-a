@@ -1,0 +1,30 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — backlash
+  backlash: ±5.0° step=0.10° dwell=0.10s ×2c (40.4s)
+  csv: direct_backlash_20260502_062233.csv
+═══════════════════════════════════════════════════════
+  (using t_fb_arrival_s for fb timing — high-accuracy)
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 14005   cmd∈[-5.00,+5.00]°   fb∈[-5.11,+4.83]°
+  slew_max: 44.9 °/s
+  step edges: 2
+    edge@4.47s Δ=-5.1°  delay=85.4ms  τ=0.0ms  OS=2.2%  t_settle=nanms  err=+1.111°
+    edge@44.87s Δ=+4.9°  delay=93.1ms  τ=0.0ms  OS=2.3%  t_settle=nanms  err=+0.111°
+  avg transport_delay=89.25ms  avg τ=0.00ms  avg OS=2.24%
+  backlash: 1.131°
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 14005   cmd∈[+0.00,+0.00]°   fb∈[-1.17,+1.17]°
+  slew_max: 14.0 °/s
+  backlash: 0.000°
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 14005   cmd∈[+0.00,+0.00]°   fb∈[-1.22,+1.28]°
+  slew_max: 50.2 °/s
+  backlash: 0.000°
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 14005   cmd∈[+0.00,+0.00]°   fb∈[-1.17,+1.17]°
+  slew_max: 3.8 °/s
+  backlash: 0.000°

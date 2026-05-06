@@ -1,0 +1,58 @@
+{
+  "frame": {
+    "passed": true,
+    "failures": [],
+    "metrics": {
+      "positions": [
+        {
+          "position": "flat_screen_up",
+          "expected_frd": [
+            0.0,
+            0.0,
+            -9.81
+          ],
+          "measured_frd": [
+            0.07,
+            -0.271,
+            -9.7763
+          ],
+          "error_ms2": 0.2819,
+          "tolerance_ms2": 1.0,
+          "passed": true
+        },
+        {
+          "position": "vertical_top_up",
+          "expected_frd": [
+            9.81,
+            0.0,
+            0.0
+          ],
+          "measured_frd": [
+            9.7261,
+            -0.7213,
+            0.4162
+          ],
+          "error_ms2": 0.837,
+          "tolerance_ms2": 1.0,
+          "passed": true
+        },
+        {
+          "position": "right_side_down",
+          "expected_frd": [
+            0.0,
+            -9.81,
+            0.0
+          ],
+          "measured_frd": [
+            -0.0586,
+            -9.6697,
+            -1.3338
+          ],
+          "error_ms2": 1.3424,
+          "tolerance_ms2": 1.5,
+          "passed": true
+        }
+      ]
+    }
+  }
+}

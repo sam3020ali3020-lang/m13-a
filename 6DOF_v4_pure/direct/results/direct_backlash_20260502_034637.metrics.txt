@@ -1,0 +1,29 @@
+═══════════════════════════════════════════════════════
+  /direct analysis — backlash
+  backlash: ±5.0° step=0.10° dwell=0.10s ×2c (40.4s)
+  csv: direct_backlash_20260502_034637.csv
+═══════════════════════════════════════════════════════
+
+── servo#0 (node 0x01) ─────────────────────────
+  samples: 13235   cmd∈[+0.00,+0.00]°   fb∈[-0.11,+0.00]°
+  slew_max: 44.7 °/s
+  backlash: 0.000°
+
+── servo#1 (node 0x02) ─────────────────────────
+  samples: 13235   cmd∈[+0.00,+0.00]°   fb∈[+0.00,+0.11]°
+  slew_max: 8.3 °/s
+  backlash: 0.000°
+
+── servo#2 (node 0x03) ─────────────────────────
+  samples: 13235   cmd∈[+0.00,+0.00]°   fb∈[+0.06,+0.11]°
+  slew_max: 9.8 °/s
+  backlash: 0.000°
+
+── servo#3 (node 0x04) ─────────────────────────
+  samples: 13235   cmd∈[-5.00,+5.00]°   fb∈[-5.06,+4.89]°
+  slew_max: 37.2 °/s
+  step edges: 2
+    edge@2.76s Δ=-5.0°  delay=61.1ms  τ=29.2ms  OS=1.1%  t_settle=nanms  err=+1.222°
+    edge@43.16s Δ=+4.8°  delay=21.2ms  τ=69.6ms  OS=5.7%  t_settle=151ms  err=+0.056°
+  avg transport_delay=41.15ms  avg τ=49.38ms  avg OS=3.42%
+  backlash: 1.171°

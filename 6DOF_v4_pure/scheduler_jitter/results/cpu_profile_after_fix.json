@@ -1,0 +1,436 @@
+{
+  "pid": 2315,
+  "label": "after_fix",
+  "duration_s": 20,
+  "samples_taken": 20,
+  "started_at": 1777849515.3327522,
+  "summary": [
+    {
+      "tid": 5066,
+      "name": "wq:nav_ctrl",
+      "samples": 20,
+      "mean_cpu": 15.13,
+      "max_cpu": 18.0,
+      "stddev_cpu": 2.33,
+      "trend": "steady"
+    },
+    {
+      "tid": 2315,
+      "name": "rdophone.px4v17",
+      "samples": 20,
+      "mean_cpu": 12.48,
+      "max_cpu": 17.0,
+      "stddev_cpu": 2.68,
+      "trend": "falling"
+    },
+    {
+      "tid": 5024,
+      "name": "rdophone.px4v17",
+      "samples": 20,
+      "mean_cpu": 8.62,
+      "max_cpu": 10.3,
+      "stddev_cpu": 1.62,
+      "trend": "steady"
+    },
+    {
+      "tid": 5068,
+      "name": "wq:INS0",
+      "samples": 20,
+      "mean_cpu": 8.46,
+      "max_cpu": 10.3,
+      "stddev_cpu": 0.97,
+      "trend": "steady"
+    },
+    {
+      "tid": 5077,
+      "name": "mavlink_if0",
+      "samples": 20,
+      "mean_cpu": 7.69,
+      "max_cpu": 9.0,
+      "stddev_cpu": 0.67,
+      "trend": "steady"
+    },
+    {
+      "tid": 5067,
+      "name": "wq:rate_ctrl",
+      "samples": 20,
+      "mean_cpu": 4.92,
+      "max_cpu": 6.0,
+      "stddev_cpu": 0.87,
+      "trend": "steady"
+    },
+    {
+      "tid": 5084,
+      "name": "logger",
+      "samples": 20,
+      "mean_cpu": 4.72,
+      "max_cpu": 6.0,
+      "stddev_cpu": 0.89,
+      "trend": "steady"
+    },
+    {
+      "tid": 5048,
+      "name": "px4",
+      "samples": 20,
+      "mean_cpu": 4.02,
+      "max_cpu": 5.0,
+      "stddev_cpu": 0.62,
+      "trend": "steady"
+    },
+    {
+      "tid": 5035,
+      "name": "wkr_hrt",
+      "samples": 20,
+      "mean_cpu": 3.27,
+      "max_cpu": 4.0,
+      "stddev_cpu": 0.64,
+      "trend": "steady"
+    },
+    {
+      "tid": 5074,
+      "name": "wq:rocket_mpc",
+      "samples": 20,
+      "mean_cpu": 2.72,
+      "max_cpu": 5.0,
+      "stddev_cpu": 0.75,
+      "trend": "steady"
+    },
+    {
+      "tid": 4986,
+      "name": "Jit thread pool",
+      "samples": 20,
+      "mean_cpu": 2.1,
+      "max_cpu": 5.0,
+      "stddev_cpu": 1.37,
+      "trend": "steady"
+    },
+    {
+      "tid": 5086,
+      "name": "log_writer_file",
+      "samples": 20,
+      "mean_cpu": 1.9,
+      "max_cpu": 3.0,
+      "stddev_cpu": 0.64,
+      "trend": "steady"
+    },
+    {
+      "tid": 5072,
+      "name": "wq:hp_default",
+      "samples": 20,
+      "mean_cpu": 1.6,
+      "max_cpu": 2.0,
+      "stddev_cpu": 0.68,
+      "trend": "steady"
+    },
+    {
+      "tid": 4995,
+      "name": "RenderThread",
+      "samples": 20,
+      "mean_cpu": 1.35,
+      "max_cpu": 3.0,
+      "stddev_cpu": 0.81,
+      "trend": "steady"
+    },
+    {
+      "tid": 5069,
+      "name": "commander",
+      "samples": 20,
+      "mean_cpu": 1.1,
+      "max_cpu": 2.0,
+      "stddev_cpu": 0.45,
+      "trend": "steady"
+    },
+    {
+      "tid": 5040,
+      "name": "DefaultDispatch",
+      "samples": 20,
+      "mean_cpu": 0.67,
+      "max_cpu": 3.4,
+      "stddev_cpu": 0.81,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5005,
+      "name": "DefaultExecutor",
+      "samples": 20,
+      "mean_cpu": 0.6,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.5,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5080,
+      "name": "mavlink_rcv_if0",
+      "samples": 20,
+      "mean_cpu": 0.55,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.51,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5071,
+      "name": "navigator",
+      "samples": 20,
+      "mean_cpu": 0.4,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.5,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5038,
+      "name": "DefaultDispatch",
+      "samples": 20,
+      "mean_cpu": 0.35,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.49,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5085,
+      "name": "px4_watchdog",
+      "samples": 20,
+      "mean_cpu": 0.2,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.41,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5030,
+      "name": "hpwork",
+      "samples": 20,
+      "mean_cpu": 0.1,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.31,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5031,
+      "name": "lpwork",
+      "samples": 20,
+      "mean_cpu": 0.1,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.31,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5075,
+      "name": "px4",
+      "samples": 20,
+      "mean_cpu": 0.05,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.22,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5041,
+      "name": "wq:lp_default",
+      "samples": 20,
+      "mean_cpu": 0.05,
+      "max_cpu": 1.0,
+      "stddev_cpu": 0.22,
+      "trend": "oscillating"
+    },
+    {
+      "tid": 5082,
+      "name": "TcpOptimizer",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5076,
+      "name": "px4",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5078,
+      "name": "px4",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5081,
+      "name": "TcpOptimizer",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5070,
+      "name": "dataman",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5043,
+      "name": "DefaultDispatch",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5047,
+      "name": "queued-work-loo",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5025,
+      "name": "px4",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5036,
+      "name": "wq:manager",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 5023,
+      "name": "ConnectivityThr",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4994,
+      "name": "Profile Saver",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4991,
+      "name": "Binder:2315_3",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4987,
+      "name": "Binder:2315_1",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4988,
+      "name": "Binder:2315_2",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4984,
+      "name": "FinalizerWatchd",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4982,
+      "name": "ReferenceQueueD",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4983,
+      "name": "FinalizerDaemon",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4980,
+      "name": "ADB-JDWP Connec",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4979,
+      "name": "Signal Catcher",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    },
+    {
+      "tid": 4981,
+      "name": "HeapTaskDaemon",
+      "samples": 20,
+      "mean_cpu": 0.0,
+      "max_cpu": 0.0,
+      "stddev_cpu": 0.0,
+      "trend": "steady"
+    }
+  ],
+  "totals_per_frame": [
+    75.20000000000002,
+    89.0,
+    95.0,
+    94.0,
+    83.0,
+    86.0,
+    92.0,
+    87.0,
+    93.0,
+    89.0,
+    87.0,
+    81.0,
+    67.0,
+    61.0,
+    61.0,
+    82.0,
+    85.0,
+    89.0,
+    84.0,
+    83.0
+  ]
+}

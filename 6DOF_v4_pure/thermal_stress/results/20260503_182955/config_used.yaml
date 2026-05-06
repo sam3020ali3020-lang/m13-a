@@ -1,0 +1,105 @@
+connection:
+  host: 127.0.0.1
+  port: 5760
+  timeout_s: 10.0
+mavlink_streams:
+  debug_float_array:
+    msg_id: 350
+    rate_hz: 100
+    crc_extra: 232
+    purpose: RktGNC timing + SRV_FB
+  servo_output_raw:
+    msg_id: 36
+    rate_hz: 10
+    crc_extra: 222
+  attitude:
+    msg_id: 30
+    rate_hz: 10
+    crc_extra: 39
+thermal:
+  poll_interval_s: 1.0
+  adb_device: ''
+  read_thermal_zones: true
+  read_cpufreq: true
+  read_battery: true
+  read_thermalservice: true
+  zone_groups:
+    cpu_silver:
+    - cpu0-silver-usr
+    - cpu1-silver-usr
+    - cpu2-silver-usr
+    - cpu3-silver-usr
+    cpu_gold:
+    - cpu0-gold-usr
+    - cpu1-gold-usr
+    - cpu2-gold-usr
+    - cpu3-gold-usr
+    gpu:
+    - gpu0-usr
+    - gpu1-usr
+    ddr:
+    - ddr-usr
+    modem:
+    - mdm-core-usr
+    - mdm-dsp-usr
+    dcvs:
+    - lmh-dcvs-00
+    - lmh-dcvs-01
+load:
+  mode: cpu-stress
+  stress_workers: 8
+  stress_use_md5: true
+  pil_runner: ../pil/pil_runner.py
+  pil_config: ../pil/pil_config.yaml
+  pil_inter_run_sleep_s: 3.0
+  heat_first_s: 0
+  heat_target_C: 65
+  heat_workers: 8
+duration_s: 30.0
+presets:
+  quick:
+    duration_s: 300
+    load_mode: passive
+  standard:
+    duration_s: 1800
+    load_mode: passive
+  desert:
+    duration_s: 1800
+    load_mode: cpu-stress
+    heat_first_s: 180
+    heat_target_C: 70
+  extreme:
+    duration_s: 3600
+    load_mode: cpu-stress
+    heat_first_s: 300
+    heat_target_C: 72
+mpc:
+  target_rate_hz: 25.0
+  deadline_us: 40000
+  warn_us: 25000
+thresholds:
+  mpc_solve_us:
+    p50_max: 8000
+    p95_max: 15000
+    p99_max: 20000
+    p999_max: 30000
+  cycle_us:
+    p50_max: 42000
+    p95_max: 50000
+    p99_max: 60000
+    p999_max: 80000
+  deadline_miss_rate:
+    warn: 0.05
+    fail: 0.2
+  throttle_degradation:
+    solve_us_ratio_max: 2.0
+    miss_rate_delta_max: 0.1
+  hot_threshold_C: 65.0
+  allow_solver_errors: false
+output:
+  results_dir: results
+  save_csv: true
+  save_json: true
+  save_plot: true
+  save_report: true
+  live_progress_s: 10.0

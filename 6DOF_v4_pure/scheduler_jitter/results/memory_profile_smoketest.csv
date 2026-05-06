@@ -1,0 +1,5 @@
+native_pss,native_priv_dirty,native_heap_size,native_heap_alloc,native_heap_free,dalvik_pss,dalvik_priv_dirty,dalvik_heap_size,dalvik_heap_alloc,dalvik_heap_free,stack_pss,gfx_pss,egl_pss,total_pss,total_priv_dirty,views,viewrootimpl,appcontexts,activities,local_binders,proxy_binders,parcel_count,t_sec
+22278,22256,29920,27565,2354,9386,8780,10125,3981,6144,224,2956,28572,115063,101552,8,1,7,1,14,45,21,0.0
+22282,22260,29920,27113,2806,4610,4004,9980,3836,6144,224,2956,28572,110299,96788,8,1,7,1,14,45,21,3.0
+22282,22260,29920,27117,2802,4482,3876,9980,3836,6144,224,2956,28572,110163,96652,8,1,7,1,14,45,21,6.0
+22282,22260,29920,27120,2799,4482,3876,9980,3836,6144,224,2956,28572,110175,96660,8,1,7,1,14,45,21,9.0

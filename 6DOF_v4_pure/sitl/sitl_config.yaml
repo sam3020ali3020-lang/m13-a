@@ -1,0 +1,12 @@
+# ============================================================================
+# SITL Bridge Configuration (DEPRECATED)
+# ============================================================================
+# ⚠️ هذا الملف مُهمَل — جميع الإعدادات انتقلت إلى:
+#    config/6dof_config_advanced.yaml → قسم bridge
+#
+# ⚠️ This file is DEPRECATED — all settings moved to:
+#    config/6dof_config_advanced.yaml → bridge section
+#
+# يُحتفظ به فقط لمنع أخطاء الملفات المفقودة في السكربتات القديمة.
+# Kept only to prevent missing-file errors in older scripts.
+# ============================================================================

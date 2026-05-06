@@ -1,0 +1,24 @@
+════════════════════════════════════════════════════════════════════════
+  THERMAL STRESS TEST — REPORT
+════════════════════════════════════════════════════════════════════════
+  MPC: no MPC data (mpc_timing.csv missing or empty)
+
+  Thermal (36 samples, 35s):
+    cpu_silver_C   min= 59.7 mean= 76.5 max= 81.1 final= 60.1 °C
+    cpu_gold_C     min= 62.7 mean= 81.2 max= 86.0 final= 65.3 °C
+    gpu_C          min= 45.3 mean= 55.3 max= 58.4 final= 52.8 °C
+    ddr_C          min= 45.8 mean= 58.2 max= 61.5 final= 53.0 °C
+    battery_C      min= 34.8 mean= 34.9 max= 35.0 final= 35.0 °C
+    skin_C         min= 34.8 mean= 36.4 max= 37.6 final= 37.3 °C
+
+  Thermal status peak:   0 (NONE=0, LIGHT=1, MODERATE=2, SEVERE=3)
+  Samples w/ status>0:   0
+  Throttle ratio gold:   min=0.950 mean=0.950
+  Throttle ratio silver: min=1.000 mean=1.000
+  Throttle windows:      1 (total 35.0s)
+
+────────────────────────────────────────────────────────────────────────
+  VERDICT: ✓ PASS
+────────────────────────────────────────────────────────────────────────
+  [WARN]  No MPC data captured — PX4 may not have been running
+════════════════════════════════════════════════════════════════════════

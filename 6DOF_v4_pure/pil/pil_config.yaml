@@ -4,7 +4,24 @@ target:
     host: 0.0.0.0
     port: 4560
     timeout_s: 600.0
-  # قناة MAVLink الكاملة (port 5760) لالتقاط DEBUG_VECT/NAMED_VALUE_FLOAT
+  # ╔══════════════════════════════════════════════════════════════════════╗
+  # ║  ⚠️  Transport يحدّد Score النهائي — اختر بحذر                        ║
+  # ╠══════════════════════════════════════════════════════════════════════╣
+  # ║  Ethernet  → MPC ≈ 24-26 ms → Score 82/100 ✅ (الموصى به)            ║
+  # ║  USB tunnel → MPC ≈ 51-55 ms → Score 67-70/100 ❌                     ║
+  # ║                                                                      ║
+  # ║  السبب: adbd daemon على الهاتف يستهلك 10-15% من cpu7 لمعالجة         ║
+  # ║  packets MAVLink، مزاحماً rocket_mpc على نفس النواة. التفاصيل في:    ║
+  # ║  PIL_TRANSPORT_FINDING_2026-05-06.md                                ║
+  # ╚══════════════════════════════════════════════════════════════════════╝
+  #
+  # mavlink_tcp.host:
+  #   * Ethernet (موصى به): IP الهاتف على شبكة Ethernet المشتركة
+  #     (مثل 10.42.0.145). يحتاج USB-C→Ethernet adapter أو reverse tethering.
+  #     على الهاتف: `setprop debug.m130.target_ip <LAPTOP_IP>` (مثل 10.42.0.1).
+  #     بدون أي `adb reverse` أو `adb forward`.
+  #   * USB tunnel (للتشخيص فقط): "127.0.0.1" مع
+  #     `adb reverse tcp:4560 tcp:4560 && adb reverse tcp:5760 tcp:5760`.
   mavlink_tcp:
     host: 127.0.0.1
     port: 5760

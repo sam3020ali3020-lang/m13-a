@@ -1,0 +1,2517 @@
+/**
+
+ * px4_jni.cpp — Phase 3 + Phase 4 fixes
+
+ * JNI bridge بين Kotlin و PX4 native
+
+ * يشغّل native_sensor_reader + uorb_publishers + PX4 modules
+
+ */
+
+#include <jni.h>
+
+#include <android/log.h>
+
+#include <string>
+
+#include <cstring>
+
+#include <thread>
+
+#include <unistd.h>
+
+#include <sys/stat.h>
+
+#include <sys/system_properties.h>
+
+#include <pthread.h>
+
+
+
+#include "shared_sensor_data.h"
+
+#include "native_sensor_reader.h"
+
+#include "android_uorb_publishers.h"
+
+#include "mavlink_tcp_bridge.h"
+
+#include "servo_usb_output.h"
+
+#include "gps_usb_ubx.h"
+
+#include "mavlink_pty_usb_bridge.h"
+
+#include "watchdog_native.h"
+
+
+
+// CP210x telemetry: FD from UsbDeviceConnection (-1 = not connected)
+
+static std::atomic<int> g_mavlink_telemetry_usb_fd{-1};
+
+
+
+// PX4 platform init — حرج! بدونه لا يعمل hrt, work queues, params, uORB
+
+#include <px4_platform_common/init.h>
+
+#include <px4_platform_common/posix.h>
+
+#include <drivers/drv_hrt.h>
+
+#include <parameters/param.h>
+
+#include <uORB/Subscription.hpp>
+
+#include <uORB/topics/vehicle_status.h>
+
+
+
+namespace px4 {
+
+    void init_once();
+
+    void init(int argc, char *argv[], const char *process_name);
+
+}
+
+
+
+// مطلوب من px4_posix_impl.cpp (يُعرَّف هناك كـ extern)
+
+extern pthread_t _shell_task_id;
+
+
+
+#define TAG "PX4Phone"
+
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
+
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
+
+
+
+// بنية البيانات المشتركة (global — يستخدمها native_sensor_reader + uorb_publishers + JNI GPS)
+
+SharedSensorData g_sensor_data;
+
+
+
+// PX4 modules — نشغّلهم برمجياً بدل rcS script
+
+// ملاحظة: uorb_main لم نعد نحتاجه — uORB يبدأ تلقائياً من px4::init_once()
+
+extern "C" {
+
+    int sensors_main(int argc, char *argv[]);
+
+    int ekf2_main(int argc, char *argv[]);
+
+    int commander_main(int argc, char *argv[]);
+
+    int navigator_main(int argc, char *argv[]);
+
+    int mavlink_main(int argc, char *argv[]);
+
+    int logger_main(int argc, char *argv[]);
+
+    int land_detector_main(int argc, char *argv[]);
+
+    int mc_att_control_main(int argc, char *argv[]);
+
+    int mc_pos_control_main(int argc, char *argv[]);
+
+    int mc_rate_control_main(int argc, char *argv[]);
+
+    int fw_att_control_main(int argc, char *argv[]);
+
+    // fw_pos_control لا يوجد في PX4 — يوجد fw_lateral_longitudinal_control
+
+    int fw_rate_control_main(int argc, char *argv[]);
+
+    int control_allocator_main(int argc, char *argv[]);
+
+    int flight_mode_manager_main(int argc, char *argv[]);
+
+    int manual_control_main(int argc, char *argv[]);
+
+    int dataman_main(int argc, char *argv[]);
+
+    int rocket_mpc_main(int argc, char *argv[]);
+
+    int xqpower_can_main(int argc, char *argv[]);
+
+    int load_mon_main(int argc, char *argv[]);
+
+    int pwm_out_sim_main(int argc, char *argv[]);
+
+    int simulator_mavlink_main(int argc, char *argv[]);
+
+}
+
+
+
+static std::thread s_px4_thread;
+
+static bool s_running = false;
+
+static std::atomic<bool> g_restart_requested{false};
+
+static bool s_platform_initialized = false;
+
+
+
+// Called from shutdown.cpp when QGC requests reboot — no exit() on Android
+
+extern "C" void px4_android_request_restart() {
+
+    param_save_default(true);
+
+    g_restart_requested.store(true);
+
+    s_running = false;
+
+    LOGI("PX4 Android: soft restart requested");
+
+}
+
+
+
+static void stop_modules_only() {
+
+    LOGI("Stopping PX4 modules for restart...");
+
+    // Watchdog OFF first so it doesn't race the teardown trying to
+
+    // auto-restart a module that's deliberately being stopped.  It will
+
+    // be re-initialised at the end of start_px4_modules().
+
+    wd_shutdown();
+
+    mavlink_pty_usb_bridge_stop();
+
+    gps_usb_ubx_stop();
+
+    servo_usb_output_stop();
+
+    { const char* a[]={"logger","stop",nullptr}; logger_main(2,(char**)a); }
+
+    mavlink_tcp_bridge_stop();
+
+    { const char* a[]={"mavlink","stop",nullptr}; mavlink_main(2,(char**)a); }
+
+    { const char* a[]={"rocket_mpc","stop",nullptr}; rocket_mpc_main(2,(char**)a); }
+
+    { const char* a[]={"xqpower_can","stop",nullptr}; xqpower_can_main(2,(char**)a); }
+
+    { const char* a[]={"control_allocator","stop",nullptr}; control_allocator_main(2,(char**)a); }
+
+    { const char* a[]={"fw_rate_control","stop",nullptr}; fw_rate_control_main(2,(char**)a); }
+
+    { const char* a[]={"fw_att_control","stop",nullptr}; fw_att_control_main(2,(char**)a); }
+
+    { const char* a[]={"mc_rate_control","stop",nullptr}; mc_rate_control_main(2,(char**)a); }
+
+    { const char* a[]={"mc_pos_control","stop",nullptr}; mc_pos_control_main(2,(char**)a); }
+
+    { const char* a[]={"mc_att_control","stop",nullptr}; mc_att_control_main(2,(char**)a); }
+
+    { const char* a[]={"manual_control","stop",nullptr}; manual_control_main(2,(char**)a); }
+
+    { const char* a[]={"flight_mode_manager","stop",nullptr}; flight_mode_manager_main(2,(char**)a); }
+
+    { const char* a[]={"land_detector","stop",nullptr}; land_detector_main(2,(char**)a); }
+
+    { const char* a[]={"navigator","stop",nullptr}; navigator_main(2,(char**)a); }
+
+    { const char* a[]={"dataman","stop",nullptr}; dataman_main(2,(char**)a); }
+
+    { const char* a[]={"commander","stop",nullptr}; commander_main(2,(char**)a); }
+
+    { const char* a[]={"ekf2","stop",nullptr}; ekf2_main(2,(char**)a); }
+
+    { const char* a[]={"sensors","stop",nullptr}; sensors_main(2,(char**)a); }
+
+    { const char* a[]={"load_mon","stop",nullptr}; load_mon_main(2,(char**)a); }
+
+    stop_uorb_publishers();
+
+    usleep(1500000); // 1.5s for modules to stop
+
+    LOGI("PX4 modules stopped");
+
+}
+
+
+
+static void start_px4_modules(const std::string& storage_path) {
+
+    LOGI("Starting PX4 modules... (restart=%s)", s_platform_initialized ? "yes" : "no");
+
+
+
+    if (!s_platform_initialized) {
+
+        // تهيئة المسارات — ننشئ المجلد الأساسي وكل المجلدات الفرعية
+
+        mkdir(storage_path.c_str(), 0755);
+
+        chdir(storage_path.c_str());
+
+        mkdir("logs", 0755);
+
+        mkdir("log", 0755);
+
+        mkdir("eeprom", 0755);
+
+        mkdir("mavlink", 0755);
+
+        mkdir("dataman", 0755);
+
+
+
+        // ===== Phase 4: تهيئة منصة PX4 (مرة واحدة فقط!) =====
+
+        px4::init_once();
+
+        LOGI("PX4 platform initialized (hrt, work queues, params, uORB)");
+
+
+
+        px4::init(0, nullptr, "px4");
+
+        LOGI("PX4 init done");
+
+
+
+        s_platform_initialized = true;
+
+    }
+
+
+
+    // ===== ضبط ملف حفظ البارامترات (دائماً — لإعادة تحميل بعد Restart) =====
+
+    param_set_default_file("./eeprom/parameters");
+
+    param_load_default();
+
+    LOGI("Parameters loaded from: ./eeprom/parameters");
+
+
+
+    // ===== ترتيب التشغيل مهم! =====
+
+    // (مستوحى من ROMFS/px4fmu_common/init.d-posix/rcS)
+
+    // ملاحظة: uORB يبدأ تلقائياً من px4::init_once() → px4_platform_init() → uorb_start()
+
+
+
+    // 2. uORB publishers — يجب أن تبدأ قبل sensors حتى تكون بيانات الحساسات متاحة
+
+    start_uorb_publishers();
+
+    LOGI("uORB publishers started");
+
+
+
+    // ===== انتظر حتى تتدفق بيانات الحساسات من Android =====
+
+    // ASensorManager يحتاج ~500ms-1s قبل أن يبدأ بتسليم events.
+
+    // بدون هذا الانتظار يبدأ commander قبل وصول أي بيانات → "Accel/Gyro/Baro missing".
+
+    LOGI("Waiting 3s for Android sensor pipeline to warm up...");
+
+    usleep(3000000); // 3 ثوانٍ — يضمن وصول أول batch من الحساسات قبل sensors_main
+
+    LOGI("Sensor warm-up done — starting PX4 modules");
+
+
+
+    // 3. Parameters
+
+    //
+
+    // السياسة:
+
+    //   - "أول تشغيل للصاروخ" = SYS_AUTOSTART != 22000 (تثبيت جديد أو بعد Reset من QGC)
+
+    //   - عند أول تشغيل: تُضبط جميع بارميترات الـ airframe دفعةً واحدة
+
+    //   - بعد ذلك: أي تغيير من المحطة الأرضية يُحفظ ويبقى حتى Reset
+
+    //   - استثناء: CAL_*_ID تُضبط دائماً إذا كانت 0 (ضرورة Android)
+
+    //              COM_ARM_SDCARD و COM_RC_IN_MODE دائماً (بنية تحتية Android)
+
+    {
+
+        param_t p = param_find("SYS_AUTOSTART");
+
+
+
+        // ===== كشف أول تشغيل للصاروخ =====
+
+        int32_t current_autostart = 0;
+
+        if (p != PARAM_INVALID) {
+
+            param_get(p, &current_autostart);
+
+        }
+
+        // أول تشغيل: SYS_AUTOSTART لم يُضبط بعد (يساوي 0)
+
+        const bool first_rocket_run = (current_autostart == 0);
+
+
+
+        // SYS_AUTOSTART: default 22004 (HITL) on first run — أنسب للتطوير
+
+        // والاختبار (PIL/HITL مع 6DOF sim). للطيران الحقيقي بدّل إلى 22005
+
+        // عبر MAVLink PARAM_SET أو واجهة المستخدم.
+
+        // Actual airframes: 22003 (SITL-posix), 22004 (HITL), 22005 (Real).
+
+        // 22001/22002 kept as legacy aliases for HITL/Real respectively.
+
+        if (p != PARAM_INVALID) {
+
+            if (first_rocket_run) {
+
+                int32_t val = 22004;
+
+                param_set(p, &val);
+
+                current_autostart = 22004;
+
+                LOGI("SYS_AUTOSTART = 22004 — FIRST ROCKET RUN (HITL), applying all airframe defaults");
+
+            } else {
+
+                LOGI("SYS_AUTOSTART = %d — params preserved from previous session", current_autostart);
+
+            }
+
+        } else {
+
+            LOGE("SYS_AUTOSTART param not found!");
+
+        }
+
+
+
+        // ===== SYS_HITL auto-selection by airframe =====
+
+        //   22001 / 22004 -> HITL  (external simulator via MAVLink HIL)
+
+        //   22002 / 22005 -> Real flight (real sensors / hardware)
+
+        //   otherwise     -> SITL
+
+        int32_t sys_hitl = 0;
+
+        {
+
+            int32_t hitl_val = (current_autostart == 22001 || current_autostart == 22004) ? 1 : 0;
+
+            sys_hitl = hitl_val;
+
+            p = param_find("SYS_HITL");
+
+            if (p != PARAM_INVALID) {
+
+                param_set(p, &hitl_val);
+
+                LOGI("SYS_HITL = %d (auto-set from airframe %d)", hitl_val, current_autostart);
+
+            }
+
+        }
+
+
+
+        // ===== HITL: CAL_ACC/GYRO must use sim sensor ID (runs EVERY start) =====
+
+        // When SYS_HITL=1, sensor_combined must use HIL_SENSOR data (device 1310988)
+
+        // not the real phone sensors (device 1310724). Without this, rocket_mpc reads
+
+        // real phone accel (desk = 0g body-X) and never detects launch.
+
+        if (sys_hitl == 1) {
+
+            p = param_find("CAL_ACC0_ID");
+
+            if (p != PARAM_INVALID) { int32_t v = 1310988; param_set(p, &v); }
+
+            p = param_find("CAL_GYRO0_ID");
+
+            if (p != PARAM_INVALID) { int32_t v = 1310988; param_set(p, &v); }
+
+            LOGI("HITL: CAL_ACC0_ID/CAL_GYRO0_ID = 1310988 (sim sensor)");
+
+
+
+            // ===== HITL: stop native_sensor_reader =====
+
+            // In HITL the IMU/Baro/Mag data is supplied by the simulator
+
+            // over TCP (HIL_SENSOR), not by the phone's hardware. The
+
+            // native sensor thread polls the phone IMU at ~400 Hz, baro
+
+            // at 25 Hz and mag at 100 Hz — pure CPU load with no benefit
+
+            // in HITL because android_uorb_publishers already drops these
+
+            // when SYS_HITL=1. Stopping the producer thread frees ~5-15%
+
+            // CPU which the MPC solver desperately needs (HITL was
+
+            // hitting 22% deadline misses with avg=21.8 ms / max=140 ms
+
+            // vs PIL avg=5.6 ms on the same hardware).
+
+            native_sensor_stop();
+
+            LOGI("HITL: native_sensor_reader stopped (sensors come from TCP)");
+
+
+
+            // ===== HITL: stop gps_usb_ubx polling =====
+
+            // GPS data in HITL also comes from the simulator (HIL_GPS over
+
+            // TCP).  The gps_usb_ubx thread otherwise sits in a 1 Hz USB
+
+            // device-discovery poll waiting for a u-blox/PL2303 to appear,
+
+            // and once attached it would push competing GPS samples into
+
+            // EKF2.  Stopping it removes one more thread from the busy
+
+            // big-cluster cores so the MPC solver gets a fairer slice.
+
+            gps_usb_ubx_stop();
+
+            LOGI("HITL: gps_usb_ubx stopped (GPS comes from TCP)");
+
+        }
+
+
+
+        // ===== كشف تغيّر الـ airframe =====
+
+        // نحفظ آخر airframe في SYS_AUTOCONFIG
+
+        // إذا تغيّر → نطبّق كل الافتراضيات من جديد
+
+        // إذا لم يتغيّر → تعديلات المستخدم تبقى محفوظة
+
+        int32_t last_applied_airframe = 0;
+
+        param_t p_autoconfig = param_find("SYS_AUTOCONFIG");
+
+        if (p_autoconfig != PARAM_INVALID) {
+
+            param_get(p_autoconfig, &last_applied_airframe);
+
+        }
+
+        const bool airframe_changed = (current_autostart != last_applied_airframe);
+
+
+
+        if (airframe_changed) {
+
+            LOGI("Airframe changed: %d -> %d — applying all defaults", last_applied_airframe, current_autostart);
+
+
+
+            // حفظ الـ airframe الحالي لكشف التغيير في المرة القادمة
+
+            if (p_autoconfig != PARAM_INVALID) {
+
+                param_set(p_autoconfig, &current_autostart);
+
+            }
+
+        } else {
+
+            LOGI("Airframe %d unchanged — user params preserved", current_autostart);
+
+        }
+
+
+
+        // ===== بارميترات الـ airframe =====
+
+        // تُطبّق عند: أول تشغيل أو تغيّر الـ airframe
+
+        // تبقى محفوظة عند: reboot بدون تغيير airframe
+
+        if (first_rocket_run || airframe_changed) {
+
+
+
+            // ============================================================
+
+            // rc.rocket_defaults — المعاملات المشتركة بين كل الـ airframes
+
+            // ============================================================
+
+
+
+            // -- نوع المركبة --
+
+            p = param_find("MAV_TYPE");
+
+            if (p != PARAM_INVALID) { int32_t v = 9; param_set(p, &v); }
+
+
+
+            // -- EKF2 أساسي --
+
+            p = param_find("EKF2_GPS_CTRL");
+
+            if (p != PARAM_INVALID) { int32_t v = 7; param_set(p, &v); }
+
+            p = param_find("EKF2_HGT_REF");
+
+            if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+            p = param_find("EKF2_BARO_CTRL");
+
+            if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+            p = param_find("EKF2_MAG_CHECK");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("EKF2_GPS_CHECK");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+
+
+            // -- EKF2 ضبط ضوضاء الحساسات للصاروخ --
+
+            // ACC_NOISE must be HIGH to prevent GPS velocity innovations from
+
+            // corrupting attitude through Kalman cross-terms during high-G burn.
+
+            // With 0.5: K_vel≈2% → velocity error accumulates → dpitch=-4.5°
+
+            // With 3.0: K_vel≈44% → GPS corrects velocity, not attitude.
+
+            p = param_find("EKF2_ACC_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 2.0f; param_set(p, &v); }    // 3.0 → 2.0 (matches SITL airframe 22003 — verified 91/100)
+
+            p = param_find("EKF2_GYR_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 0.025f; param_set(p, &v); }  // was 0.05
+
+            p = param_find("EKF2_GPS_V_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 0.5f; param_set(p, &v); }   // 1.5 → 0.5 (matches SITL — bridge gps_vel_std=0.1)
+
+            p = param_find("EKF2_GPS_P_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 2.5f; param_set(p, &v); }   // 2.0 → 2.5 (matches SITL — bridge gps_pos_std=2.5)
+
+            p = param_find("EKF2_BARO_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 10.0f; param_set(p, &v); }
+
+
+
+            // -- EKF2 حدود السرعة (حرج: الصاروخ يصل 450 م/ث) --
+
+            p = param_find("EKF2_VEL_LIM");
+
+            if (p != PARAM_INVALID) { float v = 700.0f; param_set(p, &v); }
+
+            p = param_find("EKF2_GPS_DELAY");
+
+            if (p != PARAM_INVALID) { float v = 100.0f; param_set(p, &v); } // 200 → 100 (matches SITL + bridge gps_delay_ms=100)
+
+
+
+            // -- EKF2 ثوابت زمنية --
+
+            p = param_find("EKF2_TAU_VEL");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }  // was 0.5 — fast tracking, tuned 2026-05-05
+
+            p = param_find("EKF2_TAU_POS");
+
+            if (p != PARAM_INVALID) { float v = 0.5f; param_set(p, &v); }
+
+
+
+            // -- EKF2 تعلّم انحياز المقياس --
+
+            // Midpoint between defensive defaults and Allan-derived walk rate.
+
+            // Measured Allan BI (2026-05-03): accel 0.047 mg → walk ≈5e-5 m/s³,
+
+            //                                 gyro  8.02°/h → walk ≈2e-6 rad/s².
+
+            // Kept 100× margin for thermal drift + unmodeled correlation.
+
+            p = param_find("EKF2_ACC_B_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 0.005f; param_set(p, &v); }  // was 0.02
+
+            p = param_find("EKF2_GYR_B_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 0.0001f; param_set(p, &v); } // was 0.001 — freeze gyro bias, tuned 2026-05-05
+
+            p = param_find("EKF2_ABL_LIM");
+
+            if (p != PARAM_INVALID) { float v = 0.8f; param_set(p, &v); }   // 1.0 → 0.8 (PX4 max bound; avoids silent clipping)
+
+            p = param_find("EKF2_ABL_ACCLIM");
+
+            if (p != PARAM_INVALID) { float v = 25.0f; param_set(p, &v); }
+
+            p = param_find("EKF2_ABL_GYRLIM");
+
+            if (p != PARAM_INVALID) { float v = 10.0f; param_set(p, &v); }
+
+            p = param_find("EKF2_ABL_TAU");
+
+            if (p != PARAM_INVALID) { float v = 0.2f; param_set(p, &v); }
+
+
+
+            // -- EKF2 بوابات الابتكار --
+
+            p = param_find("EKF2_GPS_P_GATE");
+
+            if (p != PARAM_INVALID) { float v = 10.0f; param_set(p, &v); }
+
+            p = param_find("EKF2_GPS_V_GATE");
+
+            if (p != PARAM_INVALID) { float v = 50.0f; param_set(p, &v); }  // 10 → 50 (matches SITL — wider gate for high-G burn)
+
+            p = param_find("EKF2_BARO_GATE");
+
+            if (p != PARAM_INVALID) { float v = 15.0f; param_set(p, &v); }
+
+
+
+            // -- EKF2 بدون GPS --
+
+            p = param_find("EKF2_NOAID_TOUT");
+
+            if (p != PARAM_INVALID) { int32_t v = 2000000; param_set(p, &v); }
+
+            p = param_find("EKF2_NOAID_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 50.0f; param_set(p, &v); }
+
+
+
+            // -- EKF2 معدل التنبؤ (100 Hz — يقلل CPU بالنصف؛ مطابق SITL airframe) --
+
+            p = param_find("EKF2_PREDICT_US");
+
+            if (p != PARAM_INVALID) { int32_t v = 10000; param_set(p, &v); } // 5000 → 10000 (200Hz → 100Hz)
+
+            // -- IMU integration rate (must match EKF2_PREDICT_US) --
+            p = param_find("IMU_INTEG_RATE");
+
+            if (p != PARAM_INVALID) { int32_t v = 100; param_set(p, &v); }
+
+            // -- Inner-loop gyro publication rate --
+            p = param_find("IMU_GYRO_RATEMAX");
+
+            if (p != PARAM_INVALID) { int32_t v = 100; param_set(p, &v); }
+
+            // -- EKF2 initial tilt uncertainty: fast tilt_align (matches SITL) --
+            p = param_find("EKF2_ANGERR_INIT");
+
+            if (p != PARAM_INVALID) { float v = 0.01f; param_set(p, &v); }
+
+            // -- Heading fusion gates (for MAG_TYPE=6 init-only at ARM) --
+            p = param_find("EKF2_HDG_GATE");
+
+            if (p != PARAM_INVALID) { float v = 10.0f; param_set(p, &v); }
+
+            p = param_find("EKF2_HEAD_NOISE");
+
+            if (p != PARAM_INVALID) { float v = 0.7f; param_set(p, &v); }
+
+
+
+            // -- Failure Detection --
+
+            p = param_find("FD_FAIL_P");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("FD_FAIL_R");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("FD_ESCS_EN");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+
+
+            // -- فحوصات التسليح --
+
+            p = param_find("COM_ARM_CHK_ESCS");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("COM_ARM_HFLT_CHK");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("COM_ARM_WO_GPS");
+
+            if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+            p = param_find("COM_ARM_ODID");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+
+
+            // -- Failsafe --
+
+            p = param_find("COM_ACT_FAIL_ACT");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("COM_LOW_BAT_ACT");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("NAV_DLL_ACT");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("NAV_RCL_ACT");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("GF_ACTION");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("CBRK_SUPPLY_CHK");
+
+            if (p != PARAM_INVALID) { int32_t v = 894281; param_set(p, &v); }
+
+            p = param_find("COM_DISARM_PRFLT");
+
+            if (p != PARAM_INVALID) { float v = -1.0f; param_set(p, &v); }
+
+            p = param_find("COM_FLT_TIME_MAX");
+
+            if (p != PARAM_INVALID) { int32_t v = -1; param_set(p, &v); }
+
+            p = param_find("COM_PARACHUTE");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("COM_WIND_WARN");
+
+            if (p != PARAM_INVALID) { float v = 0.0f; param_set(p, &v); }
+
+            p = param_find("COM_WIND_MAX");
+
+            if (p != PARAM_INVALID) { float v = 0.0f; param_set(p, &v); }
+
+
+
+            // -- Android/RC --
+
+            p = param_find("COM_RC_IN_MODE");
+
+            if (p != PARAM_INVALID) { int32_t v = 4; param_set(p, &v); }
+
+            p = param_find("SYS_HAS_NUM_ASPD");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("SYS_HAS_NUM_OF");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("SYS_HAS_NUM_DIST");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+
+
+            // -- Logging --
+
+            p = param_find("SDLOG_MODE");
+
+            if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+            p = param_find("SDLOG_BACKEND");
+
+            if (p != PARAM_INVALID) { int32_t v = 3; param_set(p, &v); }
+
+
+
+            // -- Control Allocator (X-fin) --
+
+            p = param_find("CA_AIRFRAME");
+
+            if (p != PARAM_INVALID) { int32_t v = 9; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS_COUNT");
+
+            if (p != PARAM_INVALID) { int32_t v = 4; param_set(p, &v); }
+
+            // Fin 0
+
+            p = param_find("CA_SV_CS0_TYPE");
+
+            if (p != PARAM_INVALID) { int32_t v = 12; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS0_TRQ_R");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS0_TRQ_P");
+
+            if (p != PARAM_INVALID) { float v = -0.25f; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS0_TRQ_Y");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }
+
+            // Fin 1
+
+            p = param_find("CA_SV_CS1_TYPE");
+
+            if (p != PARAM_INVALID) { int32_t v = 12; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS1_TRQ_R");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS1_TRQ_P");
+
+            if (p != PARAM_INVALID) { float v = -0.25f; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS1_TRQ_Y");
+
+            if (p != PARAM_INVALID) { float v = -0.25f; param_set(p, &v); }
+
+            // Fin 2
+
+            p = param_find("CA_SV_CS2_TYPE");
+
+            if (p != PARAM_INVALID) { int32_t v = 12; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS2_TRQ_R");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS2_TRQ_P");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS2_TRQ_Y");
+
+            if (p != PARAM_INVALID) { float v = -0.25f; param_set(p, &v); }
+
+            // Fin 3
+
+            p = param_find("CA_SV_CS3_TYPE");
+
+            if (p != PARAM_INVALID) { int32_t v = 12; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS3_TRQ_R");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS3_TRQ_P");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }
+
+            p = param_find("CA_SV_CS3_TRQ_Y");
+
+            if (p != PARAM_INVALID) { float v = 0.25f; param_set(p, &v); }
+
+
+
+            // -- Rocket MPC Parameters — M130 --
+
+            struct { const char* name; float val; } rocket_params[] = {
+
+                { "ROCKET_T_CTRL",    0.3f  },
+
+                { "ROCKET_IMP_ANG", -30.0f  },
+
+            };
+
+            for (auto& rp : rocket_params) {
+
+                p = param_find(rp.name);
+
+                if (p != PARAM_INVALID) { param_set(p, &rp.val); }
+
+            }
+
+
+
+            // ============================================================
+
+            // Airframe-specific defaults.
+
+            //   Real flight  : 22002 (legacy) / 22005
+
+            //   HITL         : 22001 (legacy) / 22004
+
+            //   SITL/Android : otherwise (incl. 22000 / 22003)
+
+            // ============================================================
+
+            if (current_autostart == 22002 || current_autostart == 22005) {
+
+                // === Real flight: real onboard sensors ===
+
+                p = param_find("SENS_EN_GPSSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+                p = param_find("SENS_EN_BAROSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+                p = param_find("SENS_EN_MAGSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+                p = param_find("EKF2_MAG_TYPE");
+
+                if (p != PARAM_INVALID) { int32_t v = 6; param_set(p, &v); }
+
+                p = param_find("EKF2_MAG_ACCLIM");
+
+                if (p != PARAM_INVALID) { float v = 30.0f; param_set(p, &v); }
+
+                p = param_find("SYS_HAS_MAG");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                // Real-flight arming gate: require a GPS fix and a converged
+
+                // EKF2 state estimate.  Mirrors the settings in ROMFS airframe
+
+                // 22005_m130_rocket_mpc_real so that JNI-driven parameter
+
+                // overrides do not quietly re-open the permissive path.
+
+                //
+
+                // COM_ARM_WO_GPS = 0  : deny arming on any GPS check fail.
+
+                // EKF2_GPS_CHECK = 1037 : bits 0|2|3|10 = sats + EPH + EPV + fix.
+
+                //
+
+                // The previously-set COM_ARM_EKF_{POS,VEL,HGT} names are not
+
+                // defined in current PX4 (legacy from an older fork) so the
+
+                // writes were no-ops; removed here to avoid the false sense
+
+                // of safety they gave.
+
+                p = param_find("COM_ARM_WO_GPS");
+
+                if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+                p = param_find("EKF2_GPS_CHECK");
+
+                if (p != PARAM_INVALID) { int32_t v = 1037; param_set(p, &v); }
+
+                // ROCKET_SITL_GPS=0: real flight reads raw sensor_gps for guidance
+
+                // origin and publishes to actuator_servos (not actuator_outputs_sim).
+
+                // Force 0 even if a previous SITL session left it at 1.
+
+                p = param_find("ROCKET_SITL_GPS");
+
+                if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+                // XqpowerCan â CAN servo driver with current limit
+
+                p = param_find("XQCAN_ENABLE");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                p = param_find("XQCAN_LIMIT");
+
+                if (p != PARAM_INVALID) { float v = 20.0f; param_set(p, &v); }
+
+                // ═══ RULE: RKT_MPC_SVO_DLY (servo transport delay) ════════════
+
+                //
+
+                //   RKT_MPC_SVO_DLY = max(pure_delay + tau_servo + 40ms, 100ms)
+
+                //
+
+                //   pure_delay = pure servo+CAN transport delay from /direct (ms)
+
+                //   tau_servo  = servo first-order time constant from /direct (ms).
+
+                //                The MPC's NX=15 ideal-fin model has NO servo
+
+                //                dynamics — τ acts as ADDITIONAL effective dead
+
+                //                time. WITHOUT τ in compensation, closed-loop
+
+                //                exhibits a 5 Hz LIMIT CYCLE in pitch rate.
+
+                //                (Verified 6DOF sim 2026-05-02.)
+
+                //   + 40ms     = safety for delays /direct does NOT see:
+
+                //                 • PX4 scheduling jitter (1–5 ms)
+
+                //                 • sensor pipeline gyro→EKF2→MPC (5–15 ms)
+
+                //                 • CAN bus contention w/ 4 actuators (1–3 ms)
+
+                //                 • MPC solve-time variability (5–10 ms)
+
+                //                 • future-planning safety (10–15 ms)
+
+                //   100ms      = absolute floor: MPC needs lookahead_stage ≥ 5
+
+                //               (= 5 × dt_h, dt_h=20ms) for stable dead-time
+
+                //               compensation; below it MPC may oscillate.
+
+                //
+
+                //   How to set for a new servo:
+
+                //     1. Run /direct repeatability → aggregate-fit
+
+                //        Extract BOTH: pure_delay AND tau_servo (τ)
+
+                //     2. candidate = pure_delay + tau_servo + 40 (ms)
+
+                //     3. if candidate < 100 → use 0.100f (floor)
+
+                //        else               → use candidate/1000.0f
+
+                //     4. ALSO update the canonical definition at
+
+                //        PX4-Autopilot/src/modules/rocket_mpc/rocket_mpc_params.c
+
+                //        (PARAM_DEFINE_FLOAT(RKT_MPC_SVO_DLY, ...))
+
+                //
+
+                //   Current servo: XQPOWER XQ-BLS8145C
+
+                //     /direct (2026-05-02, repeatability × 2 runs):
+
+                //       pure_delay = 39.31 ms  (aggregate fit R²=0.95)
+
+                //       tau_servo  = 29.88 ms  (aggregate fit R²=0.95)
+
+                //     Apply rule: max(39.31 + 29.88 + 40, 100) = 109.19 ms
+
+                //     → 0.109f → lookahead_stage = 5
+
+                // ══════════════════════════════════════════════════════════════════
+
+                p = param_find("RKT_MPC_SVO_DLY");
+
+                if (p != PARAM_INVALID) { float v = 0.100f; param_set(p, &v); }  // unified: lookahead_stage=5
+
+                // Battery — cell count and voltage divider
+
+                p = param_find("BAT1_N_CELLS");
+
+                if (p != PARAM_INVALID) { int32_t v = 6; param_set(p, &v); }
+
+                p = param_find("BAT1_V_DIV");
+
+                if (p != PARAM_INVALID) { float v = 74.74f; param_set(p, &v); }
+
+                LOGI("Airframe %d (Real flight) defaults applied", current_autostart);
+
+
+
+            } else if (current_autostart == 22001 || current_autostart == 22004) {
+
+                // === HITL: external simulator over MAVLink HIL ===
+
+                // EKF2_MAG_TYPE = 6 (init-only): align yaw from sim magnetometer
+                // on the launch rail, then ignore mag in flight. Required for
+                // ROCKET_USE_GT=0 (full EKF2 path); without it, yaw never aligns
+                // and EKF2 NED frame is undefined → MPC sees garbage state.
+                // Previous value (5 = none) only worked when ROCKET_USE_GT=1.
+                p = param_find("EKF2_MAG_TYPE");
+
+                if (p != PARAM_INVALID) { int32_t v = 6; param_set(p, &v); }
+
+                // Simulated sensors required to receive HIL streams
+
+                p = param_find("SENS_EN_GPSSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                p = param_find("SENS_EN_BAROSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                p = param_find("SENS_EN_MAGSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                // ROCKET_SITL_GPS: in HITL, _hitl flag already handles GPS source
+
+                // routing and actuator path (via || in RocketMPC.cpp), so this
+
+                // param is redundant here.  Set to 1 for documentation clarity.
+
+                p = param_find("ROCKET_SITL_GPS");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                // XqpowerCan â CAN servo driver
+
+                p = param_find("XQCAN_ENABLE");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                p = param_find("XQCAN_LIMIT");
+
+                if (p != PARAM_INVALID) { float v = 20.0f; param_set(p, &v); }
+
+                // ═══ RULE: RKT_MPC_SVO_DLY (servo transport delay) ════════════
+
+                //
+
+                //   RKT_MPC_SVO_DLY = max(pure_delay + tau_servo + 40ms, 100ms)
+
+                //
+
+                //   pure_delay = pure servo+CAN transport delay from /direct (ms)
+
+                //   tau_servo  = servo first-order time constant from /direct (ms).
+
+                //                The MPC's NX=15 ideal-fin model has NO servo
+
+                //                dynamics — τ acts as ADDITIONAL effective dead
+
+                //                time. WITHOUT τ in compensation, closed-loop
+
+                //                exhibits a 5 Hz LIMIT CYCLE in pitch rate.
+
+                //                (Verified 6DOF sim 2026-05-02.)
+
+                //   + 40ms     = safety for delays /direct does NOT see:
+
+                //                 • PX4 scheduling jitter (1–5 ms)
+
+                //                 • sensor pipeline gyro→EKF2→MPC (5–15 ms)
+
+                //                 • CAN bus contention w/ 4 actuators (1–3 ms)
+
+                //                 • MPC solve-time variability (5–10 ms)
+
+                //                 • future-planning safety (10–15 ms)
+
+                //   100ms      = absolute floor: MPC needs lookahead_stage ≥ 5
+
+                //               (= 5 × dt_h, dt_h=20ms) for stable dead-time
+
+                //               compensation; below it MPC may oscillate.
+
+                //
+
+                //   How to set for a new servo:
+
+                //     1. Run /direct repeatability → aggregate-fit
+
+                //        Extract BOTH: pure_delay AND tau_servo (τ)
+
+                //     2. candidate = pure_delay + tau_servo + 40 (ms)
+
+                //     3. if candidate < 100 → use 0.100f (floor)
+
+                //        else               → use candidate/1000.0f
+
+                //     4. ALSO update the canonical definition at
+
+                //        PX4-Autopilot/src/modules/rocket_mpc/rocket_mpc_params.c
+
+                //        (PARAM_DEFINE_FLOAT(RKT_MPC_SVO_DLY, ...))
+
+                //
+
+                //   Current servo: XQPOWER XQ-BLS8145C
+
+                //     /direct (2026-05-02, repeatability × 2 runs):
+
+                //       pure_delay = 39.31 ms  (aggregate fit R²=0.95)
+
+                //       tau_servo  = 29.88 ms  (aggregate fit R²=0.95)
+
+                //     Apply rule: max(39.31 + 29.88 + 40, 100) = 109.19 ms
+
+                //     → 0.109f → lookahead_stage = 5
+
+                // ══════════════════════════════════════════════════════════════════
+
+                p = param_find("RKT_MPC_SVO_DLY");
+
+                if (p != PARAM_INVALID) { float v = 0.100f; param_set(p, &v); }  // unified: lookahead_stage=5
+
+                // ROCKET_USE_GT = 0 → MPC reads EKF2 output (full sensor→EKF2→MPC path).
+                // This is the realistic flight-like behavior for HITL/PIL. The compile-time
+                // default in rocket_mpc_params.c is 1 (groundtruth) which bypasses EKF2
+                // entirely — only useful for SITL parity with Python ref.
+                p = param_find("ROCKET_USE_GT");
+
+                if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+                LOGI("Airframe %d (HITL) defaults applied", current_autostart);
+
+
+
+            } else {
+
+                // === SITL/Android: simulated sensors from phone stack ===
+
+                p = param_find("EKF2_MAG_TYPE");
+
+                if (p != PARAM_INVALID) { int32_t v = 5; param_set(p, &v); }
+
+                p = param_find("SENS_EN_GPSSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                p = param_find("SENS_EN_BAROSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                p = param_find("SENS_EN_MAGSIM");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                // SITL: use EKF2 lpos for guidance origin + route to actuator_outputs_sim.
+
+                p = param_find("ROCKET_SITL_GPS");
+
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+                LOGI("Airframe %d (SITL/Phone) defaults applied", current_autostart);
+
+            }
+
+
+
+            LOGI("All rocket airframe defaults applied (M130 / rc.rocket_defaults + airframe-specific)");
+
+        }
+
+
+
+        // ===== CAL_*_ID — دائماً إذا كانت 0 (ضرورة Android) =====
+
+        // تُضبط إذا لم تكن موجودة. إذا عايَر المستخدم الحساسات عبر QGC تبقى قيمه.
+
+        // في وضع HITL: لا نكتب ACC/GYRO لأننا ضبطناها أعلاه على 1310988 (sim sensor)
+
+        {
+
+            struct { const char* name; int32_t id; bool skip_in_hitl; } cal_ids[] = {
+
+                {"CAL_ACC0_ID",  1310724, true },  // ANDROID_DEVID_IMU  (skip in HITL)
+
+                {"CAL_GYRO0_ID", 1310724, true },  // ANDROID_DEVID_IMU  (skip in HITL)
+
+                {"CAL_MAG0_ID",  196612,  false},  // ANDROID_DEVID_MAG
+
+                {"CAL_BARO0_ID", 6619141, false},  // ANDROID_DEVID_BARO ((0x65<<16)|5) — SERIAL bus → external (so PX4 uses real baro temp not 15°C default)
+
+            };
+
+            for (auto& cal : cal_ids) {
+
+                if (sys_hitl == 1 && cal.skip_in_hitl) continue;
+
+                p = param_find(cal.name);
+
+                if (p != PARAM_INVALID) {
+
+                    int32_t cur = 0;
+
+                    param_get(p, &cur);
+
+                    if (cur == 0) {
+
+                        param_set(p, &cal.id);
+
+                        LOGI("%s = %d (Android device ID)", cal.name, cal.id);
+
+                    }
+
+                }
+
+            }
+
+
+
+            // CAL_MAG0_PRIO: تُضبط على 50 إذا كانت <= 0 (الافتراضي -1 = معطّل)
+
+            p = param_find("CAL_MAG0_PRIO");
+
+            if (p != PARAM_INVALID) {
+
+                int32_t prio = 0;
+
+                param_get(p, &prio);
+
+                if (prio <= 0) {
+
+                    int32_t v = 50;
+
+                    param_set(p, &v);
+
+                    LOGI("CAL_MAG0_PRIO = 50");
+
+                }
+
+            }
+
+        }
+
+
+
+        // COM_ARM_SDCARD = 0: دائماً — الهاتف لا يملك SD Card فيمنع ARM بدون هذا
+
+        p = param_find("COM_ARM_SDCARD");
+
+        if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+
+
+        // SYS_HAS_GPS = 1: GPS خارجي عبر USB (u-blox UBX)
+
+        p = param_find("SYS_HAS_GPS");
+
+        if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+
+
+
+    }
+
+
+
+    // 3b. Load monitor (CPU/RAM — مطلوب من commander لفحص ما قبل الطيران)
+
+    const char* lm_argv[] = {"load_mon", "start", nullptr};
+
+    load_mon_main(2, (char**)lm_argv);
+
+    LOGI("Load monitor started");
+
+
+
+    // 4. Sensors module (يقرأ من uORB sensor topics ويعالجها)
+
+    const char* sensors_argv[] = {"sensors", "start", nullptr};
+
+    sensors_main(2, (char**)sensors_argv);
+
+    LOGI("Sensors started");
+
+
+
+    // 4. EKF2
+
+    const char* ekf2_argv[] = {"ekf2", "start", nullptr};
+
+    ekf2_main(2, (char**)ekf2_argv);
+
+    LOGI("EKF2 started");
+
+
+
+    // 5. Commander
+
+    // Check SYS_HITL parameter: if 1, pass -h flag to enable HIL mode
+
+    // (commander -h sets hil_state = HIL_STATE_ON, required for
+
+    //  HIL_ACTUATOR_CONTROLS stream and sensor check bypass)
+
+    int32_t sys_hitl = 0;
+
+    param_get(param_find("SYS_HITL"), &sys_hitl);
+
+    if (sys_hitl == 1) {
+
+        const char* cmd_argv[] = {"commander", "start", "-h", nullptr};
+
+        commander_main(3, (char**)cmd_argv);
+
+        LOGI("Commander started with HIL mode (-h)");
+
+    } else {
+
+        const char* cmd_argv[] = {"commander", "start", nullptr};
+
+        commander_main(2, (char**)cmd_argv);
+
+        LOGI("Commander started");
+
+    }
+
+
+
+    // 6a. Dataman (تخزين المهمات في ملف — يجب أن يسبق Navigator)
+
+    const char* dm_argv[] = {"dataman", "start", "-f", "./dataman/dataman", nullptr};
+
+    dataman_main(4, (char**)dm_argv);
+
+    LOGI("Dataman started (file-backed: ./dataman/dataman)");
+
+
+
+    // 6b. Navigator
+
+    const char* nav_argv[] = {"navigator", "start", nullptr};
+
+    navigator_main(2, (char**)nav_argv);
+
+    LOGI("Navigator started");
+
+
+
+    // 7. Land detector — "fixedwing" mode for the rocket.
+
+    //
+
+    // Why not "multicopter"?
+
+    //   MulticopterLandDetector relies on:
+
+    //     (a) low thrust setpoint   ✓ (rocket post-burnout = thrust 0)
+
+    //     (b) stable gyro/accel     ✗ rocket spins fast during descent
+
+    //                                 → "stable" check never passes
+
+    //                                 OR worse: triggers falsely at apogee
+
+    //                                 if baro is noisy → mid-flight auto-disarm.
+
+    //
+
+    // Why "fixedwing" works:
+
+    //   FixedwingLandDetector falls back to groundspeed/Z-velocity from EKF2
+
+    //   when airspeed is invalid (which is our case — no pitot tube).  It uses
+
+    //   rotational threshold ONLY when both airspeed and groundspeed are
+
+    //   missing, so a spinning rocket during descent (with valid GPS velocity)
+
+    //   stays "in air" until it actually stops moving.
+
+    //
+
+    // For SITL/HITL the detector is essentially advisory (sim ends before
+
+    // landing) but for Real Flight (22005) this prevents the multicopter
+
+    // false-trigger crash class.
+
+    const char* ld_argv[] = {"land_detector", "start", "fixedwing", nullptr};
+
+    land_detector_main(3, (char**)ld_argv);
+
+
+
+    // 8. Flight mode manager
+
+    const char* fmm_argv[] = {"flight_mode_manager", "start", nullptr};
+
+    flight_mode_manager_main(2, (char**)fmm_argv);
+
+
+
+    // 9. Manual control
+
+    const char* mc_argv[] = {"manual_control", "start", nullptr};
+
+    manual_control_main(2, (char**)mc_argv);
+
+
+
+    // 10. Controllers (كلهم — commander يفعّل المناسب حسب SYS_AUTOSTART)
+
+    const char* mca_argv[] = {"mc_att_control", "start", nullptr};
+
+    mc_att_control_main(2, (char**)mca_argv);
+
+
+
+    const char* mcp_argv[] = {"mc_pos_control", "start", nullptr};
+
+    mc_pos_control_main(2, (char**)mcp_argv);
+
+
+
+    const char* mcr_argv[] = {"mc_rate_control", "start", nullptr};
+
+    mc_rate_control_main(2, (char**)mcr_argv);
+
+
+
+    const char* fwa_argv[] = {"fw_att_control", "start", nullptr};
+
+    fw_att_control_main(2, (char**)fwa_argv);
+
+
+
+    // fw_pos_control غير موجود في PX4 — يُستبدل بـ fw_lateral_longitudinal_control لاحقاً
+
+
+
+    const char* fwr_argv[] = {"fw_rate_control", "start", nullptr};
+
+    fw_rate_control_main(2, (char**)fwr_argv);
+
+
+
+    const char* ca_argv[] = {"control_allocator", "start", nullptr};
+
+    control_allocator_main(2, (char**)ca_argv);
+
+
+
+    // 10b. Rocket MPC (Rocket M130 — acados MPC+MHE, replaces former rocket_gnc)
+
+    const char* rmpc_argv[] = {"rocket_mpc", "start", nullptr};
+
+    rocket_mpc_main(2, (char**)rmpc_argv);
+
+    LOGI("Rocket MPC started");
+
+
+
+    // 10c. XQPOWER CAN servo driver (physical servos via Waveshare USB_CAN_A).
+
+    // USB FD may not be available yet -- driver connects when USB is plugged in.
+
+    //
+
+    // IMPORTANT: xqpower_can (below) and servo_usb_output (below) BOTH consume
+
+    //   actuator_outputs_sim / actuator_servos and BOTH emit XQPOWER servo
+
+    //   commands.  They must stay mutually exclusive at runtime: each driver is
+
+    //   expected to self-disable its output stage when its own transport
+
+    //   (USB-CAN adapter for xqpower_can; USB CP210x for servo_usb_output) is
+
+    //   not connected.  We start both unconditionally so whichever hardware is
+
+    //   plugged in wins.  If you ever find BOTH transports connected at the same
+
+    //   time to the same rocket, add an explicit exclusion (param or bridge
+
+    //   flag) — double-actuating the servos over two links will cause
+
+    //   controller fight.
+
+    const char* xqcan_argv[] = {"xqpower_can", "start", nullptr};
+
+    xqpower_can_main(2, (char**)xqcan_argv);
+
+    LOGI("XQPOWER CAN servo driver started");
+
+
+
+    // 10d. Servo USB output (reads actuator_servos -> sends XQPOWER via USB).
+
+    // See guard comment on 10c above: mutually exclusive with xqpower_can.
+
+    servo_usb_output_start();
+
+    LOGI("Servo USB output started");
+
+
+
+    // 10e. GPS USB UBX (reads u-blox binary protocol from USB GPS receiver)
+
+    gps_usb_ubx_start();
+
+    LOGI("GPS USB UBX reader started");
+
+
+
+    // 11. MAVLink — UDP دائماً + CP210x telemetry إذا متصل
+
+    {
+
+        // UDP MAVLink — دائماً يعمل (للـ TCP bridge و WiFi)
+
+        // Raise MAVLink budget for DEBUG_FLOAT_ARRAY (SRV_FB + RktGNC).
+
+        // 10kB/s starves SRV_FB in HIL closed-loop and collapses servo feedback
+
+        // to single-digit Hz. 40kB/s is a practical middle ground that improves
+
+        // feedback rate without jumping to very high telemetry load.
+
+        const char* mav_argv[] = {"mavlink", "start", "-u", "14550", "-o", "14551",
+
+                                  "-t", "127.0.0.1", "-r", "40000", "-m", "config", nullptr};
+
+        mavlink_main(12, (char**)mav_argv);
+
+        LOGI("MAVLink started on UDP 14550, sending to 127.0.0.1:14551, rate=40000");
+
+
+
+        // TCP bridge — دائماً يعمل (TCP:5760 ↔ UDP:14550)
+
+        mavlink_tcp_bridge_start(5760, 14550);
+
+        LOGI("TCP bridge started on port 5760 (for USB/ADB)");
+
+
+
+        // تفعيل بثّ DEBUG_VECT (لأجل PIL timing capture) — بعد ~1s ليكون mavlink جاهزاً
+
+        std::thread([]() {
+
+            sleep(1);
+
+            const char* s_argv[] = {"mavlink", "stream", "-u", "14550",
+
+                                    "-s", "DEBUG_VECT", "-r", "20", nullptr};
+
+            mavlink_main(8, (char**)s_argv);
+
+            LOGI("MAVLink: DEBUG_VECT stream enabled @20Hz on UDP 14550");
+
+
+
+            // SRV_FB من xqpower_can يُنشَر كـ DEBUG_FLOAT_ARRAY (msg 350)
+
+            // الـ HIL bridge يعتمد عليه لاستقبال online_mask + cmd/fb/err.
+
+            // بدون تفعيل البثّ يبقى online_mask=0x00 ويُجهَض HIL بعد 500ms.
+
+            const char* s2_argv[] = {"mavlink", "stream", "-u", "14550",
+
+                                     "-s", "DEBUG_FLOAT_ARRAY", "-r", "40", nullptr};
+
+            mavlink_main(8, (char**)s2_argv);
+
+            LOGI("MAVLink: DEBUG_FLOAT_ARRAY stream enabled @40Hz on UDP 14550 (SRV_FB prioritized)");
+
+        }).detach();
+
+
+
+        // CP210x telemetry — إضافي إذا متصل (instance ثاني من MAVLink)
+
+        const int telem_fd = g_mavlink_telemetry_usb_fd.load();
+
+        if (telem_fd >= 0 && mavlink_pty_usb_bridge_start(telem_fd, 115200)) {
+
+            const char* pty = mavlink_pty_usb_bridge_get_slave_path();
+
+            if (pty) {
+
+                const char* mav2_argv[] = {"mavlink", "start",
+
+                    "-d", pty, "-b", "115200", "-r", "10000", "-m", "0", nullptr};
+
+                mavlink_main(10, (char**)mav2_argv);
+
+                LOGI("MAVLink serial instance started (CP210x): %s baud=115200", pty);
+
+            }
+
+        } else if (telem_fd >= 0) {
+
+            mavlink_pty_usb_bridge_stop();
+
+            LOGE("CP210x PTY bridge failed — serial telemetry unavailable");
+
+        }
+
+    }
+
+
+
+    // 12b. HITL: pwm_out_sim
+
+    if (sys_hitl == 1) {
+
+        const char* pwmsim_argv[] = {"pwm_out_sim", "start", nullptr};
+
+        pwm_out_sim_main(2, (char**)pwmsim_argv);
+
+        LOGI("pwm_out_sim started (HITL mode)");
+
+
+
+        // 12c. PIL/HITL: simulator_mavlink client → connects to PC bridge
+
+        //      Target IP is read from system property `persist.m130.target_ip`
+
+        //      (defaults to "10.42.0.1" — PC's IP on the shared-connection
+
+        //      Ethernet subnet created by NetworkManager).
+
+        //      Fallbacks in priority order:
+
+        //        1. persist.m130.target_ip  (set via: adb shell setprop ...)
+
+        //        2. "10.42.0.1"             (Ethernet — NetworkManager default)
+
+        //        3. "127.0.0.1"             (legacy USB adb reverse tunnel)
+
+        //      Ethernet path gives ~2 ms round-trip instead of ~70 ms over
+
+        //      adb-reverse-TCP-over-USB, which lets the MPC solver see fresh
+
+        //      state and escape the low-arc local minimum on ARM64.
+
+        static char target_ip[64] = {0};
+
+        // Try debug.* namespace first (settable without root via:
+        //   adb shell setprop debug.m130.target_ip 127.0.0.1   # USB tunnel
+        //   adb shell setprop debug.m130.target_ip 10.42.0.1   # Ethernet
+        __system_property_get("debug.m130.target_ip", target_ip);
+
+        if (target_ip[0] == '\0') {
+            __system_property_get("m130.target_ip", target_ip);
+        }
+
+        if (target_ip[0] == '\0') {
+            __system_property_get("persist.m130.target_ip", target_ip);
+        }
+
+        if (target_ip[0] == '\0') {
+
+            // Default for WiFi/USB-tethered ADB: laptop's IP on shared 10.42.0.0/24 network.
+            // For USB ADB with `adb reverse`, "127.0.0.1" works too.
+            strncpy(target_ip, "10.42.0.1", sizeof(target_ip) - 1);
+
+        }
+
+        const char* simmav_argv[] = {"simulator_mavlink", "start", "-t", target_ip, "4560", nullptr};
+
+        simulator_mavlink_main(5, (char**)simmav_argv);
+
+        LOGI("simulator_mavlink started (client → %s:4560)", target_ip);
+
+
+
+        // 12d. HITL auto-arm: في وضع HITL لا يوجد RC/GCS حقيقي. نطلق خيطاً
+
+        //      يقوم بالتسلّح القسري بعد استقرار تدفّق المستشعرات (~3s).
+
+        //      rocket_mpc يحتاج arming_state == ARMED لبدء حلقة MPC.
+
+        //
+
+        //      `commander arm -f` = force arm — يتجاوز preflight checks.
+
+        //      هذا متعمّد في HITL لأن CPU load و missing-cal warnings تمنع
+
+        //      pre_flight_checks_pass من الوصول لـ true على الأجهزة الأبطأ
+
+        //      (OPPO mid-tier) رغم أن EKF2 متقارب وصالح للطيران المحاكى.
+
+        std::thread([]() {
+
+            // 3s — كان كافياً على Ethernet. زيادة إلى 20s تسبّب مشكلة:
+            //       bridge warmup ينتهي قبل وصول أول actuator → فشل الاختبار.
+            //       يعمل مع `-f` flag الذي يتخطّى pre_flight_checks بأي حال.
+            sleep(3);
+
+            LOGI("HITL auto-arm: invoking 'commander arm -f'");
+
+            const char* arm_argv[] = {"commander", "arm", "-f", nullptr};
+
+            commander_main(3, (char**)arm_argv);
+
+        }).detach();
+
+    }
+
+
+
+    // 13. Logger — MUST start after all publishing modules
+
+    // rocket_mpc publishes initial rocket_gnc_status in init() so orb_exists() sees it.
+
+    usleep(1000000); // 1s — ensure all work queue modules have run at least once
+
+
+
+    const char* log_argv[] = {"logger", "start", "-f", "-t", nullptr};
+
+    logger_main(4, (char**)log_argv);
+
+    LOGI("Logger started (boot-to-shutdown mode)");
+
+
+
+    // 14. Watchdog — must start LAST so every monitored module has had a
+
+    //     chance to publish at least once before the first poll cycle.
+
+    //     The log file lives next to PX4's other runtime artefacts so that
+
+    //     /watchdog's runner can pull it via adb over the same channel as
+
+    //     the PX4 log/ directory.
+
+    {
+
+        std::string wd_log = storage_path + "/watchdog_events.jsonl";
+
+        if (wd_init(wd_log.c_str(), /*poll_period_ms=*/50)) {
+
+            LOGI("Watchdog initialised (log=%s, period=50ms)", wd_log.c_str());
+
+        } else {
+
+            LOGE("Watchdog init failed — module liveness monitoring DISABLED");
+
+        }
+
+    }
+
+
+
+    LOGI("All PX4 modules started successfully!");
+
+}
+
+
+
+// ===== JNI Functions =====
+
+
+
+extern "C" JNIEXPORT jboolean JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_startPX4(
+
+    JNIEnv* env, jobject, jstring storagePath) {
+
+
+
+    if (s_running) {
+
+        LOGE("PX4 already running!");
+
+        return JNI_FALSE;
+
+    }
+
+
+
+    const char* path = env->GetStringUTFChars(storagePath, nullptr);
+
+    std::string storage(path);
+
+    env->ReleaseStringUTFChars(storagePath, path);
+
+
+
+    LOGI("Starting PX4 at: %s", storage.c_str());
+
+
+
+    // 1. تشغيل native sensor reader (IMU/Baro/Mag مباشرة من ASensorManager)
+
+    native_sensor_start();
+
+    LOGI("Native sensor reader started");
+
+
+
+    // 2. تشغيل PX4 modules في thread منفصل
+
+    // ملاحظة: uORB publishers تبدأ بعد init_once لأنها تحتاج uORB يكون جاهز
+
+    s_px4_thread = std::thread([storage]() {
+
+        g_restart_requested.store(false);
+
+        s_running = true;
+
+        start_px4_modules(storage);
+
+
+
+        while (true) {
+
+            // PX4 modules تعمل في work queues — ننام حتى يُطلب إيقاف أو إعادة تشغيل
+
+            while (s_running) { sleep(1); }
+
+
+
+            if (!g_restart_requested.load()) {
+
+                break; // إيقاف طبيعي
+
+            }
+
+
+
+            // QGC طلب Reboot — نعيد تشغيل الـ modules
+
+            LOGI("PX4 Android: executing soft restart...");
+
+            stop_modules_only();
+
+            g_restart_requested.store(false);
+
+            s_running = true;
+
+            start_px4_modules(storage); // init_once مُتجاهَل، params تُعاد
+
+            LOGI("PX4 Android: soft restart complete");
+
+        }
+
+    });
+
+    s_px4_thread.detach();
+
+
+
+    return JNI_TRUE;
+
+}
+
+
+
+extern "C" JNIEXPORT void JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_stopPX4(JNIEnv*, jobject) {
+
+    if (!s_running) {
+
+        LOGI("PX4 already stopped — skipping");
+
+        return;
+
+    }
+
+    s_running = false;
+
+    wd_shutdown();
+
+    mavlink_pty_usb_bridge_stop();
+
+    gps_usb_ubx_stop();
+
+    servo_usb_output_stop();
+
+    mavlink_tcp_bridge_stop();
+
+    stop_uorb_publishers();
+
+    native_sensor_stop();
+
+    LOGI("PX4 stopped");
+
+}
+
+
+
+extern "C" JNIEXPORT jboolean JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_isRunning(JNIEnv*, jobject) {
+
+    return s_running ? JNI_TRUE : JNI_FALSE;
+
+}
+
+
+
+// ===== عدادات الحساسات (للواجهة) =====
+
+
+
+extern "C" JNIEXPORT jlong JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getNativeImuCount(JNIEnv*, jobject) {
+
+    return g_sensor_counts.imu.load();
+
+}
+
+
+
+extern "C" JNIEXPORT jlong JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getNativeBaroCount(JNIEnv*, jobject) {
+
+    return g_sensor_counts.baro.load();
+
+}
+
+
+
+extern "C" JNIEXPORT jlong JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getNativeMagCount(JNIEnv*, jobject) {
+
+    return g_sensor_counts.mag.load();
+
+}
+
+
+
+extern "C" JNIEXPORT jlong JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getNativeGpsCount(JNIEnv*, jobject) {
+
+    return g_sensor_counts.gps.load();
+
+}
+
+
+
+// ===== حالة المركبة (من uORB → JNI → Kotlin UI) =====
+
+
+
+extern "C" JNIEXPORT jfloat JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getRoll(JNIEnv*, jobject) {
+
+    return get_vehicle_roll();
+
+}
+
+
+
+extern "C" JNIEXPORT jfloat JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getPitch(JNIEnv*, jobject) {
+
+    return get_vehicle_pitch();
+
+}
+
+
+
+extern "C" JNIEXPORT jfloat JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getYaw(JNIEnv*, jobject) {
+
+    return get_vehicle_yaw();
+
+}
+
+
+
+extern "C" JNIEXPORT jfloat JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getAltitude(JNIEnv*, jobject) {
+
+    return get_vehicle_altitude();
+
+}
+
+
+
+extern "C" JNIEXPORT jboolean JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_isArmed(JNIEnv*, jobject) {
+
+    return get_vehicle_armed() ? JNI_TRUE : JNI_FALSE;
+
+}
+
+
+
+extern "C" JNIEXPORT jint JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getEKFStatus(JNIEnv*, jobject) {
+
+    return get_ekf_status();
+
+}
+
+
+
+extern "C" JNIEXPORT jint JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_getAirframeId(JNIEnv*, jobject) {
+
+    return get_airframe_id();
+
+}
+
+
+
+extern "C" JNIEXPORT jboolean JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_setAirframeId(JNIEnv*, jobject, jint id) {
+
+    return set_airframe_id((int)id) ? JNI_TRUE : JNI_FALSE;
+
+}
+
+
+
+// ===== USB Servo Output (Phase 11.2) =====
+
+
+
+extern "C" JNIEXPORT void JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_setServoUsbFd(JNIEnv*, jobject, jint fd) {
+
+    servo_usb_set_fd(fd);
+
+}
+
+
+
+// ===== USB CAN Adapter (Waveshare USB_CAN_A) for xqpower_can SLCAN =====
+
+
+
+// Forward declaration — defined in XqpowerCan.cpp
+
+class XqpowerCan;
+
+namespace xqpower_can_jni {
+
+    extern void set_usb_fd(int fd);
+
+}
+
+
+
+extern "C" JNIEXPORT void JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_setCanUsbFd(JNIEnv*, jobject, jint fd) {
+
+    xqpower_can_jni::set_usb_fd(fd);
+
+}
+
+
+
+// ===== MAVLink Telemetry USB (CP210x) =====
+
+
+
+extern "C" JNIEXPORT void JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_setMavlinkTelemetryUsbFd(JNIEnv*, jobject, jint fd) {
+
+    g_mavlink_telemetry_usb_fd.store(static_cast<int>(fd));
+
+}
+
+
+
+// ===== USB GPS UBX (u-blox binary protocol) =====
+
+
+
+extern "C" JNIEXPORT void JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_setGpsUsbFd(JNIEnv*, jobject, jint fd) {
+
+    gps_usb_set_fd(fd);
+
+}
+
+
+
+// =============================================================================
+
+// Watchdog JNI surface — see watchdog_native.h
+
+//
+
+// Layout of the long[] returned by nativeGetModuleStatus (one row per call):
+
+//   [ 0] alive              (0/1)
+
+//   [ 1] was_alive_ever     (0/1)
+
+//   [ 2] auto_restart       (0/1)
+
+//   [ 3] last_alive_us
+
+//   [ 4] last_tick_us
+
+//   [ 5] last_crash_us
+
+//   [ 6] last_restart_us
+
+//   [ 7] last_recover_us
+
+//   [ 8] crash_count
+
+//   [ 9] restart_count
+
+//   [10] stale_us
+
+//   [11] now_us
+
+//   [12] age_us   (UINT64_MAX clamped to Long.MAX_VALUE for JVM — see code)
+
+// =============================================================================
+
+
+
+static jlong clamp_u64_to_jlong(uint64_t v) {
+
+    // jlong is signed 64-bit; UINT64_MAX overflows.  Clamp to INT64_MAX so
+
+    // Kotlin can still treat "never alive" as a very large age_us without
+
+    // sign-flipping into a small negative.
+
+    const uint64_t max_signed = 0x7FFFFFFFFFFFFFFFull;
+
+    return (jlong)(v > max_signed ? max_signed : v);
+
+}
+
+
+
+extern "C" JNIEXPORT jlongArray JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_nativeGetModuleStatus(
+
+    JNIEnv* env, jobject, jstring jname) {
+
+
+
+    const char* name = jname ? env->GetStringUTFChars(jname, nullptr) : nullptr;
+
+    wd_status_t st{};
+
+    const bool ok = name ? wd_get_module_status(name, &st) : false;
+
+    if (jname && name) env->ReleaseStringUTFChars(jname, name);
+
+
+
+    if (!ok) {
+
+        // Return empty array to signal "unknown module / watchdog not running"
+
+        return env->NewLongArray(0);
+
+    }
+
+
+
+    jlongArray out = env->NewLongArray(13);
+
+    jlong vals[13] = {
+
+        st.alive           ? 1 : 0,
+
+        st.was_alive_ever  ? 1 : 0,
+
+        st.auto_restart    ? 1 : 0,
+
+        (jlong)st.last_alive_us,
+
+        (jlong)st.last_tick_us,
+
+        (jlong)st.last_crash_us,
+
+        (jlong)st.last_restart_us,
+
+        (jlong)st.last_recover_us,
+
+        (jlong)st.crash_count,
+
+        (jlong)st.restart_count,
+
+        (jlong)st.stale_us,
+
+        (jlong)st.now_us,
+
+        clamp_u64_to_jlong(st.age_us),
+
+    };
+
+    env->SetLongArrayRegion(out, 0, 13, vals);
+
+    return out;
+
+}
+
+
+
+extern "C" JNIEXPORT jobjectArray JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_nativeListWatchdogModules(
+
+    JNIEnv* env, jobject) {
+
+
+
+    const char* names[32] = {nullptr};
+
+    const size_t n = wd_list_modules(names, 32);
+
+
+
+    jclass string_cls = env->FindClass("java/lang/String");
+
+    jobjectArray out = env->NewObjectArray((jsize)n, string_cls, nullptr);
+
+    for (size_t i = 0; i < n; ++i) {
+
+        env->SetObjectArrayElement(out, (jsize)i, env->NewStringUTF(names[i]));
+
+    }
+
+    return out;
+
+}
+
+
+
+extern "C" JNIEXPORT jboolean JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_nativeCrashModule(
+
+    JNIEnv* env, jobject, jstring jname) {
+
+    const char* name = env->GetStringUTFChars(jname, nullptr);
+
+    const bool ok = wd_crash_module(name);
+
+    env->ReleaseStringUTFChars(jname, name);
+
+    return ok ? JNI_TRUE : JNI_FALSE;
+
+}
+
+
+
+extern "C" JNIEXPORT jboolean JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_nativeRestartModule(
+
+    JNIEnv* env, jobject, jstring jname) {
+
+    const char* name = env->GetStringUTFChars(jname, nullptr);
+
+    const bool ok = wd_restart_module(name);
+
+    env->ReleaseStringUTFChars(jname, name);
+
+    return ok ? JNI_TRUE : JNI_FALSE;
+
+}
+
+
+
+extern "C" JNIEXPORT jboolean JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_nativeSetAutoRestart(
+
+    JNIEnv* env, jobject, jstring jname, jboolean enable) {
+
+    const char* name = env->GetStringUTFChars(jname, nullptr);
+
+    const bool ok = wd_set_auto_restart(name, enable == JNI_TRUE);
+
+    env->ReleaseStringUTFChars(jname, name);
+
+    return ok ? JNI_TRUE : JNI_FALSE;
+
+}
+
+
+
+extern "C" JNIEXPORT jstring JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_nativeGetWatchdogEvents(
+
+    JNIEnv* env, jobject, jint maxEvents) {
+
+    // 96 kB is enough for ~200 events of 500 bytes average.  Allocated on
+
+    // the heap (not the stack) because JNI callers may be on small threads.
+
+    constexpr size_t kBufSize = 96 * 1024;
+
+    char* buf = (char*)malloc(kBufSize);
+
+    if (!buf) return env->NewStringUTF("[]");
+
+    wd_copy_recent_events(buf, kBufSize,
+
+                          maxEvents > 0 ? (size_t)maxEvents : 0);
+
+    jstring out = env->NewStringUTF(buf);
+
+    free(buf);
+
+    return out;
+
+}
+
+
+
+// Truncate the watchdog JSONL log in-process (close + reopen with O_TRUNC).
+
+// Used by the /watchdog test runner between scenarios to reset the log
+
+// without the "open-but-unlinked" race that `adb shell rm` introduces.
+
+extern "C" JNIEXPORT jboolean JNICALL
+
+Java_com_ardophone_px4v17_bridge_PX4Bridge_nativeTruncateWatchdogLog(
+
+    JNIEnv*, jobject) {
+
+    return wd_truncate_log() ? JNI_TRUE : JNI_FALSE;
+
+}
+

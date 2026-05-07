@@ -73,8 +73,8 @@ OBJ+= $(OCP_OBJ)
 EXTERNAL_DIR=
 EXTERNAL_LIB=
 
-INCLUDE_PATH = /home/wd/Desktop/GAB_3/1234/m13/m13/acados-main/include
-LIB_PATH = /home/wd/Desktop/GAB_3/1234/m13/m13/acados-main/lib
+INCLUDE_PATH = /home/wd/Desktop/gab_2/Raj/m13/acados-main/include
+LIB_PATH = /home/wd/Desktop/gab_2/Raj/m13/acados-main/lib
 
 # preprocessor flags for make's implicit rules
 CPPFLAGS+= -I$(INCLUDE_PATH)

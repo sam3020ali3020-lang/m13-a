@@ -4,6 +4,61 @@
 
 ---
 
+## ⚠️ حالة التطبيق — جلسة 2026-05-07
+
+**ملخّص**: الأقسام أدناه (1–15) **مُؤجَّلة بالكامل** بقرار مُراجع موثَّق.
+**السبب**: الـ HITL وَصل لـ baseline مُستقر بإصلاح **lockstep=false** فقط
+(انظر `AI_GOVERNANCE/BASELINES.md` — Run #5 score 66.5/100). المُعاينة
+أَكَّدت أن لا تَعديل من #1–#15 يُعالج المشكلة المُتبقّية في الـ runs
+(Range −52%، Peak Alt 61m فقط) — هذه مشكلة **flight dynamics**،
+بينما كل التَعديلات تَستهدف **infrastructure** (EKF2/sensors/ARM).
+
+### تَفصيل التَأجيل لكل تَعديل
+
+| # | التَعديل | الأثر المُتوقَّع في HITL الحالي | شَرط العَودة |
+|---|---|---|---|
+| #1 | `EKF2_MAG_TYPE` ديناميكي 1⇔5 | **no-op** (EKF2 مُعطَّل في HITL، `ROCKET_USE_GT=1`) | عند الانتقال إلى Real Flight أو حالة EKF2 مُفعَّلة |
+| #2 | Launch detection بـ `ax > 1g` | منطق جديد، **لن يُغيّر trajectory** بعد الإطلاق | عند تَشخيص حقيقي لمشكلة launch detection (لم تَظهر في runs الحالية) |
+| #3 | أفق MPC `N=40, tf=1.6` | لم يُجرَّب — يَحتاج SITL→PIL→HITL parity | بعد إنجاز diff testing بين Python ↔ C++ MPC |
+| #4 | `ROCKET_MPC_TF=1.6` في generated params | متّصل بـ #3 | مع #3 |
+| #5 | فحص N ديناميكي في CMake | تنظيمي، لا أثر runtime | عند tooling overhaul |
+| #6 | فلتر α/β في sitl_analysis | SITL فقط | لا يَخصّ HITL |
+| #7 | `angular_velocity = [0,0,0]` | يَخصّ Python sim | عند تَحديث نموذج الإطلاق |
+| #8 | تحديث نموذج actuator | يَحتاج SITL parity testing أولاً | بعد diff testing |
+| #9 | تنظيف تعليقات | لا أثر runtime | متى شُئنا |
+| #10a | IMU 400→100 Hz comments | تنظيمي | متى شُئنا |
+| **#10b** | `samplingPeriodUs = 10000` | للحرارة (runs الحالية 7s، لا حاجة) | عند runs > 5 دقائق أو thermal stress |
+| **#10c** | `usleep(2500)→usleep(10000)` | **🔴 مُؤكَّد سَبَّب regression سابقاً** | فقط مع benchmarking دقيق + A/B test |
+| #11 | MHE `horizon_dt` (توثيقي) | تَوثيق فقط | لا يَحتاج تَطبيق |
+| **#12.1** | `EKF2_REQ_EPH/EPV` | **no-op** (EKF2 مُعطَّل في HITL) | Real Flight أو EKF2 مُفعَّل |
+| #12.2 | `EKF2_MAG_ACCLIM=5.0` | EKF2 فقط | كذلك |
+| **#12.3** | `_debug_array_pub` كل cycle | **🔴 مُؤكَّد سَبَّب 100% lockstep timeouts** | فقط بـ rate-limit ≤ 10 Hz **و** قناة منفصلة |
+| #12.4 | `EKF2_REQ_GPS_H = 1.0` | EKF2 فقط | Real Flight |
+| **#12.5** | `COM_CPU_MAX/RAM_MAX = -1` | يَحلّ ARM-block (load_mon)، **لم نَرَه في runs الأخيرة** | إن ظَهر "No CPU/RAM load info" يَمنع ARM |
+| #12.6 | حذف `EKF2_GPS_V/P_NOISE` | EKF2 فقط | Real Flight |
+| #12.7 | حذف `EKF2_MAG_TYPE` من airframes | متّصل بـ #1 | مع #1 |
+| #12.8 | `EKF2_MAG_TYPE` reset 1→0 | متّصل بـ #1 | مع #1 |
+| #12.9 | `EKF2_ABL_LIM` 1.0→0.8 | EKF2 فقط | Real Flight |
+| #13 | XqpowerCan 200→100 Hz | السيرفو حالياً يَعمل CAN=100% | عند مُلاحظة CAN saturation فعلي |
+| #14 | EKF2 mag/GPS tuning (5 params) | EKF2 فقط | Real Flight |
+| #15 | `EKF2_ANGERR_INIT=0.01` | EKF2 فقط | Real Flight |
+
+### الشُروط العامة لإعادة التَطبيق (مُتّفَق عليها)
+
+أيّ تَعديل يَعود فقط بعد **استيفاء الـ 4 شُروط**:
+
+1. **سبب مَلموس بالأرقام**: log أو metric يُثبت المشكلة التي يُعالجها التَعديل (لا تَطبيق "احترازي").
+2. **A/B test مُسجَّل**: قبل/بعد على نفس الـ baseline (Run #5 الحالي = baseline reference).
+3. **revert فوري إن ساء أيّ metric**: الالتزام بـ `LESSONS_LEARNED.md` rule.
+4. **single change at a time**: لا دَمج تَعديلَين في run واحد.
+
+### Backups المحفوظة لكلّ تَعديل بَدأ في الجلسة
+
+- `px4_jni.cpp.pre_round1_12.5_1778139280` — قبل #12.5 (revert تَمَّ، لكن backup يُحفَظ للمُراجَعة)
+- `hil_config.yaml.pre_lockstep_fix_1778138419` — قبل lockstep=false (الإصلاح المُعتَمَد)
+
+---
+
 ## 1. `EKF2_MAG_TYPE` ديناميكي (AUTO قبل الإطلاق، NONE بعده)
 
 **الملفات:**

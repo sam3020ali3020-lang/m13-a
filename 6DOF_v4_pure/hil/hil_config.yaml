@@ -9,7 +9,7 @@ target:
   # connects directly to phone's Ethernet IP. Old USB-tunnel path used
   # 127.0.0.1 with `adb forward tcp:5760 tcp:5760`.
   mavlink_tcp:
-    host: 10.42.0.174
+    host: 10.42.0.145
     port: 5760
   serial:
     device: /dev/ttyACM0
@@ -26,7 +26,7 @@ warmup:
   arm_every_s: 1.0          # أرسل ARM كل هذه المدة
   settle_after_arm_s: 8.0   # استقرار EKF بعد أول actuator msg (موسّع من 2s إلى 8s)
   max_s: 30.0               # بعد هذا الوقت يُكمل بدون arm
-  set_hitl_param: true      # تفعيل SYS_HITL=1 عبر PARAM_SET قبل warm-up
+  set_hitl_param: false     # ← مُعطَّل مؤقّتاً للتشخيص: airframe 22004 يضبطها rcS
   hitl_param_timeout_s: 5.0 # مهلة انتظار PARAM_VALUE المؤكد (على قناة 5760)
   clear_flight_termination: true  # إرسال DO_FLIGHTTERMINATION=0 قبل ARM
   # ⚠️ preflight_reset مُصمَّم لمسار USB-tunnel فقط (host=127.0.0.1):
@@ -63,9 +63,17 @@ hil:
   #
   # القيد: إذا تجاوز PX4 الـ timeout نتقدّم مع تسجيل تحذير. في وضع سليم
   # PX4 يردّ في 4-8ms، فـ 20ms timeout مريح.
-  lockstep: true                        # true = hybrid lockstep، false = realtime خالص
-  lockstep_timeout_ms: 20.0             # حد أقصى لانتظار HIL_ACTUATOR_CONTROLS
-  lockstep_warn_threshold: 0.05         # تحذير إن نسبة timeouts > 5%
+  # 2026-05-07: lockstep عُطِّل بعد 3 runs:
+  #   - 20ms timeout: 100% timeouts، 522/522
+  #   - 50ms timeout: 100% timeouts، 103/103 (لا تحسُّن!)
+  # السبب الجذري: PX4 يرسل HIL_ACTUATOR_CONTROLS بصورة مُتجمِّعة (TCP buffering
+  # أو Nagle) لا تتناغم مع نوافذ الـ steps. lockstep يُهدر 50ms/step ⟶
+  # المُحاكاة 6× أبطأ من realtime ⟶ MPC يعمل على بيانات قديمة ⟶ اللاحتمية.
+  # في HIL، السيرفوهات فيزيائية فلا فائدة من lockstep أصلاً (الدقّة تأتي من
+  # wall-clock pacing الواقعي). راجع hil_analysis لاحقاً للجودة.
+  lockstep: false                       # عُطِّل - realtime خالص (السيرفوهات فيزيائية)
+  lockstep_timeout_ms: 50.0             # غير مستخدم (lockstep=false)
+  lockstep_warn_threshold: 0.05         # غير مستخدم (lockstep=false)
   servo_feedback_timeout_ms: 200.0      # يُعدّ الفيدباك قديماً بعد 200ms
   # إذا شاخ الفيدباك > abort_ms بعد انقضاء grace_ms من بدء حلقة
   # الطيران، نوقف المحاكاة (bench abort، ليس flight termination).

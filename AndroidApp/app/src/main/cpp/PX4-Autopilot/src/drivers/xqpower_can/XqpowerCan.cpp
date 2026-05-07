@@ -132,7 +132,13 @@ bool XqpowerCan::init()
 	 * to 10 ms before xqpower_can picks it up; at 200 Hz that half-period
 	 * is 2.5 ms.  Measured HIL pure-delay was ~120 ms; every ms shaved
 	 * here comes directly off the cmd→fin_can lag. */
-	ScheduleOnInterval(5000);   /* 200 Hz */
+	/* 2026-05-07: 100Hz chosen empirically over 200Hz.
+	 * 200Hz test: 2 servos lost feedback (different pair than 100Hz).
+	 * 100Hz test: range 419m vs 227m at 200Hz. Same Score 68.5 but
+	 * 100Hz tracking is more consistent across all 4 servos.
+	 * Root cause of remaining 2-servo intermittent loss: open issue
+	 * (parser fix solved bulk of it; suspected race in TX/RX serialization). */
+	ScheduleOnInterval(10000);   /* 100 Hz */
 
 	return true;
 }
@@ -576,58 +582,82 @@ int XqpowerCan::can_receive()
 		 * in the byte stream since exact framing is unclear.
 		 */
 
-		/* Scan for 0x81 0x05 / 0x82 0x05 / 0x83 0x05 / 0x84 0x05 patterns
-		 * (little-endian 0x0581-0x0584 = SDO responses from servos) */
-		while (rd + 17 <= _slcan_rxpos) {
-			uint8_t b0 = (uint8_t)_slcan_rxbuf[rd];
+		/* CAN_LIN_Tool V6.0 RX framing — empirically determined 2026-05-07:
+		 *
+		 *   FIRST frame in HID payload (17 bytes):
+		 *     [DLC] [flag] [ID_LO] [ID_HI] [ext 4B=00] [DLC2] [data 8B]
+		 *
+		 *   SUBSEQUENT frames in same HID payload (15 bytes):
+		 *     [ID_LO] [ID_HI] [ext 4B=00] [DLC] [data 8B]   ← no DLC/flag prefix
+		 *
+		 * Multiple SDO responses can pack into ONE 62-byte HID transfer when
+		 * polling rate is high. The original 17-byte-only parser misses the
+		 * subsequent frames → nodes 2 and 4 lose feedback in flight.
+		 *
+		 * Strategy: try 17B at current offset first (catches the leading frame);
+		 * if that fails, try 15B at current offset (catches subsequent frames).
+		 * On any successful parse, advance by frame size; otherwise advance 1B.
+		 *
+		 * IMPORTANT: do NOT accept can_id == 0x000. Stray zero bytes from
+		 * USB echo can mimic that pattern, causing parser misalignment.
+		 */
+		auto valid_can_id = [](uint16_t id) -> bool {
+			return (id >= 0x180 && id <= 0x184) ||
+			       (id >= 0x580 && id <= 0x584) ||
+			       (id >= 0x600 && id <= 0x604);
+		};
 
-			/* Look for DLC=0x08 or DLC=0x02 as frame start */
-			if (b0 != 0x08 && b0 != 0x02) {
+		auto is_zero_ext = [&](int off) -> bool {
+			return (uint8_t)_slcan_rxbuf[off]   == 0x00 &&
+			       (uint8_t)_slcan_rxbuf[off+1] == 0x00 &&
+			       (uint8_t)_slcan_rxbuf[off+2] == 0x00 &&
+			       (uint8_t)_slcan_rxbuf[off+3] == 0x00;
+		};
+
+		while (rd < _slcan_rxpos) {
+			bool parsed = false;
+
+			/* Try 17-byte format: [DLC][flag][ID LE][ext 4B][DLC2][data 8B] */
+			if (rd + 17 <= _slcan_rxpos) {
+				uint8_t b0 = (uint8_t)_slcan_rxbuf[rd];
+				if ((b0 == 0x08 || b0 == 0x02) && b0 <= 8) {
+					uint16_t can_id = (uint16_t)((uint8_t)_slcan_rxbuf[rd + 2] |
+								     ((uint8_t)_slcan_rxbuf[rd + 3] << 8));
+					if (valid_can_id(can_id) && is_zero_ext(rd + 4)) {
+						uint8_t data[8] = {};
+						for (int j = 0; j < 8 && j < b0; j++) {
+							data[j] = (uint8_t)_slcan_rxbuf[rd + 9 + j];
+						}
+						servo_process_rx(can_id, data, b0);
+						count++;
+						rd += 17;
+						parsed = true;
+					}
+				}
+			}
+
+			/* Try 15-byte continuation format: [ID LE][ext 4B][DLC][data 8B] */
+			if (!parsed && rd + 15 <= _slcan_rxpos) {
+				uint16_t can_id = (uint16_t)((uint8_t)_slcan_rxbuf[rd] |
+							     ((uint8_t)_slcan_rxbuf[rd + 1] << 8));
+				if (valid_can_id(can_id) && is_zero_ext(rd + 2)) {
+					uint8_t dlc = (uint8_t)_slcan_rxbuf[rd + 6];
+					if (dlc <= 8) {
+						uint8_t data[8] = {};
+						for (int j = 0; j < 8 && j < dlc; j++) {
+							data[j] = (uint8_t)_slcan_rxbuf[rd + 7 + j];
+						}
+						servo_process_rx(can_id, data, dlc);
+						count++;
+						rd += 15;
+						parsed = true;
+					}
+				}
+			}
+
+			if (!parsed) {
 				rd++;
-				continue;
 			}
-
-			/* Check if [rd+2..rd+3] looks like a valid CAN ID */
-			if (rd + 17 > _slcan_rxpos) break;
-
-			uint16_t can_id = (uint16_t)((uint8_t)_slcan_rxbuf[rd + 2] |
-						     ((uint8_t)_slcan_rxbuf[rd + 3] << 8));
-
-			uint8_t dlc = b0;  /* first byte is DLC */
-
-			if (dlc > 8) { rd++; continue; }
-
-			/* Validate CAN ID — XQPOWER uses 0x580+node, 0x180+node, 0x600+node.
-			 *
-			 * IMPORTANT: do NOT accept can_id == 0x000 here. NMT broadcast
-			 * is only ever sent by us (TX), and we don't need its echo.
-			 * Accepting 0x000 causes catastrophic parser misalignment under
-			 * heavy TX load: stray status bytes from the USB adapter look
-			 * like valid frames (b0=0x02/0x08 + ID=00 00 occurs frequently
-			 * in zero-padded TX echo), and once misaligned the 17-byte
-			 * stride keeps producing phantom frames forever, swallowing
-			 * real SDO responses → fb stalls permanently.
-			 *
-			 * Verified on Linux Python port (servo_characterization/xqpower.py):
-			 * removing 0x000 from valid IDs eliminates mid-test fb stalls in
-			 * cascaded multi-servo tests at ~1.2k USB ops/s.
-			 */
-			bool valid_id = (can_id >= 0x180 && can_id <= 0x184) ||
-					(can_id >= 0x580 && can_id <= 0x584) ||
-					(can_id >= 0x600 && can_id <= 0x604);
-
-			if (!valid_id) { rd++; continue; }
-
-			/* Frame layout: [DLC] [flags] [ID_LO] [ID_HI] [ext0..ext3] [DLC2] [data0..data7]
-			 * Total = 1 + 1 + 2 + 4 + 1 + 8 = 17 bytes */
-			uint8_t data[8] = {};
-			for (int j = 0; j < 8 && j < dlc; j++) {
-				data[j] = (uint8_t)_slcan_rxbuf[rd + 9 + j];
-			}
-
-			servo_process_rx(can_id, data, dlc);
-			count++;
-			rd += 17;
 		}
 
 	} else {

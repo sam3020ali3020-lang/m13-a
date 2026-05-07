@@ -1,0 +1,360 @@
+/**
+ * android_uorb_publishers.cpp — Phase 3
+ * الجسر بين SharedSensorData (native_sensor_reader) و PX4 uORB
+ * يقرأ من SharedSensorData وينشر على uORB topics
+ */
+#include "android_uorb_publishers.h"
+#include "shared_sensor_data.h"
+#include <parameters/param.h>
+
+#include <uORB/Publication.hpp>
+#include <uORB/Subscription.hpp>
+#include <uORB/topics/sensor_accel.h>
+#include <uORB/topics/sensor_gyro.h>
+#include <uORB/topics/sensor_baro.h>
+#include <uORB/topics/sensor_mag.h>
+#include <uORB/topics/vehicle_attitude.h>
+#include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/vehicle_local_position.h>
+#include <uORB/topics/estimator_status_flags.h>
+#include <drivers/drv_hrt.h>
+#include <px4_platform_common/module_params.h>  // param_find / param_get
+
+#include <thread>
+#include <atomic>
+#include <cmath>
+#include <cstdio>
+#include <unistd.h>
+#include <android/log.h>
+
+// PX4 Device ID format: (devtype << 16) | (address << 8) | (bus << 3) | bus_type
+// bus_type=4 (SIMULATION), bus_type=5 (SERIAL)
+// devtype: من drv_sensor.h — أنواع الحساسات المحاكية
+//
+// IMU/Mag use SIMULATION (4): يبقى accel/gyro/mag كـ "internal" بدون rotation تلقائي
+// (نحن نعمل phone_to_frd يدوياً في native_sensor_reader). DEFAULT_PRIORITY=50.
+//
+// BARO uses SERIAL (5): يجعل PX4 يعتبره "external" فيستخدم temperature من
+// sensor_baro مباشرة بدلاً من DEFAULT_TEMPERATURE_CELSIUS=15°C.
+// السبب: VehicleAirData.cpp يتجاهل الحرارة من internal baros لأن traditional
+// FCs لها baro داخلي يعكس حرارة المعالج وليس البيئة. على الهاتف، baro
+// (نسخر CPU temp فيه) يعكس حرارة الهيكل وهي ما نريد قياسه فعلاً.
+#define ANDROID_DEVID_IMU   ((0x14 << 16) | 4)  // DRV_IMU_DEVTYPE_SIM   + SIMULATION
+#define ANDROID_DEVID_MAG   ((0x03 << 16) | 4)  // DRV_MAG_DEVTYPE_MAGSIM + SIMULATION
+#define ANDROID_DEVID_BARO  ((0x65 << 16) | 5)  // DRV_BARO_DEVTYPE_BAROSIM + SERIAL (external)
+
+extern SharedSensorData g_sensor_data;
+
+static std::atomic<bool> s_running{false};
+static std::thread s_publisher_thread;
+
+// Mag values for publishing (only when new data arrives)
+static float s_mag_x = 0.0f;
+static float s_mag_y = 0.0f;
+static float s_mag_z = 0.0f;
+
+// === Atomic cache for UI reads (no semaphore needed from JNI) ===
+// publisher_loop updates these from uORB; JNI getters read them lock-free.
+static std::atomic<float> s_cached_roll{0.0f};
+static std::atomic<float> s_cached_pitch{0.0f};
+static std::atomic<float> s_cached_yaw{0.0f};
+static std::atomic<float> s_cached_altitude{0.0f};
+static std::atomic<bool>  s_cached_armed{false};
+static std::atomic<int>   s_cached_nav_state{0};
+static std::atomic<int>   s_cached_ekf_status{0};
+
+// === Publishers (كتابة على uORB) ===
+static uORB::Publication<sensor_accel_s> s_accel_pub{ORB_ID(sensor_accel)};
+static uORB::Publication<sensor_gyro_s>  s_gyro_pub{ORB_ID(sensor_gyro)};
+static uORB::Publication<sensor_baro_s>  s_baro_pub{ORB_ID(sensor_baro)};
+static uORB::Publication<sensor_mag_s>   s_mag_pub{ORB_ID(sensor_mag)};
+// === Subscribers (قراءة من uORB — لعرض الحالة في الواجهة) ===
+static uORB::Subscription s_att_sub{ORB_ID(vehicle_attitude)};
+static uORB::Subscription s_status_sub{ORB_ID(vehicle_status)};
+static uORB::Subscription s_local_pos_sub{ORB_ID(vehicle_local_position)};
+static uORB::Subscription s_estimator_flags_sub{ORB_ID(estimator_status_flags)};
+
+// Note: An earlier version of this file converted Android BOOTTIME timestamps
+// to PX4 HRT via a periodic clock-offset re-sync.  That approach was replaced
+// by a simpler, more correct one: native_sensor_reader stamps each event with
+// hrt_absolute_time() at the moment of receipt (`hrt_receipt_us` in
+// SharedSensorData) and we use that directly as `timestamp_sample` below.  No
+// clock-domain conversion is needed — the receipt time is already in PX4 HRT.
+
+static void publisher_loop() {
+    // HITL: skip phone accel/gyro so sensor_combined uses HIL_SENSOR data only.
+    // Without this, phone sensors get instance 0 and rocket_gnc reads desk accel
+    // instead of simulated thrust → launch never detected → fins stay zero.
+    //
+    // Note: SYS_HITL is set by px4_jni.cpp AFTER start_uorb_publishers() runs.
+    // We must re-read SYS_HITL periodically inside the loop, not just once
+    // at thread start (when the param is still at firmware default 0 OR
+    // possibly uninitialized garbage). Polling once per second is cheap.
+    param_t p_hitl = param_find("SYS_HITL");
+    bool skip_imu = false;  // updated each second from param
+    hrt_abstime last_hitl_check = 0;
+
+    // Diagnostic counters — log every 5 seconds
+    uint64_t pub_accel = 0, pub_gyro = 0, pub_baro = 0, pub_mag = 0;
+    hrt_abstime last_pub_log = hrt_absolute_time();
+
+    while (s_running.load()) {
+
+        // Re-read SYS_HITL once per second
+        {
+            const hrt_abstime t = hrt_absolute_time();
+            if (t - last_hitl_check >= 1000000ULL) {  // 1 s
+                int32_t v = 0;
+                if (p_hitl != PARAM_INVALID) { param_get(p_hitl, &v); }
+                skip_imu = (v == 1);
+                last_hitl_check = t;
+            }
+        }
+
+        // ========== Accelerometer (independent) ==========
+        if (!skip_imu && g_sensor_data.accel.has_new_data.load()) {
+            std::lock_guard<std::mutex> lock(g_sensor_data.accel_mutex);
+
+            // timestamp_sample = وقت استقبال event الهاردوير (مسجَّل في native_sensor_reader لحظة الوصول)
+            // timestamp        = وقت النشر على uORB — دائماً >= timestamp_sample
+            // الفرق = latency حقيقي يستخدمه EKF بدون drift أو تحويل ساعات
+            const hrt_abstime sample_ts = g_sensor_data.accel.hrt_receipt_us;
+            const hrt_abstime now       = hrt_absolute_time();
+
+            sensor_accel_s accel{};
+            accel.timestamp          = now;
+            accel.timestamp_sample   = sample_ts;
+            accel.device_id          = ANDROID_DEVID_IMU;
+            accel.x                  = g_sensor_data.accel.data[0];
+            accel.y                  = g_sensor_data.accel.data[1];
+            accel.z                  = g_sensor_data.accel.data[2];
+            accel.temperature        = g_sensor_data.accel.temperature;
+            accel.samples            = 1;
+            s_accel_pub.publish(accel);
+            ++pub_accel;
+
+            g_sensor_data.accel.has_new_data.store(false);
+        }
+
+        // ========== Gyroscope (independent) ==========
+        if (!skip_imu && g_sensor_data.gyro.has_new_data.load()) {
+            std::lock_guard<std::mutex> lock(g_sensor_data.gyro_mutex);
+
+            // timestamp_sample = وقت استقبال event الهاردوير (مسجَّل في native_sensor_reader لحظة الوصول)
+            // timestamp        = وقت النشر على uORB — دائماً >= timestamp_sample
+            const hrt_abstime sample_ts = g_sensor_data.gyro.hrt_receipt_us;
+            const hrt_abstime now       = hrt_absolute_time();
+
+            sensor_gyro_s gyro{};
+            gyro.timestamp           = now;
+            gyro.timestamp_sample    = sample_ts;
+            gyro.device_id           = ANDROID_DEVID_IMU;
+            gyro.x                   = g_sensor_data.gyro.data[0];
+            gyro.y                   = g_sensor_data.gyro.data[1];
+            gyro.z                   = g_sensor_data.gyro.data[2];
+            gyro.temperature         = g_sensor_data.gyro.temperature;
+            gyro.samples             = 1;
+            s_gyro_pub.publish(gyro);
+            ++pub_gyro;
+
+            g_sensor_data.gyro.has_new_data.store(false);
+        }
+
+        // ========== Barometer ==========
+        {
+            std::lock_guard<std::mutex> lock(g_sensor_data.baro_mutex);
+            if (g_sensor_data.baro.count > 0) {
+                sensor_baro_s baro{};
+                baro.timestamp       = hrt_absolute_time();
+                baro.timestamp_sample = baro.timestamp;
+                baro.device_id       = ANDROID_DEVID_BARO;
+                // sum_pressure already in Pa (converted in native_sensor_reader.cpp: hPa × 100)
+                baro.pressure        = (float)(g_sensor_data.baro.sum_pressure / g_sensor_data.baro.count);
+                baro.temperature     = (float)(g_sensor_data.baro.sum_temperature / g_sensor_data.baro.count);
+                s_baro_pub.publish(baro);
+                ++pub_baro;
+
+                // صفّر العداد
+                g_sensor_data.baro.sum_pressure = 0;
+                g_sensor_data.baro.sum_temperature = 0;
+                g_sensor_data.baro.count = 0;
+            }
+        }
+
+        // ========== Magnetometer (publish only when new data arrives) ==========
+        {
+            std::lock_guard<std::mutex> lock(g_sensor_data.mag_mutex);
+            if (g_sensor_data.mag.count > 0) {
+                s_mag_x = (float)(g_sensor_data.mag.sum_field[0] / g_sensor_data.mag.count) / 1000.0f;
+                s_mag_y = (float)(g_sensor_data.mag.sum_field[1] / g_sensor_data.mag.count) / 1000.0f;
+                s_mag_z = (float)(g_sensor_data.mag.sum_field[2] / g_sensor_data.mag.count) / 1000.0f;
+                g_sensor_data.mag.sum_field[0] = 0;
+                g_sensor_data.mag.sum_field[1] = 0;
+                g_sensor_data.mag.sum_field[2] = 0;
+                g_sensor_data.mag.count = 0;
+
+                sensor_mag_s mag{};
+                mag.timestamp        = hrt_absolute_time();
+                mag.timestamp_sample = mag.timestamp;
+                mag.device_id        = ANDROID_DEVID_MAG;
+                mag.x = s_mag_x;
+                mag.y = s_mag_y;
+                mag.z = s_mag_z;
+                s_mag_pub.publish(mag);
+                ++pub_mag;
+            }
+        }
+
+        // Diagnostic: log publish rates every 5 seconds
+        {
+            const hrt_abstime t_now = hrt_absolute_time();
+            if (t_now - last_pub_log >= 5000000ULL) {
+                const uint64_t dt_s = (t_now - last_pub_log) / 1000000ULL;
+                if (dt_s > 0) {
+                    __android_log_print(ANDROID_LOG_INFO, "UorbPub",
+                        "PUBLISH RATES: Accel=%llu/s  Gyro=%llu/s  Baro=%llu/s  Mag=%llu/s  skip_imu=%d  accel_advertised=%d  gyro_advertised=%d",
+                        (unsigned long long)(pub_accel / dt_s),
+                        (unsigned long long)(pub_gyro / dt_s),
+                        (unsigned long long)(pub_baro / dt_s),
+                        (unsigned long long)(pub_mag / dt_s),
+                        (int)skip_imu,
+                        (int)s_accel_pub.advertised(),
+                        (int)s_gyro_pub.advertised());
+                }
+                pub_accel = pub_gyro = pub_baro = pub_mag = 0;
+                last_pub_log = t_now;
+            }
+        }
+
+        // === Update cached state for UI (every ~50ms = 20 Hz is enough for display) ===
+        static hrt_abstime s_last_ui_update = 0;
+        const hrt_abstime now_ui = hrt_absolute_time();
+        if ((now_ui - s_last_ui_update) >= 50000) { // 50 ms
+            s_last_ui_update = now_ui;
+
+            vehicle_attitude_s att{};
+            if (s_att_sub.copy(&att)) {
+                float sinr = 2.0f * (att.q[0] * att.q[1] + att.q[2] * att.q[3]);
+                float cosr = 1.0f - 2.0f * (att.q[1] * att.q[1] + att.q[2] * att.q[2]);
+                s_cached_roll.store(atan2f(sinr, cosr) * 57.2957795f, std::memory_order_relaxed);
+
+                float sinp = 2.0f * (att.q[0] * att.q[2] - att.q[3] * att.q[1]);
+                s_cached_pitch.store(asinf(fmaxf(-1.0f, fminf(1.0f, sinp))) * 57.2957795f, std::memory_order_relaxed);
+
+                float siny = 2.0f * (att.q[0] * att.q[3] + att.q[1] * att.q[2]);
+                float cosy = 1.0f - 2.0f * (att.q[2] * att.q[2] + att.q[3] * att.q[3]);
+                s_cached_yaw.store(atan2f(siny, cosy) * 57.2957795f, std::memory_order_relaxed);
+            }
+
+            vehicle_local_position_s pos{};
+            if (s_local_pos_sub.copy(&pos)) {
+                s_cached_altitude.store(-pos.z, std::memory_order_relaxed);
+            }
+
+            vehicle_status_s status{};
+            if (s_status_sub.copy(&status)) {
+                s_cached_armed.store(status.arming_state == 2, std::memory_order_relaxed);
+                s_cached_nav_state.store(status.nav_state, std::memory_order_relaxed);
+            }
+
+            // EKF status for the UI's StatusDot:
+            //   0 = Bad   (RED)    — filter not aligned at all
+            //   1 = OK    (YELLOW) — tilt + yaw aligned, but missing position aiding
+            //                       OR a numerical/innovation fault is active
+            //   2 = Good  (GREEN)  — tilt+yaw aligned, position fusion active,
+            //                       no numerical or innovation faults
+            //
+            // Source: estimator_status_flags.cs_* (control status) plus
+            // fs_* (fault status) and reject_* (innovation rejects).
+            estimator_status_flags_s est_flags{};
+            if (s_estimator_flags_sub.copy(&est_flags)) {
+                const bool aligned    = est_flags.cs_tilt_align && est_flags.cs_yaw_align;
+                const bool position   = est_flags.cs_gnss_pos
+                                        || est_flags.cs_ev_pos
+                                        || est_flags.cs_aux_gpos;
+                const bool num_fault  = est_flags.fs_bad_mag_x   || est_flags.fs_bad_mag_y
+                                        || est_flags.fs_bad_mag_z || est_flags.fs_bad_hdg
+                                        || est_flags.fs_bad_acc_vertical
+                                        || est_flags.fs_bad_acc_clipping;
+                const bool innov_rej  = est_flags.reject_hor_vel || est_flags.reject_ver_vel
+                                        || est_flags.reject_hor_pos || est_flags.reject_ver_pos
+                                        || est_flags.reject_yaw;
+
+                int ekf_status = 0;          // Bad
+                if (aligned) {
+                    ekf_status = 1;           // OK (at least aligned)
+                    if (position && !num_fault && !innov_rej) {
+                        ekf_status = 2;       // Good
+                    }
+                }
+                s_cached_ekf_status.store(ekf_status, std::memory_order_relaxed);
+            }
+        }
+
+        // CHANGELOG #10c (2026-05-07): 100Hz polling matches IMU upstream rate.
+        // Lower rate is mathematically equivalent to 400Hz here (mailbox drain,
+        // not signal sampling — Nyquist doesn't apply). timestamp_sample is
+        // captured in native_sensor_reader at event arrival, so EKF still sees
+        // accurate event times. Saves ~50% polling CPU.
+        usleep(10000);  // ~100 Hz polling rate (matches IMU)
+    }
+}
+
+void start_uorb_publishers() {
+    s_running.store(true);
+    s_publisher_thread = std::thread(publisher_loop);
+}
+
+void stop_uorb_publishers() {
+    s_running.store(false);
+    if (s_publisher_thread.joinable()) {
+        s_publisher_thread.join();
+    }
+}
+
+// === قراءة حالة المركبة من الـ atomic cache (بدون uORB semaphore — آمن للاستدعاء من أي thread) ===
+
+float get_vehicle_roll()     { return s_cached_roll.load(std::memory_order_relaxed); }
+float get_vehicle_pitch()    { return s_cached_pitch.load(std::memory_order_relaxed); }
+float get_vehicle_yaw()      { return s_cached_yaw.load(std::memory_order_relaxed); }
+float get_vehicle_altitude() { return s_cached_altitude.load(std::memory_order_relaxed); }
+bool  get_vehicle_armed()    { return s_cached_armed.load(std::memory_order_relaxed); }
+int   get_vehicle_nav_state(){ return s_cached_nav_state.load(std::memory_order_relaxed); }
+int   get_ekf_status()       { return s_cached_ekf_status.load(std::memory_order_relaxed); }
+
+int get_airframe_id() {
+    int32_t val = 0;
+    param_t p = param_find("SYS_AUTOSTART");
+    if (p != PARAM_INVALID) { param_get(p, &val); }
+    return val;
+}
+
+// Change SYS_AUTOSTART from Kotlin UI.  Caller is responsible for restarting
+// PX4 modules (via stopPX4 + startPX4) so the new airframe defaults are applied
+// by the boot-time logic in px4_jni.cpp.
+bool set_airframe_id(int id) {
+    param_t p = param_find("SYS_AUTOSTART");
+    if (p == PARAM_INVALID) { return false; }
+    int32_t val = (int32_t)id;
+    if (param_set(p, &val) != 0) { return false; }
+    // Persist to parameter storage so the value survives the restart.
+    param_save_default(true);
+    return true;
+}
+
+// Board stubs for Android (مطلوبة من commander)
+#include <px4_platform_common/board_common.h>
+
+extern "C" {
+
+int board_power_off(int status)
+{
+    return 0;
+}
+
+int board_register_power_state_notification_cb(power_button_state_notification_t cb)
+{
+    return 0;
+}
+
+} // extern "C"

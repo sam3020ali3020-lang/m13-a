@@ -1285,13 +1285,21 @@ static void start_px4_modules(const std::string& storage_path) {
 
                 if (p != PARAM_INVALID) { float v = 0.100f; param_set(p, &v); }  // unified: lookahead_stage=5
 
-                // ROCKET_USE_GT = 0 → MPC reads EKF2 output (full sensor→EKF2→MPC path).
-                // This is the realistic flight-like behavior for HITL/PIL. The compile-time
-                // default in rocket_mpc_params.c is 1 (groundtruth) which bypasses EKF2
-                // entirely — only useful for SITL parity with Python ref.
+                // ROCKET_USE_GT = 0 (2026-05-07 12:11 owner-approved):
+                // Re-enable EKF2 path. MPC reads vehicle_local_position from EKF2 (normal flight path).
+                // ekf2_main() is also re-enabled in start_px4_modules below.
                 p = param_find("ROCKET_USE_GT");
 
                 if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+
+                // 2026-05-07: CPU offload — match SITL defaults to relieve Android CPU.
+                // Does not affect MPC quality (MPC runs on sensor_combined callback).
+                p = param_find("IMU_INTEG_RATE");
+                if (p != PARAM_INVALID) { int32_t v = 100; param_set(p, &v); }
+                p = param_find("IMU_GYRO_RATEMAX");
+                if (p != PARAM_INVALID) { int32_t v = 100; param_set(p, &v); }
+                p = param_find("EKF2_PREDICT_US");
+                if (p != PARAM_INVALID) { int32_t v = 10000; param_set(p, &v); }
 
                 LOGI("Airframe %d (HITL) defaults applied", current_autostart);
 
@@ -1447,13 +1455,11 @@ static void start_px4_modules(const std::string& storage_path) {
 
 
 
-    // 4. EKF2
-
+    // 4. EKF2 — re-enabled 2026-05-07 12:11 (owner-approved):
+    // Normal EKF2 path active; ROCKET_USE_GT=0 above.
     const char* ekf2_argv[] = {"ekf2", "start", nullptr};
-
     ekf2_main(2, (char**)ekf2_argv);
-
-    LOGI("EKF2 started");
+    LOGI("EKF2 STARTED — normal flight path");
 
 
 
@@ -1809,7 +1815,18 @@ static void start_px4_modules(const std::string& storage_path) {
 
         static char target_ip[64] = {0};
 
-        __system_property_get("persist.m130.target_ip", target_ip);
+        // Try debug.* namespace first (settable without root via:
+        //   adb shell setprop debug.m130.target_ip 127.0.0.1   # USB tunnel
+        //   adb shell setprop debug.m130.target_ip 10.42.0.1   # Ethernet
+        __system_property_get("debug.m130.target_ip", target_ip);
+
+        if (target_ip[0] == '\0') {
+            __system_property_get("m130.target_ip", target_ip);
+        }
+
+        if (target_ip[0] == '\0') {
+            __system_property_get("persist.m130.target_ip", target_ip);
+        }
 
         if (target_ip[0] == '\0') {
 
@@ -1845,7 +1862,10 @@ static void start_px4_modules(const std::string& storage_path) {
 
         std::thread([]() {
 
-            sleep(3); // قصير: simulator_mavlink connect + sensor flow + EKF2 basic init
+            // 3s — كان كافياً على Ethernet. زيادة إلى 20s تسبّب مشكلة:
+            //       bridge warmup ينتهي قبل وصول أول actuator → فشل الاختبار.
+            //       يعمل مع `-f` flag الذي يتخطّى pre_flight_checks بأي حال.
+            sleep(3);
 
             LOGI("HITL auto-arm: invoking 'commander arm -f'");
 

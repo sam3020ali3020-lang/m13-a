@@ -5,6 +5,28 @@
 
 ---
 
+## ⚠️ شرط حرج (CRITICAL PRECONDITION) — Transport
+
+**كل التعديلات أدناه عديمة الجدوى إذا استخدمتَ USB tunnel (`adb reverse`) لقناة MAVLink.**
+تجربة عملية على Galaxy S22+ (SM_S918U) في 2026-05-06:
+
+| Transport | MPC avg | Score | الفرق |
+|---|---|---|---|
+| **Ethernet مباشر** (host = phone IP) | **24-26 ms** | **82** ✅ | baseline |
+| **USB tunnel** (`adb reverse` + 127.0.0.1) | **51-55 ms** | **67-70** ❌ | -12 إلى -15 نقطة |
+
+**السبب**: `adbd` daemon على الهاتف يعالج كل حزمة MAVLink بـ userspace transitions على نفس cores (cpu7) التي يستخدمها `rocket_mpc`. عند 200Hz HIL_SENSOR + 25Hz actuators + timing telemetry ⇒ adbd يستهلك 10-15% من cpu7 ⇒ MPC solver يتباطأ 2.1×.
+
+**الحل الإلزامي**:
+- وصِّل الهاتف عبر **Ethernet** (USB-C→Ethernet adapter أو USB tethering reverse).
+- في `pil_config.yaml`: `mavlink_tcp.host` = IP الهاتف على Ethernet (مثل `10.42.0.145`).
+- على الهاتف: `setprop debug.m130.target_ip <LAPTOP_IP>` (مثل `10.42.0.1`).
+- لا تستخدم `adb reverse tcp:4560` ولا `tcp:5760` على Ethernet.
+
+**شحن الجهاز (USB أو AC) لا يؤثر** — ثبت تجريبياً أن Ethernet مع USB-charging أعطى نفس 82 كـ Ethernet على بطارية. التفصيل في `PIL_TRANSPORT_FINDING_2026-05-06.md`.
+
+---
+
 ## ملخّص الملفات المعدّلة
 
 | # | الملف | عدد التعديلات |

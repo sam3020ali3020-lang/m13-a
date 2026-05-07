@@ -38,6 +38,13 @@ param set EKF2_MAG_TYPE   5
 # HITL: permissive arming (no real GPS fix required)
 param set COM_ARM_WO_GPS  1
 
+# 2026-05-07: CPU offload — reduce IMU/EKF2 update rate to relieve mid-tier
+# Android CPU. Same values as PX4 SITL defaults. Does not affect MPC quality
+# (MPC runs on sensor_combined callback at ~250Hz still). Safe for HITL only.
+param set IMU_INTEG_RATE   100
+param set IMU_GYRO_RATEMAX 100
+param set EKF2_PREDICT_US  10000
+
 # Use EKF2 output (not groundtruth) — full sensor→EKF2→MPC path.
 # This is the realistic flight-like behavior. The PIL test purpose is to
 # validate the entire software stack (EKF2+MPC) on the target processor.

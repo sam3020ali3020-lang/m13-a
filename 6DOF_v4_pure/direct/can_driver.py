@@ -632,7 +632,7 @@ class _XqpowerBusAdapter(CanBus):
         import sys
         from pathlib import Path
         # make /servo_characterization importable
-        sc_path = Path("/home/yoga/m13/m13/servo_characterization")
+        sc_path = Path(__file__).resolve().parents[2] / "servo_characterization"
         if str(sc_path) not in sys.path:
             sys.path.insert(0, str(sc_path))
         try:

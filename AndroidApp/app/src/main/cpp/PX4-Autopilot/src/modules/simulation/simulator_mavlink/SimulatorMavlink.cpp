@@ -177,7 +177,20 @@ void SimulatorMavlink::send_esc_telemetry(mavlink_hil_actuator_controls_t hil_ac
 
 void SimulatorMavlink::send_controls()
 {
-	orb_copy(ORB_ID(actuator_outputs), _actuator_outputs_sub, &_actuator_outputs);
+	// 2026-05-08 FIX: two-step read on actuator_outputs_sim.
+	// (1) orb_copy() on the legacy int handle is REQUIRED to consume the
+	//     queue entry — otherwise px4_poll() POLLIN never re-arms after the
+	//     first publish, and send_controls() stops being called.
+	// (2) uORB::Subscription::copy() is the actual data source — verified
+	//     via debug_array(id=77 SIM_RD) that the legacy orb_copy reads zero
+	//     even when rocket_mpc publishes non-zero values, because mixing
+	//     legacy orb_subscribe_multi with modern uORB::Publication<T>
+	//     breaks the binding. Subscription matches XqpowerCan's pattern
+	//     and returns the real data.
+	// See docs/HITL_FIXES/2026-05-08_FIX_zero_fin_commands_in_HITL_bridge.md
+	actuator_outputs_s _legacy_drain{};
+	orb_copy(ORB_ID(actuator_outputs_sim), _actuator_outputs_sub, &_legacy_drain);
+	_actuator_outputs_sim_sub.copy(&_actuator_outputs);
 
 	if (_actuator_outputs.timestamp > 0) {
 		mavlink_hil_actuator_controls_t hil_act_control;
@@ -185,8 +198,6 @@ void SimulatorMavlink::send_controls()
 
 		mavlink_message_t message{};
 		mavlink_msg_hil_actuator_controls_encode(_param_mav_sys_id.get(), _param_mav_comp_id.get(), &message, &hil_act_control);
-
-		PX4_DEBUG("sending controls t=%ld (%ld)", _actuator_outputs.timestamp, hil_act_control.time_usec);
 
 		send_mavlink_message(message);
 
@@ -1104,8 +1115,16 @@ void SimulatorMavlink::send()
 			_vehicle_status_sub.update(&_vehicle_status);
 			_battery_status_sub.update(&_battery_status);
 
-			// Wait for other modules, such as logger or ekf2
-			px4_lockstep_wait_for_components();
+			// 2026-05-08 FIX (Attempt 6): bypass lockstep wait. Verified by
+			// ULog analysis (debug_array id=77 SIM_RD): send_controls stopped
+			// being called at PX4 t=21421s while rocket_mpc kept publishing
+			// non-zero data through t=21437s (15.5s gap, including all of the
+			// post-launch flight). The bridge runs without lockstep
+			// (hil_config.yaml lockstep:false), so this wait blocks the send
+			// thread waiting for components that never ack — cutting off the
+			// actuator->bridge stream right when MPC starts producing real fin
+			// commands.
+			// px4_lockstep_wait_for_components();
 
 			send_controls();
 		}

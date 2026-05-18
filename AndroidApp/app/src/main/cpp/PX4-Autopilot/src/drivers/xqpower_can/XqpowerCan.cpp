@@ -1397,14 +1397,16 @@ void XqpowerCan::Run()
 		_servo_fb_pub.publish(dbg);
 	}
 
-	/* Position polling: 2 servos per TX cycle (round-robin, 25 Hz per servo).
-	 * Polling all 4 every cycle overloaded USB-CAN adapter.
-	 * 2 per cycle = 100 SDO frames/s — safe for SLCAN+CH340. */
+	/* Position polling: ALL 4 servos every TX cycle = 100 Hz per servo.
+	 * 2026-05-08: bumped from 2/cycle (50 Hz/servo) to 4/cycle so MPC sees
+	 * fresh feedback at the same rate it solves (100 Hz). 400 SDOs/s
+	 * @ 2 Mbps CAN = ~16 kbit/s payload — well within SLCAN+CH340 budget.
+	 * If USB-CAN adapter overloads (tx_fail spikes), revert to 2/cycle. */
 	if (tx_cycle) {
-		servo_read_position(_pos_servo_idx);
-		_pos_servo_idx = (_pos_servo_idx + 1) % XQPOWER_MAX_SERVOS;
-		servo_read_position(_pos_servo_idx);
-		_pos_servo_idx = (_pos_servo_idx + 1) % XQPOWER_MAX_SERVOS;
+		for (int k = 0; k < XQPOWER_MAX_SERVOS; ++k) {
+			servo_read_position(_pos_servo_idx);
+			_pos_servo_idx = (_pos_servo_idx + 1) % XQPOWER_MAX_SERVOS;
+		}
 	}
 
 	/* Status polling (round-robin, every 2.5s at 50Hz) */

@@ -1104,11 +1104,28 @@ void RocketMPC::Run()
 			// zero: MHE's baro model is `y = h·H_SCALE + launch_alt` and we
 			// seed `h = 0` below, so y_predicted = launch_alt = baro_at_launch.
 			if (!_launch_alt_captured) {
-				if (_sensor.baro_fresh(now) && PX4_ISFINITE(air.baro_alt_meter)) {
+				// 2026-05-08 (Obs-09 + Obs-10): Range sanity check.
+				// ISFINITE alone is insufficient: stale calibration offset can produce
+				// readings like -1264019m (finite but absurd) which were silently
+				// accepted before, breaking MHE for the entire flight.
+				// Plausible launch altitudes worldwide: -500m (Dead Sea) to +6000m
+				// (Andean highlands). 10000m is conservative ceiling for missiles.
+				constexpr float MIN_PLAUSIBLE_ALT_M = -500.0f;
+				constexpr float MAX_PLAUSIBLE_ALT_M = 10000.0f;
+
+				if (_sensor.baro_fresh(now)
+				    && PX4_ISFINITE(air.baro_alt_meter)
+				    && air.baro_alt_meter > MIN_PLAUSIBLE_ALT_M
+				    && air.baro_alt_meter < MAX_PLAUSIBLE_ALT_M) {
 					_actual_launch_alt_msl = air.baro_alt_meter;
 					_launch_alt_captured   = true;
 					PX4_WARN("Launch alt captured from BARO=%.1fm (no GPS at arm/pre-launch)",
 						 (double)_actual_launch_alt_msl);
+
+				} else if (_sensor.baro_fresh(now) && PX4_ISFINITE(air.baro_alt_meter)) {
+					// Reading exists but failed range check
+					PX4_ERR("BARO out-of-range (%.1fm) — rejecting; MHE will stay frozen",
+						(double)air.baro_alt_meter);
 
 				} else {
 					PX4_ERR("Launch detected but neither GPS nor baro available for launch_alt "

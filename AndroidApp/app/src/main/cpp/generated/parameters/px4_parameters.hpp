@@ -8320,7 +8320,7 @@ static constexpr param_info_s parameters[] = {
 
 	{
 		.name = "RKT_MPC_SVO_DLY",
-		.val = { .f = 0.100 },
+		.val = { .f = 0.150 },
 	},
 
 	{

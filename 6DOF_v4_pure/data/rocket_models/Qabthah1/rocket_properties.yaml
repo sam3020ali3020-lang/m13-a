@@ -168,7 +168,7 @@ actuator:
   #   NOTE: this is the servo dynamics time constant ONLY.
   #   Transport delay is handled separately via delay_steps (model:2)
   #   or lookahead_stage (MPC).
-  tau_servo: 0.0314               # s - SCALAR (used by MPC for compensation). Measured τ=31.35±1.5ms.
+  tau_servo: 0.0314            # s - SCALAR (used by MPC for compensation). Measured τ=31.35±1.5ms.
 
   # Per-fin τ array (sim-only realism). Each servo has slightly different
   # dynamics due to manufacturing variance. The MPC still uses scalar

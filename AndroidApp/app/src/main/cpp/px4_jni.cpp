@@ -378,7 +378,7 @@ static void start_px4_modules(const std::string& storage_path) {
 
         // Actual airframes: 22003 (SITL-posix), 22004 (HITL), 22005 (Real).
 
-        // 22001/22002 kept as legacy aliases for HITL/Real respectively.
+        // 22001/22002 legacy aliases REMOVED 2026-05-08 (Obs-16: no airframe files exist).
 
         if (p != PARAM_INVALID) {
 
@@ -418,7 +418,7 @@ static void start_px4_modules(const std::string& storage_path) {
 
         {
 
-            int32_t hitl_val = (current_autostart == 22001 || current_autostart == 22004) ? 1 : 0;
+            int32_t hitl_val = (current_autostart == 22004) ? 1 : 0;  // 22001 removed (no airframe)
 
             sys_hitl = hitl_val;
 
@@ -984,7 +984,7 @@ static void start_px4_modules(const std::string& storage_path) {
 
             // ============================================================
 
-            if (current_autostart == 22002 || current_autostart == 22005) {
+            if (current_autostart == 22005) {  // 22002 removed (no airframe)
 
                 // === Real flight: real onboard sensors ===
 
@@ -1158,7 +1158,7 @@ static void start_px4_modules(const std::string& storage_path) {
 
 
 
-            } else if (current_autostart == 22001 || current_autostart == 22004) {
+            } else if (current_autostart == 22004) {  // 22001 removed (no airframe)
 
                 // === HITL: external simulator over MAVLink HIL ===
 
@@ -1283,14 +1283,19 @@ static void start_px4_modules(const std::string& storage_path) {
 
                 p = param_find("RKT_MPC_SVO_DLY");
 
-                if (p != PARAM_INVALID) { float v = 0.100f; param_set(p, &v); }  // unified: lookahead_stage=5
+                if (p != PARAM_INVALID) { float v = 0.300f; param_set(p, &v); }  // HITL: lookahead_stage=15 (winning value: Range=2369m, Max α=22°, no saturation; matches analyzer recommendation 0.295)
 
-                // ROCKET_USE_GT = 0 (2026-05-07 12:11 owner-approved):
-                // Re-enable EKF2 path. MPC reads vehicle_local_position from EKF2 (normal flight path).
-                // ekf2_main() is also re-enabled in start_px4_modules below.
+                // ROCKET_USE_GT = 1 (Attempt 3 — 2026-05-08 owner request):
+                // Bypass EKF2 entirely; rocket_mpc reads groundtruth topics
+                // (vehicle_local_position_groundtruth + vehicle_attitude_groundtruth)
+                // streamed by simulator_mavlink from HIL_STATE_QUATERNION.
+                // Rationale: Attempt 2 (ROCKET_USE_GT=0) yielded cmd=0 throughout the
+                // run despite pwm_out_sim/control_allocator fixes — strong indicator that
+                // EKF2 local_position is not converging in HITL, leaving x_mpc invalid.
+                // GT path removes that dependency to isolate the MPC pipeline itself.
                 p = param_find("ROCKET_USE_GT");
 
-                if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
+                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
 
                 // 2026-05-07: CPU offload — match SITL defaults to relieve Android CPU.
                 // Does not affect MPC quality (MPC runs on sensor_combined callback).
@@ -1455,11 +1460,10 @@ static void start_px4_modules(const std::string& storage_path) {
 
 
 
-    // 4. EKF2 — re-enabled 2026-05-07 12:11 (owner-approved):
-    // Normal EKF2 path active; ROCKET_USE_GT=0 above.
+    // 4. EKF2 — Attempt 2 (2026-05-08): re-enabled for A/B test (with vs without servos).
     const char* ekf2_argv[] = {"ekf2", "start", nullptr};
     ekf2_main(2, (char**)ekf2_argv);
-    LOGI("EKF2 STARTED — normal flight path");
+    LOGI("EKF2 started (Attempt 2 — ROCKET_USE_GT=0 path)");
 
 
 
@@ -1578,6 +1582,13 @@ static void start_px4_modules(const std::string& storage_path) {
 
 
     // 10. Controllers (كلهم — commander يفعّل المناسب حسب SYS_AUTOSTART)
+    //
+    // 2026-05-08: تَجرِبة إيقاف هذه المَوديولات لِـ airframe الصاروخ
+    // فَشَلَت — الصاروخ تَخَبَّط لـ alpha=52° وسَقَط في 2 ثانية.
+    // السَبَب: control_allocator + rate controllers يُؤَدّون pre-launch
+    // rate damping ضَروري قَبل أَن يَكتَشِف rocket_mpc الإطلاق.
+    // التَركيب الصَحيح: تُشَغَّل دائماً، وxqpower_can يُفَضِّل
+    // actuator_outputs_sim (مِن rocket_mpc) عِند توافُره.
 
     const char* mca_argv[] = {"mc_att_control", "start", nullptr};
 
@@ -1779,15 +1790,32 @@ static void start_px4_modules(const std::string& storage_path) {
 
 
 
-    // 12b. HITL: pwm_out_sim
+    // 12b. HITL: pwm_out_sim — DISABLED (2026-05-08 race fix)
+    //
+    // ROOT CAUSE FOUND: pwm_out_sim publishes actuator_outputs_sim at ~250Hz
+    // driven by control_allocator. In our rocket airframe, the allocator has
+    // no mixer for fin channels → its output is zero. PWMSim faithfully scales
+    // and publishes those zeros, RACING with rocket_mpc which publishes real
+    // fin angles (radians) at ~100Hz to the SAME uORB topic.
+    //
+    // simulator_mavlink polls actuator_outputs_sim and streams whichever
+    // value is most recent into HIL_ACTUATOR_CONTROLS. With pwm_out_sim
+    // publishing 2.5x more often (and always zero), the bridge receives
+    // mostly zeros → 6DOF dynamics fly with no fin deflection → range collapses
+    // to ~100m instead of ~2500m (PIL baseline-pil83).
+    //
+    // xqpower_can also subscribes but has different polling timing, so it
+    // sometimes catches rocket_mpc's real values → CAN servos move correctly,
+    // masking the bug at the hardware side.
+    //
+    // Fix: don't start pwm_out_sim. rocket_mpc is the sole publisher
+    // (one writer, multiple readers — clean uORB pattern).
 
     if (sys_hitl == 1) {
 
-        const char* pwmsim_argv[] = {"pwm_out_sim", "start", nullptr};
-
-        pwm_out_sim_main(2, (char**)pwmsim_argv);
-
-        LOGI("pwm_out_sim started (HITL mode)");
+        // const char* pwmsim_argv[] = {"pwm_out_sim", "start", nullptr};
+        // pwm_out_sim_main(2, (char**)pwmsim_argv);
+        LOGI("pwm_out_sim NOT started (HITL race fix — rocket_mpc is sole publisher of actuator_outputs_sim @ 100Hz)");
 
 
 

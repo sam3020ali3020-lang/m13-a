@@ -1005,8 +1005,18 @@ class HILBridge:
         الاستدعاء من حلقات warm-up/auto-zero/PARAM بدل استخدام ``init_sensors``
         مُحسَب مرة واحدة يحلّ M9: ضجيج متجدّد في كل تكرار يمنع EKF2 من بناء
         bias estimation على قيمة ثابتة تماماً طوال ~80s من التهيئة.
+
+        position_lla fix (mirrors PIL bridge LESSONS_LEARNED 2026-05-06):
+        in long_range_mode, state[0:3] is ECEF (~1.8M m). Without explicit
+        position_lla, _sensors falls to _ned_to_lla(ECEF_as_NED) → baro
+        ~3e11 hPa → EKF2 altitude corrupt.
         """
-        return self._sensors({"forces": [0, 0, 0], "vel_ned": [0, 0, 0]}, state)
+        snap = {"forces": [0, 0, 0], "vel_ned": [0, 0, 0]}
+        if getattr(self.sim, "long_range_mode", False):
+            snap["position_lla"] = (
+                self.launch_lat, self.launch_lon, self.launch_alt
+            )
+        return self._sensors(snap, state)
 
     def _sensors(self, snapshot: dict, state: np.ndarray):
         pos = state[0:3]
@@ -1439,13 +1449,18 @@ class HILBridge:
         print(f"[HIL] Timing samples captured: {len(self.timing['t_sim'])}")
 
         # ─── ملخّص Hybrid Lockstep ────────────────────────────────────
+        # B4 (Obs-08) 2026-05-08: توضيح أن النظام HITL hybrid (ليس lockstep خالصاً).
+        # حتى مع lockstep:false في hil_config.yaml، الـbridge ينتظر HIL_ACTUATOR_CONTROLS
+        # من PX4 قبل تقدّم sim step (sync فعلي عبر actuator)، ثم يطبّق wall-clock pacing
+        # للحفاظ على real-time. الـbanner السابق "realtime pacing only" مضلل لأنه يوحي
+        # بعدم وجود sync مع PX4 — وهذا غير صحيح.
         if self._lockstep:
             total_waits = self._lockstep_ack_count + self._lockstep_timeout_count
             if total_waits > 0:
                 timeout_pct = 100.0 * self._lockstep_timeout_count / total_waits
                 avg_wait_us = (self._lockstep_wait_us_sum
                                / max(1, self._lockstep_ack_count))
-                print(f"[HIL] Lockstep: {self._lockstep_ack_count} acks, "
+                print(f"[HIL] Lockstep (strict): {self._lockstep_ack_count} acks, "
                       f"{self._lockstep_timeout_count} timeouts ({timeout_pct:.1f}%), "
                       f"avg_wait={avg_wait_us/1000:.2f}ms, "
                       f"max_wait={self._lockstep_wait_us_max/1000:.1f}ms")
@@ -1455,7 +1470,9 @@ class HILBridge:
                           f"PX4 may be overloaded or thermally throttled. "
                           f"Consider raising lockstep_timeout_ms.")
         else:
-            print("[HIL] Lockstep: disabled (realtime pacing only)")
+            print("[HIL] Sync mode: HITL hybrid "
+                  "(actuator-driven sync + PC wall-clock pacing, "
+                  f"actuator_msgs={self._actuator_msg_count})")
 
         # ─── ملخّص فيدباك السيرفو ─────────────────────────────────────
         fb_n = self._servo_fb_count
@@ -1504,6 +1521,13 @@ class HILBridge:
                 if p:
                     self._last_controls = np.array(p["controls"])
                     self._actuator_msg_count += 1
+                    # 2026-05-08 DIAGNOSTIC: log first 50 + every 100th HIL_ACT msg.
+                    # Verifies whether bridge receives non-zero controls when PX4
+                    # ULog confirms actuator_outputs_sim has non-zero values.
+                    n = self._actuator_msg_count
+                    if n <= 50 or n % 100 == 0:
+                        c = p["controls"][:4]
+                        print(f"[DIAG] HIL_ACT #{n} t_us={p['t_us']} ctrl[0..3]=[{c[0]:+.4f},{c[1]:+.4f},{c[2]:+.4f},{c[3]:+.4f}]  raw_len={len(payload)}", flush=True)
 
     def _send_via_timing(self, data: bytes) -> bool:
         """أرسل بايتات MAVLink عبر القناة الكاملة (5760) إذا كانت جاهزة.

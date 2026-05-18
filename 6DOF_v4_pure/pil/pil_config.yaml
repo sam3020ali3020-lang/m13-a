@@ -23,7 +23,7 @@ target:
   #   * USB tunnel (للتشخيص فقط): "127.0.0.1" مع
   #     `adb reverse tcp:4560 tcp:4560 && adb reverse tcp:5760 tcp:5760`.
   mavlink_tcp:
-    host: 127.0.0.1
+    host: 10.42.0.145    # Ethernet — restored to baseline-pil83 config (was 127.0.0.1 USB tunnel which costs 12-15 score points)
     port: 5760
   serial:
     device: /dev/ttyACM0

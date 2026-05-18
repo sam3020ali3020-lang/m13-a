@@ -266,7 +266,20 @@ private:
 	std::default_random_engine _gen{};
 
 	// uORB subscription handlers
+	// NOTE (2026-05-08, Attempt 5): two-phase subscription setup.
+	//   `_actuator_outputs_sub` (raw int handle from orb_subscribe_multi) is
+	//   kept ONLY for px4_poll() POLLIN signalling — the poll correctly wakes
+	//   when actuator_outputs_sim is published by rocket_mpc.
+	//   `_actuator_outputs_sim_sub` (uORB::Subscription class) is used for
+	//   the actual data read (.copy()). The legacy orb_copy() on the raw
+	//   handle was verified via ULog/debug_array id=77 "SIM_RD" to read
+	//   always-zero data even while rocket_mpc published non-zero values
+	//   (343/1594 non-zero samples on topic, 0/528 non-zero in SIM_RD).
+	//   Root cause: mixing legacy orb_subscribe_multi + orb_copy with
+	//   uORB::Publication<T> breaks the internal binding in newer PX4 forks.
+	//   XqpowerCan uses uORB::Subscription for the same topic and works.
 	int _actuator_outputs_sub{-1};
+	uORB::Subscription _actuator_outputs_sim_sub{ORB_ID(actuator_outputs_sim)};
 	actuator_outputs_s _actuator_outputs{};
 
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};

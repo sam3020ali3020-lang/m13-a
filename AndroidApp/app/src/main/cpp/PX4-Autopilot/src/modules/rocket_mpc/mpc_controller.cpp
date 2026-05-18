@@ -624,12 +624,26 @@ MpcSolveResult MpcController::solve(const double x_mpc_in[MPC_NX],
 		status = m130_rocket_acados_solve(_capsule);
 		if (_solve_count < 2) { PX4_DEBUG("MPC RTI iter %d done, status=%d", i, status); }
 
-		if (status != 0 && status != 2) {
+		iters_done++;
+
+		// [008] QP cascade fix: only break on status=1 (NaN — unrecoverable).
+		// status=4 (QP didn't fully converge in HPIPM) is RECOVERABLE: HPIPM
+		// retains the partial iterate, and the next RTI iteration builds on
+		// it. Breaking out caused a cascade at burnout: cold-start next cycle
+		// → harder QP → status=4 again → freeze fins → eventually _reinit(0)
+		// → loss of control. Letting the loop continue lets the partial
+		// iterate refine into a usable (sub-optimal) solution.
+		if (status == 1) {
 			ok = false;
 			break;
 		}
 
-		iters_done++;
+		if (status != 0 && status != 2) {
+			ok = false;
+			// Don't break — finish remaining iterations to refine the
+			// partial iterate. A finite sub-optimal solution is far
+			// better than freezing or zeroing the control.
+		}
 
 		// Budget check: don't start the next iteration if we're already
 		// over the wall-clock budget.  The solution from the completed
@@ -681,7 +695,9 @@ MpcSolveResult MpcController::solve(const double x_mpc_in[MPC_NX],
 
 	float de, dr, da;
 
-	if (!ok || !finite_check) {
+	if (!finite_check) {
+		// [008] QP cascade fix: NaN is the ONLY truly unrecoverable case.
+		// Freeze on last known-good control and count toward _reinit threshold.
 		_consec_fails++;
 		_warm = false;       // force fresh forward_guess next solve — don't shift corrupted trajectory
 		_consec_ok = 0;      // require 3 consecutive OK before re-enabling warm shift
@@ -691,7 +707,7 @@ MpcSolveResult MpcController::solve(const double x_mpc_in[MPC_NX],
 
 		// Diagnostic: dump input state on first few failures and every 50th after
 		if (_consec_fails <= 3 || (_consec_fails % 50) == 0) {
-			PX4_WARN("MPC fail #%d status=%d t=%.2f V=%.1f gam=%.4f chi=%.4f",
+			PX4_WARN("MPC NaN #%d status=%d t=%.2f V=%.1f gam=%.4f chi=%.4f",
 				 _consec_fails, status, (double)t_flight,
 				 x_mpc[0], x_mpc[1], x_mpc[2]);
 			PX4_WARN("  alpha=%.4f beta=%.4f phi=%.4f h=%.4f xg=%.4f",
@@ -700,8 +716,30 @@ MpcSolveResult MpcController::solve(const double x_mpc_in[MPC_NX],
 				 (double)gamma_ref, (double)chi_ref, (double)phi_ref, (double)h_ref);
 		}
 
-		if (_consec_fails >= 10) {
+		// [008] Threshold raised 10 → 30 cycles (≈0.4s → ≈1.2s).
+		// With sub-optimal control fallback in the !ok branch below, sustained
+		// NaN is the only path here; 30 cycles is a safer panic threshold.
+		if (_consec_fails >= 30) {
 			_reinit(x_mpc);
+		}
+
+	} else if (!ok) {
+		// [008] QP cascade fix: solver flagged failure but output is finite.
+		// Use the partial-iterate solution (sub-optimal but continuous control)
+		// instead of freezing. This breaks the cascade observed at burnout
+		// where status=4 spikes during the propulsion→coast transition.
+		// Crucially: do NOT invalidate _warm — the trajectory is still
+		// close to the true optimum and warm-shift will help next cycle.
+		// Do NOT increment _consec_fails — that counter is now NaN-only;
+		// _reinit() must NEVER trigger from sub-optimal solves.
+		de = (float)x1[12];
+		dr = (float)x1[13];
+		da = (float)x1[14];
+
+		if (_solve_count <= 3 || (_solve_count % 250) == 0) {
+			PX4_INFO("MPC sub-optimal status=%d t=%.2f de=%.4f dr=%.4f da=%.4f",
+				 status, (double)t_flight,
+				 (double)de, (double)dr, (double)da);
 		}
 
 	} else {

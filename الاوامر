@@ -5,7 +5,7 @@
 
 # ---------- متغير المسار الرئيسي ----------
 # غيّره مرة واحدة ليناسب جهازك:
-export M13_ROOT="$HOME/Desktop/GAB_3/1234/m13/m13"
+export M13_ROOT="$HOME/Desktop/GAB_3/m1322222/m13/m13"
 
 # ---------- 1. بناء + تثبيت (بدون clean) ----------
 JAVA_HOME=/home/wd/jdk17 \
@@ -74,19 +74,19 @@ python3 $M13_ROOT/6DOF_v4_pure/validation/generate_test_vectors.py
 # ══════════════════════════════════════════════════════
 #
 # المسارات الفعلية على هذا الجهاز:
-#   PX4_DIR = /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/app/src/main/cpp/PX4-Autopilot
-#   SITL_DIR = /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/sitl
+#   PX4_DIR = /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/app/src/main/cpp/PX4-Autopilot
+#   SITL_DIR = /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/sitl
 #   PX4_BIN = $PX4_DIR/build/px4_sitl_default/bin/px4
 
 # ---------- الخطوة 1: بناء PX4 SITL ----------
-make -C /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/app/src/main/cpp/PX4-Autopilot px4_sitl_default -j$(nproc)
+make -C /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/app/src/main/cpp/PX4-Autopilot px4_sitl_default -j$(nproc)
 
 # ---------- الخطوة 2: تشغيل SITL (PX4 + محاكاة 6DOF) ----------
-python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/sitl/run_sitl_test.py \
-  --px4-bin /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/app/src/main/cpp/PX4-Autopilot/build/px4_sitl_default/bin/px4
+python3 /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/sitl/run_sitl_test.py \
+  --px4-bin /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/app/src/main/cpp/PX4-Autopilot/build/px4_sitl_default/bin/px4
 
 # ---------- الخطوة 3: مقارنة نتائج SITL مع المحاكاة المستقلة ----------
-python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/sitl/compare_sitl_vs_standalone.py
+python3 /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/sitl/compare_sitl_vs_standalone.py
 
 # ══════════════════════════════════════════════════════
 #  أوامر PIL — الهاتف + فيزياء الكمبيوتر
@@ -98,15 +98,15 @@ python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/sitl/compare_sitl_vs_st
 #   - port forwarding مفعّل
 
 # ---------- الخطوة 1: بناء مكتبات ARM64 (solvers) ----------
-bash /home/wd/Desktop/GAB_3/1234/m13/m13/scripts/build_m130_solvers_arm64.sh
+bash /home/wd/Desktop/GAB_3/m1322222/m13/m13/scripts/build_m130_solvers_arm64.sh
 
 # ---------- الخطوة 2: بناء نظيف + APK ----------
 JAVA_HOME=/home/wd/jdk17 \
-  /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/gradlew \
-  -p /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp clean assembleDebug
+  /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/gradlew \
+  -p /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp clean assembleDebug
 
 # ---------- الخطوة 3: تثبيت APK ----------
-adb install -r /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/app/build/outputs/apk/debug/app-debug.apk
+adb install -r /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/app/build/outputs/apk/debug/app-debug.apk
 
 # ---------- الخطوة 4: port forwarding ----------
 adb reverse tcp:4560 tcp:4560
@@ -115,7 +115,7 @@ adb reverse tcp:4560 tcp:4560
 adb shell am force-stop com.ardophone.px4v17
 
 # ---------- الخطوة 6: تشغيل PIL runner (يستمع أولاً على 4560) ----------
-python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/pil/pil_runner.py
+python3 /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/pil/pil_runner.py
 
 # ---------- الخطوة 7: تشغيل التطبيق (في terminal ثاني) ----------
 adb shell am start -n com.ardophone.px4v17/.MainActivity
@@ -131,15 +131,15 @@ adb shell am start -n com.ardophone.px4v17/.MainActivity
 #   - port forwarding مفعّل (tcp:4560)
 
 # ---------- الخطوة 1: بناء مكتبات ARM64 (solvers) ----------
-bash /home/wd/Desktop/GAB_3/1234/m13/m13/scripts/build_m130_solvers_arm64.sh
+bash /home/wd/Desktop/GAB_3/m1322222/m13/m13/scripts/build_m130_solvers_arm64.sh
 
 # ---------- الخطوة 2: بناء نظيف + APK ----------
 JAVA_HOME=/home/wd/jdk17 \
-  /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/gradlew \
-  -p /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp clean assembleDebug
+  /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/gradlew \
+  -p /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp clean assembleDebug
 
 # ---------- الخطوة 3: تثبيت APK ----------
-adb install -r /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/app/build/outputs/apk/debug/app-debug.apk
+adb install -r /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/app/build/outputs/apk/debug/app-debug.apk
 
 # ---------- الخطوة 4: port forwarding ----------
 adb reverse tcp:4560 tcp:4560
@@ -148,7 +148,7 @@ adb reverse tcp:4560 tcp:4560
 adb shell am force-stop com.ardophone.px4v17
 
 # ---------- الخطوة 6: تشغيل HIL runner (يستمع أولاً) ----------
-python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/hil/hil_runner.py
+python3 /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/hil/hil_runner.py
 
 # ---------- الخطوة 7: تشغيل التطبيق (في terminal ثاني — HIL) ----------
 adb shell am start -n com.ardophone.px4v17/.MainActivity
@@ -172,8 +172,8 @@ adb shell am start -n com.ardophone.px4v17/.MainActivity
 
 # ---------- الخطوة 1: تثبيت التطبيق ----------
 JAVA_HOME=/home/wd/jdk17 \
-  /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/gradlew \
-  -p /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp clean installDebug
+  /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/gradlew \
+  -p /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp clean installDebug
 
 # ---------- الخطوة 2: port forwarding (MAVLink TCP) ----------
 adb forward tcp:5760 tcp:5760
@@ -184,17 +184,17 @@ adb shell am start -n com.ardophone.px4v17/.MainActivity
 
 # ---------- الخطوة 4: تشغيل E2E (اختر preset) ----------
 # Quick (60 ثانية — sensor pipeline فقط):
-python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/e2e_latency/e2e_runner.py --preset quick
+python3 /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/e2e_latency/e2e_runner.py --preset quick
 
 # Standard (5 دقائق — sensor + tap test):
-python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/e2e_latency/e2e_runner.py --preset standard
+python3 /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/e2e_latency/e2e_runner.py --preset standard
 
 # Full (15 دقيقة — كل الاختبارات):
-python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/e2e_latency/e2e_runner.py --preset full
+python3 /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/e2e_latency/e2e_runner.py --preset full
 
 # ---------- الخطوة 5: تحليل نتائج سابقة ----------
-python3 /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/e2e_latency/e2e_runner.py \
-  --analyze-only /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/e2e_latency/results/<TIMESTAMP>/
+python3 /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/e2e_latency/e2e_runner.py \
+  --analyze-only /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/e2e_latency/results/<TIMESTAMP>/
 
 # ══════════════════════════════════════════════════════
 #  ملحق — أوامر مُساعدة (قتل/تنظيف/تشخيص)
@@ -235,23 +235,23 @@ fuser -k <PORT>/tcp                # أو: kill -9 <PID>
 cp <FILE> <FILE>.pre_fix_$(date +%s)
 
 # ---------- A10. تنظيف SITL build (لإعادة بناء كاملة) ----------
-rm -rf /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/app/src/main/cpp/PX4-Autopilot/build/px4_sitl_default
+rm -rf /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/app/src/main/cpp/PX4-Autopilot/build/px4_sitl_default
 # ثم: make -C ... px4_sitl_default
 
 # ---------- A11. تنظيف Android build (لإعادة بناء APK كاملة) ----------
 JAVA_HOME=/home/wd/jdk17 \
-  /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp/gradlew \
-  -p /home/wd/Desktop/GAB_3/1234/m13/m13/AndroidApp clean
+  /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp/gradlew \
+  -p /home/wd/Desktop/GAB_3/m1322222/m13/m13/AndroidApp clean
 
 # ---------- A12. عرض آخر نتيجة HITL/PIL/SITL ----------
-ls -lt /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/hil/results/*.csv  | head -3
-ls -lt /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/pil/results/*.csv  | head -3
-ls -lt /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/sitl/results/*.csv | head -3
+ls -lt /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/hil/results/*.csv  | head -3
+ls -lt /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/pil/results/*.csv  | head -3
+ls -lt /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/sitl/results/*.csv | head -3
 
 # ---------- A13. فتح آخر تقرير HTML تلقائياً ----------
-xdg-open $(ls -t /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/pil/results/plots/*.html  | head -1) 2>/dev/null
-xdg-open $(ls -t /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/hil/results/plots/*.html  | head -1) 2>/dev/null
-xdg-open $(ls -t /home/wd/Desktop/GAB_3/1234/m13/m13/6DOF_v4_pure/sitl/results/plots/*.html | head -1) 2>/dev/null
+xdg-open $(ls -t /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/pil/results/plots/*.html  | head -1) 2>/dev/null
+xdg-open $(ls -t /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/hil/results/plots/*.html  | head -1) 2>/dev/null
+xdg-open $(ls -t /home/wd/Desktop/GAB_3/m1322222/m13/m13/6DOF_v4_pure/sitl/results/plots/*.html | head -1) 2>/dev/null
 
 # ---------- A14. تحقق من حالة EKF2 / ROCKET_USE_GT في APK المُثبَّت ----------
 # عبر logcat بعد Start PX4:

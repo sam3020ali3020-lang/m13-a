@@ -9,7 +9,7 @@ target:
   # connects directly to phone's Ethernet IP. Old USB-tunnel path used
   # 127.0.0.1 with `adb forward tcp:5760 tcp:5760`.
   mavlink_tcp:
-    host: 10.42.0.145
+    host: 10.42.0.215
     port: 5760
   serial:
     device: /dev/ttyACM0

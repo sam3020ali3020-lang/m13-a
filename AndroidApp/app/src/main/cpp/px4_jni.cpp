@@ -2572,27 +2572,18 @@ static void start_px4_modules(const std::string& storage_path) {
 
 
 
-                // ROCKET_USE_GT = 1 (Attempt 3 — 2026-05-08 owner request):
+                // ROCKET_USE_GT = 0: use EKF2 output (full-stack validation).
 
-                // Bypass EKF2 entirely; rocket_mpc reads groundtruth topics
+                // Previous GT=1 bypassed EKF2 as workaround for cmd=0 caused by
 
-                // (vehicle_local_position_groundtruth + vehicle_attitude_groundtruth)
+                // gravity double-subtraction in HIL bridge. Now fixed.
 
-                // streamed by simulator_mavlink from HIL_STATE_QUATERNION.
-
-                // Rationale: Attempt 2 (ROCKET_USE_GT=0) yielded cmd=0 throughout the
-
-                // run despite pwm_out_sim/control_allocator fixes — strong indicator that
-
-                // EKF2 local_position is not converging in HITL, leaving x_mpc invalid.
-
-                // GT path removes that dependency to isolate the MPC pipeline itself.
 
                 p = param_find("ROCKET_USE_GT");
 
 
 
-                if (p != PARAM_INVALID) { int32_t v = 1; param_set(p, &v); }
+                if (p != PARAM_INVALID) { int32_t v = 0; param_set(p, &v); }
 
 
 

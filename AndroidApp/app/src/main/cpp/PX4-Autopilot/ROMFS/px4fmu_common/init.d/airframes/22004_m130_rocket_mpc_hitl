@@ -32,8 +32,11 @@ param set ROCKET_SITL_GPS 1
 # HITL: enable baro sim (simulator_mavlink provides baro via HIL_SENSOR)
 param set SENS_EN_BAROSIM 1
 
-# HITL: no magnetometer (sim provides attitude directly)
-param set EKF2_MAG_TYPE   5
+# HITL: init-only magnetometer alignment (one-shot at ARM, no continuous
+# fusion). Required for ROCKET_USE_GT=0 (EKF2 path) — without yaw
+# alignment, EKF2 NED frame is undefined → MPC sees garbage state.
+# Mirrors PIL airframe and px4_jni.cpp HITL block.
+param set EKF2_MAG_TYPE   6
 
 # HITL: permissive arming (no real GPS fix required)
 param set COM_ARM_WO_GPS  1

@@ -408,13 +408,14 @@ def _ned_to_lla(pos, lat0, lon0, alt0):
 
 
 def _body_specific_force(f_body, mass, g_ned, quat):
-    q0, q1, q2, q3 = quat
-    C = np.array([
-        [1 - 2 * (q2 * q2 + q3 * q3), 2 * (q1 * q2 + q0 * q3), 2 * (q1 * q3 - q0 * q2)],
-        [2 * (q1 * q2 - q0 * q3), 1 - 2 * (q1 * q1 + q3 * q3), 2 * (q2 * q3 + q0 * q1)],
-        [2 * (q1 * q3 + q0 * q2), 2 * (q2 * q3 - q0 * q1), 1 - 2 * (q1 * q1 + q2 * q2)],
-    ])
-    return f_body / max(mass, 0.1) - C @ g_ned
+    """Specific force in body frame (what an IMU accelerometer measures).
+
+    f_body = thrust + aero (from 6DOF sim, NO gravity).
+    Newton: a_inertial = F_ext/m + g   →   specific_force = a - g = F_ext/m.
+    Mirrors PIL bridge `_body_specific_force` (pil/mavlink_bridge_pil.py:381-389).
+    """
+    del g_ned, quat  # kept for API symmetry with previous signature
+    return f_body / max(mass, 0.1)
 
 
 def _mag_body(lat_deg, quat):
@@ -999,19 +1000,28 @@ class HILBridge:
     # ─── بناء بيانات الحسّاسات ───────────────────────────────────────────────
 
     def _static_sensors(self, state: np.ndarray) -> dict:
-        """حسّاسات ثابتة للصاروخ على المنصّة (forces=0, vel=0) مع ضجيج جديد
-        كل استدعاء.
+        """حسّاسات ثابتة للصاروخ على المنصّة مع ضجيج جديد كل استدعاء.
 
         الاستدعاء من حلقات warm-up/auto-zero/PARAM بدل استخدام ``init_sensors``
         مُحسَب مرة واحدة يحلّ M9: ضجيج متجدّد في كل تكرار يمنع EKF2 من بناء
         bias estimation على قيمة ثابتة تماماً طوال ~80s من التهيئة.
 
-        position_lla fix (mirrors PIL bridge LESSONS_LEARNED 2026-05-06):
-        in long_range_mode, state[0:3] is ECEF (~1.8M m). Without explicit
-        position_lla, _sensors falls to _ned_to_lla(ECEF_as_NED) → baro
-        ~3e11 hPa → EKF2 altitude corrupt.
+        Pad forces: launch-rail reaction = -m·g_body.  With specific_force =
+        F_ext/m (post gravity-fix), we must supply the pad reaction so the
+        accelerometer reads -C·g_ned (correct for a stationary body).
+        Without this, accel_body would be zero → EKF2 tilt alignment fails.
+        Parity with PIL bridge (_sensors called with pad_forces).
         """
-        snap = {"forces": [0, 0, 0], "vel_ned": [0, 0, 0]}
+        quat = state[6:10]
+        q0, q1, q2, q3 = quat
+        C_ned2b = np.array([
+            [1 - 2 * (q2 * q2 + q3 * q3), 2 * (q1 * q2 + q0 * q3), 2 * (q1 * q3 - q0 * q2)],
+            [2 * (q1 * q2 - q0 * q3), 1 - 2 * (q1 * q1 + q3 * q3), 2 * (q2 * q3 + q0 * q1)],
+            [2 * (q1 * q3 + q0 * q2), 2 * (q2 * q3 - q0 * q1), 1 - 2 * (q1 * q1 + q2 * q2)],
+        ])
+        mass = state[13] if len(state) > 13 else 12.74
+        pad_forces = -mass * (C_ned2b @ np.array([0.0, 0.0, 9.80665]))
+        snap = {"forces": pad_forces, "vel_ned": [0, 0, 0]}
         if getattr(self.sim, "long_range_mode", False):
             snap["position_lla"] = (
                 self.launch_lat, self.launch_lon, self.launch_alt
@@ -1118,6 +1128,25 @@ class HILBridge:
         #   4) بعد أول actuator msg ننتظر settle_after_arm_s لاستقرار
         #      EKF النهائي ثم نبدأ المحاكاة فوراً
         #   هذا يضمن أن PX4 يبدأ التحكم من t≈0 بدون فجوة
+        #
+        # Pad forces: launch-rail reaction = -m·g_body. With specific_force = F_ext/m
+        # (post-fix), this gives accel_body = -C·g_ned ≡ IMU output for stationary
+        # body, enabling EKF2 tilt alignment. Parity with PIL bridge.
+        _launch_quat = state[6:10]
+        q0, q1, q2, q3 = _launch_quat
+        _C_ned2b = np.array([
+            [1 - 2 * (q2 * q2 + q3 * q3), 2 * (q1 * q2 + q0 * q3), 2 * (q1 * q3 - q0 * q2)],
+            [2 * (q1 * q2 - q0 * q3), 1 - 2 * (q1 * q1 + q3 * q3), 2 * (q2 * q3 + q0 * q1)],
+            [2 * (q1 * q3 + q0 * q2), 2 * (q2 * q3 - q0 * q1), 1 - 2 * (q1 * q1 + q2 * q2)],
+        ])
+        _pad_mass = state[13] if len(state) > 13 else 12.74
+        _pad_forces = -_pad_mass * (_C_ned2b @ np.array([0.0, 0.0, 9.80665]))
+        _pad_sensors = self._sensors(
+            {"forces": _pad_forces, "vel_ned": [0, 0, 0],
+             "position_lla": (self.launch_lat, self.launch_lon, self.launch_alt)},
+            state,
+        )
+
         print("[HIL] Warm-up: sending sensors + ARM, waiting for PX4 readiness...")
         self._actuator_msg_count = 0
         wu_start = time.monotonic()
@@ -1135,22 +1164,33 @@ class HILBridge:
             # الفعلي يمكن أن تُحدث انحرافاً يُعلّم الحسّاسات STALE.
             self._sim_t_us = int(time.monotonic() * 1e6)
             self._send(build_heartbeat())
+            # CRITICAL: use actual launch quaternion (not identity).
+            # EKF2 cross-checks gravity direction from accel against groundtruth
+            # attitude during alignment. Identity quat with tilted-pad accel
+            # creates inconsistency → yaw alignment fails. Mirrors PIL bridge.
             self._send(build_hil_state_quat(
                 self._sim_t_us,
-                np.array([1, 0, 0, 0]), np.zeros(3),
+                _launch_quat, np.zeros(3),
                 self.launch_lat, self.launch_lon, self.launch_alt,
-                0, 0, 0, np.array([0, 0, -9.80665]), 0.0,
+                0, 0, 0, _pad_sensors["accel_body_true"], 0.0,
             ))
             self._send(build_hil_gps(
                 self._sim_t_us,
                 self.launch_lat, self.launch_lon, self.launch_alt, 0, 0, 0,
             ))
-            s = self._static_sensors(state)
+            # Re-noise per tick: prevents PX4 DataValidator marking sensors
+            # STALE (rejects 100+ identical samples). Mirrors PIL bridge.
+            wu_noisy_accel, wu_noisy_gyro = self.noise.add_imu_noise(
+                _pad_sensors["accel_body_true"], np.zeros(3)
+            )
+            wu_noisy_mag = self.noise.add_mag_noise(_pad_sensors["mag_body"])
+            wu_noisy_alt = self.noise.add_baro_noise(self.launch_alt)
+            wu_noisy_baro_p = 1013.25 * (1.0 - 2.25577e-5 * wu_noisy_alt) ** 5.25588
             self._send(build_hil_sensor(
                 self._sim_t_us,
-                s["accel_body"], s["gyro_body"],
-                s["mag_body"], s["baro_p"],
-                s["diff_p"], s["pressure_alt"],
+                wu_noisy_accel, wu_noisy_gyro,
+                wu_noisy_mag, wu_noisy_baro_p,
+                _pad_sensors["diff_p"], wu_noisy_alt,
             ))
 
             # أرسل ARM بشكل متكرر
@@ -1179,16 +1219,21 @@ class HILBridge:
                         self._send(build_heartbeat())
                         self._send(build_hil_state_quat(
                             self._sim_t_us,
-                            np.array([1, 0, 0, 0]), np.zeros(3),
+                            _launch_quat, np.zeros(3),
                             self.launch_lat, self.launch_lon, self.launch_alt,
-                            0, 0, 0, np.array([0, 0, -9.80665]), 0.0,
+                            0, 0, 0, _pad_sensors["accel_body_true"], 0.0,
                         ))
-                        s = self._static_sensors(state)
+                        wu_noisy_accel, wu_noisy_gyro = self.noise.add_imu_noise(
+                            _pad_sensors["accel_body_true"], np.zeros(3)
+                        )
+                        wu_noisy_mag = self.noise.add_mag_noise(_pad_sensors["mag_body"])
+                        wu_noisy_alt = self.noise.add_baro_noise(self.launch_alt)
+                        wu_noisy_baro_p = 1013.25 * (1.0 - 2.25577e-5 * wu_noisy_alt) ** 5.25588
                         self._send(build_hil_sensor(
                             self._sim_t_us,
-                            s["accel_body"], s["gyro_body"],
-                            s["mag_body"], s["baro_p"],
-                            s["diff_p"], s["pressure_alt"],
+                            wu_noisy_accel, wu_noisy_gyro,
+                            wu_noisy_mag, wu_noisy_baro_p,
+                            _pad_sensors["diff_p"], wu_noisy_alt,
                         ))
                         self._drain_target(dt)
                         time.sleep(0.005)
@@ -1740,6 +1785,21 @@ class HILBridge:
               f"(settle={self.servo_zero_settle_s:.1f}s, "
               f"sample={self.servo_zero_sample_s:.1f}s)...")
 
+        # Pre-compute pad forces for servo-zero warm-up phase.
+        q0, q1, q2, q3 = state[6:10]
+        _C_ned2b_cz = np.array([
+            [1 - 2 * (q2 * q2 + q3 * q3), 2 * (q1 * q2 + q0 * q3), 2 * (q1 * q3 - q0 * q2)],
+            [2 * (q1 * q2 - q0 * q3), 1 - 2 * (q1 * q1 + q3 * q3), 2 * (q2 * q3 + q0 * q1)],
+            [2 * (q1 * q3 + q0 * q2), 2 * (q2 * q3 - q0 * q1), 1 - 2 * (q1 * q1 + q2 * q2)],
+        ])
+        _pad_mass_cz = state[13] if len(state) > 13 else 12.74
+        _cz_pad_forces = -_pad_mass_cz * (_C_ned2b_cz @ np.array([0.0, 0.0, 9.80665]))
+        _cz_pad_sensors = self._sensors(
+            {"forces": _cz_pad_forces, "vel_ned": [0, 0, 0],
+             "position_lla": (self.launch_lat, self.launch_lon, self.launch_alt)},
+            state,
+        )
+
         t_start = time.monotonic()
         settle_end = t_start + self.servo_zero_settle_s
         sample_end = settle_end + self.servo_zero_sample_s
@@ -1762,22 +1822,28 @@ class HILBridge:
             # انتقال `_set_hitl_param`/warmup إلى wall-clock، ما قد يُربك EKF2.
             self._sim_t_us = int(time.monotonic() * 1e6)
             self._send(build_heartbeat())
+            # Use actual launch quaternion for consistency with accel data.
             self._send(build_hil_state_quat(
                 self._sim_t_us,
-                np.array([1, 0, 0, 0]), np.zeros(3),
+                state[6:10], np.zeros(3),
                 self.launch_lat, self.launch_lon, self.launch_alt,
-                0, 0, 0, np.array([0, 0, -9.80665]), 0.0,
+                0, 0, 0, _cz_pad_sensors["accel_body_true"], 0.0,
             ))
             self._send(build_hil_gps(
                 self._sim_t_us,
                 self.launch_lat, self.launch_lon, self.launch_alt, 0, 0, 0,
             ))
-            s = self._static_sensors(state)
+            wu_noisy_accel, wu_noisy_gyro = self.noise.add_imu_noise(
+                _cz_pad_sensors["accel_body_true"], np.zeros(3)
+            )
+            wu_noisy_mag = self.noise.add_mag_noise(_cz_pad_sensors["mag_body"])
+            wu_noisy_alt = self.noise.add_baro_noise(self.launch_alt)
+            wu_noisy_baro_p = 1013.25 * (1.0 - 2.25577e-5 * wu_noisy_alt) ** 5.25588
             self._send(build_hil_sensor(
                 self._sim_t_us,
-                s["accel_body"], s["gyro_body"],
-                s["mag_body"], s["baro_p"],
-                s["diff_p"], s["pressure_alt"],
+                wu_noisy_accel, wu_noisy_gyro,
+                wu_noisy_mag, wu_noisy_baro_p,
+                _cz_pad_sensors["diff_p"], wu_noisy_alt,
             ))
             self._drain_target(dt)
             time.sleep(0.005)

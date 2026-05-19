@@ -1,0 +1,52 @@
+[
+  {
+    "tag": "OK1",
+    "ts": "20260519_230511",
+    "dur_s": 14.07,
+    "apogee_m": 1314.9,
+    "final_range_m": 2559.5,
+    "max_speed_mps": 257.9,
+    "max_alpha_deg": 1.86,
+    "max_beta_deg": 1.25
+  },
+  {
+    "tag": "OK2",
+    "ts": "20260519_230642",
+    "dur_s": 13.92,
+    "apogee_m": 1258.4,
+    "final_range_m": 2480.2,
+    "max_speed_mps": 255.5,
+    "max_alpha_deg": 0.21,
+    "max_beta_deg": 0.89
+  },
+  {
+    "tag": "OK3",
+    "ts": "20260519_230841",
+    "dur_s": 14.74,
+    "apogee_m": 1265.6,
+    "final_range_m": 2608.6,
+    "max_speed_mps": 254.5,
+    "max_alpha_deg": 0.21,
+    "max_beta_deg": 0.89
+  },
+  {
+    "tag": "PARTIAL1",
+    "ts": "20260519_234055",
+    "dur_s": 8.79,
+    "apogee_m": 1270.2,
+    "final_range_m": 1408.4,
+    "max_speed_mps": 254.4,
+    "max_alpha_deg": 3.13,
+    "max_beta_deg": 1.48
+  },
+  {
+    "tag": "PARTIAL2",
+    "ts": "20260519_234745",
+    "dur_s": 9.12,
+    "apogee_m": 1246.0,
+    "final_range_m": 1480.7,
+    "max_speed_mps": 256.1,
+    "max_alpha_deg": 3.13,
+    "max_beta_deg": 1.42
+  }
+]

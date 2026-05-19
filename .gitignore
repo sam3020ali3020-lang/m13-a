@@ -67,3 +67,8 @@ Thumbs.db
 # === APK / debug outputs ===
 *.apk
 *.aab
+
+# Large toolchain files (>100MB, exceeds GitHub limit)
+AndroidApp/app/src/main/cpp/PX4-Autopilot/Tools/setup/xtensa-esp-elf-*.tar.xz
+AndroidApp/app/src/main/cpp/PX4-Autopilot/.git_upstream_disabled/
+6DOF_v4_pure/hil/results/

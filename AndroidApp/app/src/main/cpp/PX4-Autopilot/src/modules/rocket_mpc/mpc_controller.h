@@ -158,4 +158,23 @@ private:
 
 	// Temporary trajectory buffer for forward guess
 	double _x_traj[(MPC_N + 1) * MPC_NX]{};
+
+	// ─── Fallback PD controller (active during NaN episodes) ───
+	// Replaces the legacy "freeze last fin command" behaviour after the
+	// solver has produced NaN for MAX_FREEZE_CYCLES consecutive cycles.
+	// The PD acts directly on alpha → δe and beta → δr from the current
+	// (still-finite) MPC input state, with damping from the body angular
+	// rates q (pitch) and r (yaw). δa is held at 0 — no roll command in
+	// fallback to avoid exciting roll/yaw coupling while the optimizer
+	// is sick.
+	static constexpr float PD_KP_ALPHA   = 2.0f;     // proportional gain alpha → δe
+	static constexpr float PD_KD_ALPHA   = 0.3f;     // derivative gain (damping on q)
+	static constexpr float PD_KP_BETA    = 2.0f;     // proportional gain beta  → δr
+	static constexpr float PD_KD_BETA    = 0.3f;     // derivative gain (damping on r)
+	static constexpr float PD_DELTA_MAX  = 0.2618f;  // 15° max — 5° margin under solver's 20°
+	static constexpr int   MAX_FREEZE_CYCLES = 5;    // ≈200 ms @ 25 Hz before PD engages
+	float _prev_alpha{0.0f};
+	float _prev_beta{0.0f};
+	bool  _fallback_active{false};
+	int   _fallback_count{0};
 };

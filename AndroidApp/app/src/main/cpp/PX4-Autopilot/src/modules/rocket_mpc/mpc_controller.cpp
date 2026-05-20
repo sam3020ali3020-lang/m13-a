@@ -1,5 +1,6 @@
 #include "mpc_controller.h"
 
+#include <algorithm>   // std::max, std::min — used by NaN-fallback PD clamps
 #include <cstring>
 #include <cstdio>
 #include <drivers/drv_hrt.h>
@@ -385,6 +386,13 @@ void MpcController::reset()
 	_cmd_buf_count = 0;
 	memset(_x_traj, 0, sizeof(_x_traj));
 
+	// [v4-NaN-fix] Wipe PD fallback state on every re-arm so a previous
+	// flight's stuck-in-fallback condition does not leak into the next.
+	_fallback_active = false;
+	_fallback_count = 0;
+	_prev_alpha = 0.0f;
+	_prev_beta  = 0.0f;
+
 	PX4_INFO("MPC reset for re-arm");
 }
 
@@ -394,7 +402,46 @@ void MpcController::reset()
 void MpcController::_reinit(const double x_mpc[MPC_NX])
 {
 	m130_rocket_acados_reset(_capsule, 1);
-	_forward_guess(x_mpc, _last_solve_t > 0.0f ? _last_solve_t : 0.0f);
+
+	// [v4-NaN-fix] Sanitize the current state BEFORE feeding it to
+	// _forward_guess. The legacy reinit blindly trusted x_mpc, but during
+	// a NaN cascade the rocket has typically drifted so far (alpha → ±π,
+	// rates → tens of rad/s, V near zero) that forward_guess produces a
+	// trajectory that immediately violates the OCP's box bounds and the
+	// next solve returns NaN again — the exact loop the PD fallback was
+	// added to break. Clamping to physically-sane envelope values gives
+	// the solver a feasible warm-start and a real chance to recover.
+	double x_sanitized[MPC_NX];
+	memcpy(x_sanitized, x_mpc, MPC_NX * sizeof(double));
+
+	// Clamp alpha (idx 6) and beta (idx 7) to ±0.5 rad (≈28.6°). Beyond
+	// this the linearised aero model in the OCP no longer represents
+	// reality, so any guess based on it is fiction.
+	static constexpr double ALPHA_CLAMP = 0.5;
+	if (x_sanitized[6] >  ALPHA_CLAMP) { x_sanitized[6] =  ALPHA_CLAMP; }
+	if (x_sanitized[6] < -ALPHA_CLAMP) { x_sanitized[6] = -ALPHA_CLAMP; }
+	if (x_sanitized[7] >  ALPHA_CLAMP) { x_sanitized[7] =  ALPHA_CLAMP; }
+	if (x_sanitized[7] < -ALPHA_CLAMP) { x_sanitized[7] = -ALPHA_CLAMP; }
+
+	// Clamp body angular rates (idx 3=q, 4=r, 5=p) to ±5 rad/s (≈286°/s)
+	for (int j = 3; j <= 5; j++) {
+		if (x_sanitized[j] >  5.0) { x_sanitized[j] =  5.0; }
+		if (x_sanitized[j] < -5.0) { x_sanitized[j] = -5.0; }
+	}
+
+	// Ensure V (idx 0) is positive; the aero model divides by V in
+	// several places and a zero/negative V immediately produces NaN.
+	if (x_sanitized[0] < 10.0) { x_sanitized[0] = 10.0; }
+
+	// Zero the fin states (idx 12,13,14 = δe_state, δr_state, δa_state).
+	// We are giving the solver a fresh start — there is no benefit to
+	// carrying over the last actuator state when everything else has
+	// been clamped to a different operating point.
+	x_sanitized[12] = 0.0;
+	x_sanitized[13] = 0.0;
+	x_sanitized[14] = 0.0;
+
+	_forward_guess(x_sanitized, _last_solve_t > 0.0f ? _last_solve_t : 0.0f);
 
 	for (int k = 0; k <= _cfg.N_horizon; k++) {
 		ocp_nlp_out_set(_nlp_config, _nlp_dims, _nlp_out, _nlp_in, k, "x",
@@ -410,7 +457,8 @@ void MpcController::_reinit(const double x_mpc[MPC_NX])
 	_warm = false;
 	_consec_fails = 0;
 	_consec_ok = 0;
-	PX4_WARN("MPC solver reinitialized");
+	PX4_WARN("MPC solver reinitialized (sanitized alpha=%.3f beta=%.3f)",
+		 x_sanitized[6], x_sanitized[7]);
 }
 
 // ===================================================================
@@ -697,19 +745,76 @@ MpcSolveResult MpcController::solve(const double x_mpc_in[MPC_NX],
 
 	if (!finite_check) {
 		// [008] QP cascade fix: NaN is the ONLY truly unrecoverable case.
-		// Freeze on last known-good control and count toward _reinit threshold.
+		// [v4-NaN-fix] After MAX_FREEZE_CYCLES of pure freeze, hand control
+		// to a PD fallback on alpha/beta so the body doesn't drift while the
+		// solver tries to recover. Without this, the freeze → drift → bad
+		// _forward_guess → NaN-again loop pegs alpha at ±π and the rocket
+		// tumbles (observed in PARTIAL runs 234055/234745: 4+ s freeze,
+		// alpha → 179°). The PD does not replace _reinit(); it only fills
+		// the gap until either solver recovers or _reinit fires at 30 cycles.
 		_consec_fails++;
 		_warm = false;       // force fresh forward_guess next solve — don't shift corrupted trajectory
 		_consec_ok = 0;      // require 3 consecutive OK before re-enabling warm shift
-		de = _last_delta_e;
-		dr = _last_delta_r;
-		da = _last_delta_a;
+
+		if (_consec_fails <= MAX_FREEZE_CYCLES) {
+			// First ~200 ms (5 cycles): legacy freeze on last-known-good.
+			// Avoids spurious PD activation on a single transient NaN.
+			de = _last_delta_e;
+			dr = _last_delta_r;
+			da = _last_delta_a;
+		} else {
+			// Beyond MAX_FREEZE_CYCLES: switch to PD on the still-finite
+			// MPC input state. State map (per OCP setup):
+			//   x_mpc[3] = q (pitch rate, rad/s)
+			//   x_mpc[4] = r (yaw rate,   rad/s)
+			//   x_mpc[6] = alpha (rad)
+			//   x_mpc[7] = beta  (rad)
+			float alpha_now = (float)x_mpc[6];
+			float beta_now  = (float)x_mpc[7];
+			float q_rate    = (float)x_mpc[3];
+			float r_rate    = (float)x_mpc[4];
+
+			// Only run PD if the input state itself is finite. If it
+			// also went NaN we have no signal to act on — keep freezing.
+			if (std::isfinite(alpha_now) && std::isfinite(beta_now) &&
+			    std::isfinite(q_rate) && std::isfinite(r_rate)) {
+
+				// PD law: opposes positive alpha/beta, damped by body rates.
+				//   δe ← -(KP·α + KD·q)
+				//   δr ← -(KP·β + KD·r)
+				//   δa ← 0     (no roll command while solver is sick)
+				de = -(PD_KP_ALPHA * alpha_now + PD_KD_ALPHA * q_rate);
+				dr = -(PD_KP_BETA  * beta_now  + PD_KD_BETA  * r_rate);
+				da = 0.0f;
+
+				// Saturate to PD-specific tighter limit (15°) so we never
+				// match the solver's 20° box bound exactly — leaves head-
+				// room when the optimizer comes back online.
+				de = std::max(-PD_DELTA_MAX, std::min(PD_DELTA_MAX, de));
+				dr = std::max(-PD_DELTA_MAX, std::min(PD_DELTA_MAX, dr));
+
+				_prev_alpha = alpha_now;
+				_prev_beta  = beta_now;
+
+				if (!_fallback_active) {
+					PX4_WARN("MPC NaN fallback: PD active at t=%.2f alpha=%.3f beta=%.3f",
+						 (double)t_flight, (double)alpha_now, (double)beta_now);
+					_fallback_active = true;
+				}
+				_fallback_count++;
+			} else {
+				// Even the input state is non-finite — fall back to freeze.
+				de = _last_delta_e;
+				dr = _last_delta_r;
+				da = _last_delta_a;
+			}
+		}
 
 		// Diagnostic: dump input state on first few failures and every 50th after
 		if (_consec_fails <= 3 || (_consec_fails % 50) == 0) {
-			PX4_WARN("MPC NaN #%d status=%d t=%.2f V=%.1f gam=%.4f chi=%.4f",
+			PX4_WARN("MPC NaN #%d status=%d t=%.2f V=%.1f gam=%.4f fallback=%d",
 				 _consec_fails, status, (double)t_flight,
-				 x_mpc[0], x_mpc[1], x_mpc[2]);
+				 x_mpc[0], x_mpc[1], _fallback_active ? 1 : 0);
 			PX4_WARN("  alpha=%.4f beta=%.4f phi=%.4f h=%.4f xg=%.4f",
 				 x_mpc[6], x_mpc[7], x_mpc[8], x_mpc[9], x_mpc[10]);
 			PX4_WARN("  refs: gam=%.4f chi=%.4f phi=%.4f h=%.4f",
@@ -719,6 +824,9 @@ MpcSolveResult MpcController::solve(const double x_mpc_in[MPC_NX],
 		// [008] Threshold raised 10 → 30 cycles (≈0.4s → ≈1.2s).
 		// With sub-optimal control fallback in the !ok branch below, sustained
 		// NaN is the only path here; 30 cycles is a safer panic threshold.
+		// Note: _fallback_active is intentionally NOT cleared on _reinit —
+		// PD must keep running until the solver actually returns a valid
+		// (finite + ok) output, which is detected only in the else branch.
 		if (_consec_fails >= 30) {
 			_reinit(x_mpc);
 		}
@@ -744,6 +852,17 @@ MpcSolveResult MpcController::solve(const double x_mpc_in[MPC_NX],
 
 	} else {
 		_consec_fails = 0;
+
+		// [v4-NaN-fix] Recovery edge: solver returned a clean (finite + ok)
+		// solution. If we were in PD fallback, log the transition and clear
+		// the flag so subsequent NaN bursts re-arm the freeze grace period
+		// from scratch.
+		if (_fallback_active) {
+			PX4_INFO("MPC NaN recovery: PD→MPC after %d fallback cycles", _fallback_count);
+			_fallback_active = false;
+			_fallback_count = 0;
+		}
+
 		de = (float)x1[12];
 		dr = (float)x1[13];
 		da = (float)x1[14];

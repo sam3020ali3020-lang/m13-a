@@ -197,6 +197,33 @@ def load_hil_servos(csv_path: Path):
     return sdf
 
 
+def load_hil_thermal(csv_path: Path):
+    """Load thermal CSV (phone CPU temp/freq via adb) if present alongside the
+    flight CSV. Two layouts are supported:
+      <flight_stem>_thermal.csv   ← bridge-integrated sampler (legacy + future)
+      <flight_stem>.thermal.csv   ← alt extension form
+    The standalone shell sampler (_thermal_quick.sh) writes to the FIRST form,
+    so users who run the lightweight sidecar get the same UX as the integrated
+    path. Returns None if no file or no rows. Columns we care about:
+      cpu_temp_c (mandatory),  cpu0_freq_mhz,  cpu4_freq_mhz,  cpu7_freq_mhz."""
+    thermal_path = csv_path.with_name(csv_path.stem + "_thermal.csv")
+    if not thermal_path.exists():
+        thermal_path = csv_path.with_name(csv_path.stem + ".thermal.csv")
+    if not thermal_path.exists():
+        return None
+    try:
+        tdf = pd.read_csv(thermal_path)
+    except Exception:
+        return None
+    if len(tdf) == 0 or "cpu_temp_c" not in tdf.columns:
+        return None
+    # Drop rows where temperature is non-positive (sampler error placeholders)
+    tdf = tdf[pd.to_numeric(tdf["cpu_temp_c"], errors="coerce") > 0].reset_index(drop=True)
+    if len(tdf) == 0:
+        return None
+    return tdf
+
+
 # ══════════════════════════════════════════════════════════════════════
 #  Metrics Extraction
 # ══════════════════════════════════════════════════════════════════════
@@ -1435,7 +1462,7 @@ def _plotly_div(fig):
 
 
 def generate_html(df, metrics, scores, diags, recs,
-                  timing_df=None, servo_df=None, html_path=None):
+                  timing_df=None, servo_df=None, thermal_df=None, html_path=None):
     m = metrics
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -1479,6 +1506,53 @@ def generate_html(df, metrics, scores, diags, recs,
         )
 
     # Servo mini-card (HIL-specific)
+    # CPU temperature mini-card — only rendered if a thermal CSV was loaded
+    # (i.e. the standalone _thermal_quick.sh sidecar was running, or a future
+    # bridge-integrated sampler emitted <stem>_thermal.csv).  Color-graded
+    # against the empirical Snapdragon throttle envelope:
+    #   < 60 °C  pass   (cool, no throttling)
+    #   60–80 °C warn   (some core derating possible)
+    #   ≥ 80 °C  fail   (hard thermal throttle, MPC jitter likely)
+    thermal_card = ""
+    cpu_max = m.get("cpu_temp_max_c")
+    if cpu_max is not None and cpu_max == cpu_max:  # not NaN
+        cpu_mean = m.get("cpu_temp_mean_c", cpu_max)
+        cpu_min  = m.get("cpu_temp_min_c",  cpu_max)
+        n_th     = m.get("thermal_samples", 0)
+        tcolor = ("var(--fail)" if cpu_max >= 80.0 else
+                  "var(--warn)" if cpu_max >= 60.0 else
+                  "var(--pass)")
+        # Big-core (cpu7) frequency stats — sustained low mean is the actual
+        # throttle signature per the v5.1 thermal-review (note #2). Color is
+        # tied to the ratio mean/max: <50% sustained = hard throttle.
+        f7_max  = m.get("cpu7_freq_max_mhz")
+        f7_mean = m.get("cpu7_freq_mean_mhz")
+        f7_min  = m.get("cpu7_freq_min_mhz")
+        freq_rows = ""
+        if f7_max and f7_mean:
+            ratio = f7_mean / f7_max
+            fcolor = ("var(--fail)" if ratio < 0.50 else
+                      "var(--warn)" if ratio < 0.70 else
+                      "var(--pass)")
+            freq_rows = (
+                f'<tr><td>cpu7 max</td><td>{f7_max:.0f} MHz</td></tr>'
+                f'<tr><td>cpu7 mean</td><td style="color:{fcolor};font-weight:700">'
+                f'{f7_mean:.0f} MHz ({ratio*100:.0f}% of max)</td></tr>'
+                f'<tr><td>cpu7 min</td><td>{f7_min:.0f} MHz</td></tr>'
+            )
+        thermal_card = (
+            f'<div class="card">'
+            f'<h3 style="margin-bottom:8px">CPU Temperature + Throttle (phone)</h3>'
+            f'<table>'
+            f'<tr><td>Max temp</td><td style="color:{tcolor};font-weight:700;font-size:1.15rem">'
+            f'{cpu_max:.1f} \u00b0C</td></tr>'
+            f'<tr><td>Mean temp</td><td>{cpu_mean:.1f} \u00b0C</td></tr>'
+            f'<tr><td>Min temp</td><td>{cpu_min:.1f} \u00b0C</td></tr>'
+            f'{freq_rows}'
+            f'<tr><td>Samples</td><td>{n_th}</td></tr>'
+            f'</table></div>'
+        )
+
     servo_card = ""
     mae = m.get("servo_tracking_mae_deg", 0)
     can_pct = m.get("fin_source_can_pct", 0)
@@ -1582,7 +1656,7 @@ def generate_html(df, metrics, scores, diags, recs,
         f'<div class="card"><h3 style="margin-bottom:8px">Diagnostics</h3>{diag_html}</div>'
         f'</div>'
     )
-    side_cards = timing_card + servo_card
+    side_cards = timing_card + servo_card + thermal_card
     if side_cards:
         overview_grid += f'<div class="grid grid-2" style="margin-bottom:16px">{side_cards}</div>'
 
@@ -1702,6 +1776,24 @@ def print_console_summary(m, scores):
               f"over-deadline: {m.get('mpc_over_deadline_pct',0):.0f}%")
     else:
         print(f"  MPC timing: (no timing samples — check adb reverse tcp:5760)")
+    # CPU temperature — printed prominently as requested for thermal-throttling diagnosis.
+    cpu_max = m.get("cpu_temp_max_c")
+    if cpu_max is not None and cpu_max == cpu_max:  # not NaN
+        cpu_mean = m.get("cpu_temp_mean_c", cpu_max)
+        n_th = m.get("thermal_samples", 0)
+        flag = "🔥" if cpu_max >= 80 else ("⚠️ " if cpu_max >= 60 else "✅")
+        line = (f"  CPU temp:  {flag} max={cpu_max:.1f}°C  mean={cpu_mean:.1f}°C  "
+                f"({n_th} samples)")
+        # Big-core throttle signature.
+        f7_max  = m.get("cpu7_freq_max_mhz")
+        f7_mean = m.get("cpu7_freq_mean_mhz")
+        if f7_max and f7_mean:
+            ratio = f7_mean / f7_max
+            tflag = "🔻" if ratio < 0.50 else ("⚠️ " if ratio < 0.70 else "✅")
+            line += f"  cpu7 {tflag} {f7_mean:.0f}/{f7_max:.0f} MHz ({ratio*100:.0f}%)"
+        print(line)
+    else:
+        print(f"  CPU temp:  (no _thermal.csv next to flight CSV)")
     # Servo delay measurement & flight recommendation
     measured_ms = m.get("servo_delay_measured_ms", 0)
     if measured_ms > 0:
@@ -1748,7 +1840,35 @@ def analyze_hil_csv(csv_path, open_browser=True):
         return {}, {"overall": "FAIL", "total": 0, "checks": []}, ""
     timing_df = load_hil_timing(csv_path)
     servo_df = load_hil_servos(csv_path)
+    thermal_df = load_hil_thermal(csv_path)
     metrics = extract_metrics(df, csv_path, timing_df=timing_df, servo_df=servo_df)
+
+    # Fold thermal stats into metrics so console + HTML can pick them up via m["..."].
+    # Per the v5.1 thermal-review (note #2): also derive frequency-throttle
+    # metrics from the big core (cpu7), because a sustained frequency drop
+    # below the nominal max is a more reliable thermal-throttle indicator
+    # than absolute temperature on Snapdragon (the chip backs off frequency
+    # well before reporting the skin temp the user sees).
+    if thermal_df is not None:
+        t = pd.to_numeric(thermal_df["cpu_temp_c"], errors="coerce").dropna()
+        if len(t) > 0:
+            metrics["cpu_temp_max_c"]  = float(t.max())
+            metrics["cpu_temp_mean_c"] = float(t.mean())
+            metrics["cpu_temp_min_c"]  = float(t.min())
+            metrics["thermal_samples"] = int(len(t))
+        for col, key_max, key_mean, key_min in (
+            ("cpu0_freq_mhz", "cpu0_freq_max_mhz", "cpu0_freq_mean_mhz", "cpu0_freq_min_mhz"),
+            ("cpu4_freq_mhz", "cpu4_freq_max_mhz", "cpu4_freq_mean_mhz", "cpu4_freq_min_mhz"),
+            ("cpu7_freq_mhz", "cpu7_freq_max_mhz", "cpu7_freq_mean_mhz", "cpu7_freq_min_mhz"),
+        ):
+            if col in thermal_df.columns:
+                f = pd.to_numeric(thermal_df[col], errors="coerce").dropna()
+                f = f[f > 0]  # 0 = sample-read error from sidecar
+                if len(f) > 0:
+                    metrics[key_max]  = float(f.max())
+                    metrics[key_mean] = float(f.mean())
+                    metrics[key_min]  = float(f.min())
+
     scores = score_run(metrics)
     diags = diagnose(df, metrics)
     recs = recommend(metrics, scores, diags)
@@ -1759,6 +1879,7 @@ def analyze_hil_csv(csv_path, open_browser=True):
 
     generate_html(df, metrics, scores, diags, recs,
                   timing_df=timing_df, servo_df=servo_df,
+                  thermal_df=thermal_df,
                   html_path=str(html_path))
     print_console_summary(metrics, scores)
     print(f"  HTML → {html_path}")

@@ -234,6 +234,31 @@ def preflight_reset(cfg_path: str) -> None:
           "anyway. If HIL aborts, press START in the app and re-run.")
 
 
+def _spawn_thermal_sidecar(flight_csv: str):
+    """Spawn _thermal_quick.sh as a background process writing to the
+    <flight_stem>_thermal.csv path that hil_analysis.load_hil_thermal()
+    looks for automatically. Returns the subprocess.Popen handle so the
+    caller can terminate it after the bridge exits, or None on failure
+    (the run continues without thermal data — non-fatal)."""
+    import subprocess
+    script = Path(__file__).parent / "_thermal_quick.sh"
+    if not script.exists():
+        return None
+    thermal_csv = str(Path(flight_csv).with_name(Path(flight_csv).stem + "_thermal.csv"))
+    try:
+        proc = subprocess.Popen(
+            ["bash", str(script), thermal_csv],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,   # decouple from this PG so SIGINT to bridge doesn't kill it
+        )
+        print(f"  [thermal] sidecar PID={proc.pid} → {thermal_csv}")
+        return proc
+    except Exception as e:
+        print(f"  [thermal] sidecar failed to start: {e}")
+        return None
+
+
 def run_hil(cfg_path: str, flight_csv: str, timing_csv: str) -> tuple[str, str]:
     """يُطلق جسر HIL المستقل وينتظر اتصال الهدف."""
     from mavlink_bridge_hil import HILBridge
@@ -244,8 +269,23 @@ def run_hil(cfg_path: str, flight_csv: str, timing_csv: str) -> tuple[str, str]:
     print("  HIL: connecting to remote target")
     print("=" * 70)
 
-    bridge = HILBridge(cfg_path)
-    bridge.run(flight_csv, timing_csv)
+    # Start thermal sidecar BEFORE the bridge so we capture warm-up + flight.
+    # The sidecar runs an `adb shell` poll every 500 ms; cost is ≤2 % CPU on
+    # the host and a single USB roundtrip per sample — small enough that it
+    # does not perturb the bridge's MAVLink timing.
+    thermal_proc = _spawn_thermal_sidecar(flight_csv)
+
+    try:
+        bridge = HILBridge(cfg_path)
+        bridge.run(flight_csv, timing_csv)
+    finally:
+        if thermal_proc is not None and thermal_proc.poll() is None:
+            thermal_proc.terminate()
+            try:
+                thermal_proc.wait(timeout=2.0)
+            except Exception:
+                thermal_proc.kill()
+
     return flight_csv, timing_csv
 
 

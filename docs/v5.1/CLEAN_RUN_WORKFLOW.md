@@ -1,91 +1,90 @@
-# v5.1 — Clean HIL Run Workflow
+# v5.1 — طريقة تشغيل HIL النظيفة
 
-This is the **only** workflow that produced consistent range error across runs.
-Skipping any of the marked CRITICAL steps causes parameter / state leakage
-between runs and explains the ±25 % range-error spread observed earlier.
+هذه هي **الطريقة الوحيدة** التي أَنتجَت range error مُتّسقاً عبر التشغيلات.
+تَخطّي أيّ خطوة مُعَلَّمة بِـ "حَرِجة" يُسبِّب تَسرُّب البارامترات / الحالة بين
+الـ runs ويُفسِّر تَشتُّت الـ ±25 % في الـ range الذي رُصد سابقاً.
 
 ---
 
-## Per-run procedure
+## الإجراء لِكل run
 
 ```bash
-# ── before each run ──────────────────────────────────────────
-pkill -9 -f hil_runner                                         # ① kill any previous bridge
-pkill -9 -f _thermal_quick                                     # ② kill any previous thermal sidecar
-fuser -k 4560/tcp                                              # ③ free the MAVLink port
-adb shell am force-stop com.ardophone.px4v17                   # CRITICAL — really kills the app process,
-                                                              #             not just the UI activity
-adb shell pm clear      com.ardophone.px4v17                   # CRITICAL — wipes EEPROM / persistent params
-                                                              #             so RKT_MPC_SVO_DLY etc. start fresh
-adb reverse tcp:4560 tcp:4560                                  # MAVLink HIL data
-adb forward tcp:5760 tcp:5760                                  # MPC timing samples (else "no timing data")
-adb logcat -c                                                  # ④ optional — clean log for diagnostics
+# ── قبل كلّ run ──────────────────────────────────────────────
+pkill -9 -f hil_runner                                         # ① إنهاء الـ bridge السابق
+pkill -9 -f _thermal_quick                                     # ② إنهاء thermal sidecar السابق
+fuser -k 4560/tcp                                              # ③ تَحرير منفذ MAVLink
+adb shell am force-stop com.ardophone.px4v17                   # حَرِج — يَقتل عمليّة التطبيق فعلاً،
+                                                              #          وليس مُجرّد UI Activity
+adb shell pm clear      com.ardophone.px4v17                   # حَرِج — يَمسح EEPROM / params مُستمرّة
+                                                              #          كي يَبدأ RKT_MPC_SVO_DLY إلخ. من جديد
+adb reverse tcp:4560 tcp:4560                                  # بيانات MAVLink HIL
+adb forward tcp:5760 tcp:5760                                  # عيّنات توقيت MPC (وإلّا "no timing data")
+adb logcat -c                                                  # ④ اختياريّ — سجلّ نظيف للتشخيص
 
-# ── start the run ────────────────────────────────────────────
+# ── بدء الـ run ──────────────────────────────────────────────
 nohup python3 -u 6DOF_v4_pure/hil/hil_runner.py > /tmp/hil_run.log 2>&1 & disown
-sleep 4                                                        # let the bridge bind to 4560
-adb shell am start -n com.ardophone.px4v17/.MainActivity       # launch the UI
-# → press START in the app — flight is ~14 s
+sleep 4                                                        # امنح الـ bridge وقتاً للارتباط بـ 4560
+adb shell am start -n com.ardophone.px4v17/.MainActivity       # تشغيل الـ UI
+# → اضغط START داخل التطبيق — الرحلة ~14 ثانية
 ```
 
-The thermal sidecar starts itself from inside `run_hil()` and writes to
-`<flight_csv_stem>_thermal.csv`, so the HTML report picks it up automatically.
+الـ thermal sidecar يَبدأ نفسه من داخل `run_hil()` ويَكتب إلى
+`<flight_csv_stem>_thermal.csv`، فيَلتقطه تقرير الـ HTML تلقائيّاً.
 
 ---
 
-## Why each "CRITICAL" step matters
+## لماذا كلّ خطوة "حَرِجة"
 
 ### `am force-stop`
-Pressing **STOP** in the app's UI only stops the simulation thread. The Android
-process keeps running, which means PX4 modules keep their static state:
+الضغط على **STOP** في UI التطبيق يُوقف فقط خيط المُحاكاة. عمليّة Android تَبقى
+حيّة، أيّ أنّ مَوديولات PX4 تَحتفظ بِحالتها الساكنة:
 
-* `Ekf2` keeps the gyro / accel bias estimates from the previous flight. On the
-  *next* `START`, tilt-alignment converges to the *previous* run's bias instead
-  of re-converging from scratch — biases the new run's NED frame.
-* `MhEstimator` (when active) holds its sliding window from the previous run.
+* `Ekf2` يَحتفظ بتقديرات gyro / accel bias من الرحلة السابقة. عند الـ `START`
+  *التالي*، يَتقارب tilt-alignment إلى bias الـ run *السابق* بدلاً من
+  re-converge من الصفر — يُحرِف إطار NED للـ run الجديد.
+* `MhEstimator` (عند تَفعيله) يَحتفظ بنافذته المنزلقة من الـ run السابق.
 
-`am force-stop` actually kills the process so all module constructors run again
-on the next launch.
+`am force-stop` فعليّاً يَقتل العمليّة كي تَعمل constructors المَوديولات كلّها
+مُجدَّداً عند الإطلاق التالي.
 
 ### `pm clear`
-At the end of each run the on-target code calls `param save`, which persists a
-handful of auto-tuned parameters. The most consequential one is:
+في نِهاية كلّ run، الكود على الهاتف يَستدعي `param save`، الذي يَحفظ بضع
+بارامترات مُتمّ ضبطها تلقائيّاً. الأَهمّ منها:
 
 ```text
-RKT_MPC_SVO_DLY  ← auto-tuned from the measured servo delay
+RKT_MPC_SVO_DLY  ← يُضبَط تلقائيّاً من قياس تأخير الـ servo
 ```
 
-This parameter sets the MPC `lookahead_stage`. Run 1 might measure 0.14 s and
-save it. Run 2 starts with 0.14 s already loaded, measures 0.20 s, and saves
-0.20 s. By Run 4 the lookahead is twice what Run 1 used → MPC predicts the
-plant *much* further out → completely different fin commands for the same
-flight phase.
+هذه البارامتر تَضبط `lookahead_stage` لِـ MPC. قد يَقيس Run 1 قيمة 0.14 s
+ويَحفظها. يَبدأ Run 2 بِـ 0.14 s مُحمَّلة بالفعل، يَقيس 0.20 s، ويَحفظ 0.20 s.
+بِحلول Run 4 يَصير الـ lookahead ضعف ما استَعمَله Run 1 → MPC يَتنبّأ بِالنظام
+*أَبعد بِكثير* → أوامر زعانف مُختلفة تماماً لِنفس مَرحلة الطيران.
 
-`pm clear` deletes `/data/data/com.ardophone.px4v17/files/params.bin` (and the
-rest of the app's data dir), forcing a fresh boot from the ROMFS defaults.
+`pm clear` يَحذف `/data/data/com.ardophone.px4v17/files/params.bin` (وبقيّة
+مُجلَّد بَيانات التطبيق)، مُجبِراً تَشغيلاً جديداً من قيم ROMFS الافتراضيّة.
 
 ### `adb forward tcp:5760`
-The MPC timing samples are streamed over a separate MAVLink connection on
-port 5760. Without the forward, `hil_analysis.py` reports
-*"MPC timing: no timing samples"* and the timing card in the HTML is empty.
+عيّنات توقيت MPC تُبثّ عبر اتّصال MAVLink مُنفصل على المنفذ 5760. بِدون الـ
+forward، يُبلِّغ `hil_analysis.py` عن *"MPC timing: no timing samples"*
+وتَكون بطاقة التوقيت في الـ HTML فارغة.
 
 ---
 
-## Symptom-to-cause table
+## جدول العَرَض ↔ السبب
 
-| Symptom across runs | Likely missing step |
+| العَرَض عبر التشغيلات | الخطوة الناقصة المُحتمَلة |
 |---|---|
-| Range error wanders by >5 % run-to-run | `pm clear` (`RKT_MPC_SVO_DLY` drift) |
-| First-arm tilt-align takes 8 s (normally 3–4 s) | `am force-stop` (stale EKF2 biases) |
-| HTML report has no MPC timing card | `adb forward tcp:5760` |
-| HTML report has no CPU-temp card | `_thermal_quick.sh` not on disk or sidecar crashed (check `nohup` log) |
-| `am start` says *"Activity not started, intent has been delivered to currently running top-most instance"* | The previous app process is still alive — re-run `am force-stop` |
+| الـ range error يَتذبذب أكثر من 5 % بين runs | `pm clear` (انجراف `RKT_MPC_SVO_DLY`) |
+| tilt-align أوّل ARM يَستغرق 8 s (طبيعيّاً 3–4 s) | `am force-stop` (biases EKF2 قديمة) |
+| تقرير HTML بِدون بطاقة توقيت MPC | `adb forward tcp:5760` |
+| تقرير HTML بِدون بطاقة حرارة CPU | `_thermal_quick.sh` غير موجود أو الـ sidecar انهار (راجع سجلّ `nohup`) |
+| `am start` يَقول *"Activity not started, intent has been delivered to currently running top-most instance"* | عمليّة التطبيق السابقة لا تزال حيّة — أعد تشغيل `am force-stop` |
 
 ---
 
-## One-shot script (optional)
+## script لِخطوة واحدة (اختياريّ)
 
-If you want to bake the whole sequence into a single command:
+إذا أَردت دَمج كل التَسلسُل في أمر واحد:
 
 ```bash
 cat > /tmp/run_one.sh <<'SH'
@@ -104,7 +103,7 @@ nohup python3 -u 6DOF_v4_pure/hil/hil_runner.py > /tmp/hil_run.log 2>&1 &
 disown
 sleep 4
 adb shell am start -n "$APP"/.MainActivity
-echo "READY — press START in the app"
+echo "READY — اضغط START في التطبيق"
 SH
 chmod +x /tmp/run_one.sh
 /tmp/run_one.sh

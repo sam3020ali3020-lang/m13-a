@@ -412,7 +412,6 @@ def _body_specific_force(f_body, mass, g_ned, quat):
 
     f_body = thrust + aero (from 6DOF sim, NO gravity).
     Newton: a_inertial = F_ext/m + g   →   specific_force = a - g = F_ext/m.
-    Mirrors PIL bridge `_body_specific_force` (pil/mavlink_bridge_pil.py:381-389).
     """
     del g_ned, quat  # kept for API symmetry with previous signature
     return f_body / max(mass, 0.1)
@@ -633,20 +632,8 @@ class HILBridge:
             sim_cfg = yaml.safe_load(f)
         sim_cfg["simulation"]["control_type"] = "none"
         sim_cfg.setdefault("estimation", {})["mode"] = "off"
-        # Respect initial_conditions.angular_velocity from config.
-        # Previously this was forced to zero which silently cancelled any
-        # yaw/pitch-rate disturbance tests on real hardware runs.
-
-        # مسار الديناميكا: زاوية السيرفو المقاسة (SRV_FB) → المحاكاة
-        # مباشرة. نُعطّل نموذج Python لأن العتاد الحقيقي فيه τ فيزيائي
-        # بالفعل، وإضافة τ رياضي فوقه مضاعفة للتأخير.
         sim_cfg["simulation"]["use_actuator_dynamics"] = False
 
-        # ─── Noise generator ─────────────────────────────────────────────
-        # يقرأ من bridge.noise في sim config (نفس مصدر SITL/PIL).
-        # سابقاً كان HIL يستخدم hardcoded σ=0.1/0.002 فقط للـ IMU ويتجاهل
-        # mag/baro/GPS noise تماماً — بيانات مثالية غير واقعية تخفي مشاكل
-        # EKF2 biases/drift التي تظهر فقط في real hardware.
         noise_cfg = sim_cfg.get("bridge", {}).get("noise", {})
         self.noise = SensorNoise({"noise": noise_cfg}, rng_seed=self.seed)
 
@@ -662,24 +649,9 @@ class HILBridge:
             config_file=self._tmp.name, long_range_mode=long_range
         )
 
-        # ─── HIL fix: disable simulated actuator dynamics ──────────────────
-        # In HIL closed_loop the *real* CAN servos already apply their physical
-        # τ ≈ 25 ms first-order lag to the MPC command, and the bridge feeds
-        # the post-lag measurement (fin_can) back into the simulator as the
-        # control input.  If `use_actuator_dynamics` is left enabled the
-        # simulator applies *another* τ filter on top of fin_can — i.e. the
-        # rocket's aerodynamic forces see fins lagged by ~50 ms instead of the
-        # ~25 ms physical reality.  That double lag is what blew up alpha to
-        # 36–47° and crashed HITL scores from PIL's 100/100 down to ~30/100.
-        # PIL stays single-lag because it feeds fin_cmd (no real servo) into
-        # the same simulator filter once.  Real flight is also single-lag
-        # (only the physical servo, no simulator).  Forcing the actuator off
-        # here makes HIL match real-flight servo dynamics exactly.
         if getattr(self.sim, "use_actuator_dynamics", False):
             self.sim.use_actuator_dynamics = False
             self.sim.actuator = None
-            print("[HIL] use_actuator_dynamics disabled (real CAN servo "
-                  "already provides physical τ; double-lag avoided)")
 
         self.launch_lat = sim_cfg.get("launch", {}).get("latitude", 16.457472)
         self.launch_lon = sim_cfg.get("launch", {}).get("longitude", 44.115361)
@@ -1164,10 +1136,6 @@ class HILBridge:
             # الفعلي يمكن أن تُحدث انحرافاً يُعلّم الحسّاسات STALE.
             self._sim_t_us = int(time.monotonic() * 1e6)
             self._send(build_heartbeat())
-            # CRITICAL: use actual launch quaternion (not identity).
-            # EKF2 cross-checks gravity direction from accel against groundtruth
-            # attitude during alignment. Identity quat with tilted-pad accel
-            # creates inconsistency → yaw alignment fails. Mirrors PIL bridge.
             self._send(build_hil_state_quat(
                 self._sim_t_us,
                 _launch_quat, np.zeros(3),
@@ -1178,8 +1146,6 @@ class HILBridge:
                 self._sim_t_us,
                 self.launch_lat, self.launch_lon, self.launch_alt, 0, 0, 0,
             ))
-            # Re-noise per tick: prevents PX4 DataValidator marking sensors
-            # STALE (rejects 100+ identical samples). Mirrors PIL bridge.
             wu_noisy_accel, wu_noisy_gyro = self.noise.add_imu_noise(
                 _pad_sensors["accel_body_true"], np.zeros(3)
             )

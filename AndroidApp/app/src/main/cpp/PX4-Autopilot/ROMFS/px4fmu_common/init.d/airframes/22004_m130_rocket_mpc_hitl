@@ -23,49 +23,24 @@
 # HIL mode — all sensor data comes from 6DOF sim via USB serial
 param set-default SYS_HITL 1
 
-# HITL: ROCKET_SITL_GPS=1 routes guidance GPS origin to EKF2 lpos reference
-# and actuator output to actuator_outputs_sim (lockstep).
-# Note: in HITL, _hitl flag alone is sufficient (|| in RocketMPC.cpp),
-# so this is redundant but set for documentation clarity.
 param set ROCKET_SITL_GPS 1
 
-# HITL: enable baro sim (simulator_mavlink provides baro via HIL_SENSOR)
 param set SENS_EN_BAROSIM 1
 
-# HITL: init-only magnetometer alignment (one-shot at ARM, no continuous
-# fusion). Required for ROCKET_USE_GT=0 (EKF2 path) — without yaw
-# alignment, EKF2 NED frame is undefined → MPC sees garbage state.
-# Mirrors PIL airframe and px4_jni.cpp HITL block.
 param set EKF2_MAG_TYPE   6
 
-# HITL: permissive arming (no real GPS fix required)
 param set COM_ARM_WO_GPS  1
 
-# 2026-05-07: CPU offload — reduce IMU/EKF2 update rate to relieve mid-tier
-# Android CPU. Same values as PX4 SITL defaults. Does not affect MPC quality
-# (MPC runs on sensor_combined callback at ~250Hz still). Safe for HITL only.
 param set IMU_INTEG_RATE   100
 param set IMU_GYRO_RATEMAX 100
 param set EKF2_PREDICT_US  10000
 
-# Use EKF2 output (not groundtruth) — full sensor→EKF2→MPC path.
-# This is the realistic flight-like behavior. The PIL test purpose is to
-# validate the entire software stack (EKF2+MPC) on the target processor.
-# Set to 1 only to isolate MPC from EKF2 errors during debugging.
 param set-default ROCKET_USE_GT 0
 
-# ---- Rocket MPC parameters ----
-# Target X (downrange, m) uses ROCKET_XTRGT default from rocket_mpc_params.c.
 param set-default ROCKET_T_CTRL      0.3
-
-# Servo transport delay compensation (measured + safety margin)
-# XQPOWER XQ-BLS8145C: pure_delay=31.72ms, tau=29.88ms, margin=71ms → 0.140s
-# Floor at 100ms for MPC stability (lookahead_stage ≥ 5).
 param set-default RKT_MPC_SVO_DLY    0.100
 
-# ---- XQPOWER CAN servo parameters ----
 param set-default XQCAN_ENABLE     1
-param set-default XQCAN_LIMIT     20.0    # ±20 deg (matches MPC fin limit)
+param set-default XQCAN_LIMIT     20.0
 
-# Stop pwm_out_sim — rocket_mpc publishes actuator_outputs_sim directly.
 pwm_out_sim stop

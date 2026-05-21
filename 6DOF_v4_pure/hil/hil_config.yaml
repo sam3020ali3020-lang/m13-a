@@ -53,27 +53,10 @@ warmup:
 hil:
   # mode اختياري: إن وُجد يجب أن يكون 'closed_loop' (monitor_only أُزيل).
   mode: closed_loop
-  # ─── Hybrid Lockstep ────────────────────────────────────────────────────
-  # في HIL، السيرفوهات فيزيائية ولا يمكن إيقافها؛ لذلك wall-clock pacing
-  # إجباري. لكن حلقة sim↔PX4 الرقمية تعاني من TCP/scheduler jitter (2-10ms
-  # عشوائي). Hybrid lockstep يحل هذا: بعد إرسال HIL_SENSOR نَنتظر
-  # HIL_ACTUATOR_CONTROLS جديدة من PX4 قبل التقدّم، ثم نُكمل wall-clock
-  # pacing. النتيجة: TCP jitter ≈ 0 بينما تأخير السيرفو الفيزيائي يبقى
-  # كما هو (وهذا ما نريد قياسه).
-  #
-  # القيد: إذا تجاوز PX4 الـ timeout نتقدّم مع تسجيل تحذير. في وضع سليم
-  # PX4 يردّ في 4-8ms، فـ 20ms timeout مريح.
-  # 2026-05-08: lockstep أُعيد لـ true (baseline-pil83 config).
-  # المشكلة السابقة (100% timeouts) كانت بسبب USB tunnel CPU contention على adbd؛
-  # مع Ethernet (10.42.0.145) PX4 يردّ في 4-8ms كما كان مُتوقّعاً.
-  lockstep: false                        # true = hybrid lockstep، false = realtime خالص
-  lockstep_timeout_ms: 20.0             # حد أقصى لانتظار HIL_ACTUATOR_CONTROLS
-  lockstep_warn_threshold: 0.05         # تحذير إن نسبة timeouts > 5%
-  servo_feedback_timeout_ms: 200.0      # يُعدّ الفيدباك قديماً بعد 200ms
-  # إذا شاخ الفيدباك > abort_ms بعد انقضاء grace_ms من بدء حلقة
-  # الطيران، نوقف المحاكاة (bench abort، ليس flight termination).
-  # القيم الإنتاجية (500ms) تكشف فقدان الفيدباك بسرعة. للتشخيص فقط
-  # (MPC perf test بدون CAN) ارفعهما مؤقتاً وأعِدهما بعد الانتهاء.
+  lockstep: false
+  lockstep_timeout_ms: 20.0
+  lockstep_warn_threshold: 0.05
+  servo_feedback_timeout_ms: 200.0
   servo_feedback_abort_ms: 500.0
   servo_feedback_grace_ms: 500.0
   require_all_servos_online: false      # إن true: جميع السيرفوهات الأربعة لازم تكون online_mask=0x0F
@@ -87,26 +70,8 @@ hil:
   servo_zero_sample_s: 2.0              # زمن جمع العيّنات (ثانية)
   servo_zero_max_deg: 10.0              # حد أقصى لانحراف مقبول؛ أكبر = خطأ hardware
                                         # (انحراف >10° يُرفض تلقائياً — راجع تركيب الزعنفة)
-  # ─── حارس أمان: خطأ تتبع السيرفو (cmd vs fb) — معطَّل افتراضياً ───────
-  # الفكرة: إذا تجاوز |cmd - fb| ≥ abort_deg لأكثر من breach_steps خطوة
-  # متتالية → ABORT. لكن هذا الحارس redundant + ضارّ في /hil:
-  #
-  #  1) PX4 الحقيقي لا يستخدمه — السلامة في الطيران تأتي من
-  #     online_mask + tx_fail + DO_FLIGHTTERMINATION، لا من tracking err.
-  #  2) كاشفان آخران أدق وأسرع:
-  #       • online_mask + require_all_servos_online → سيرفو offline
-  #       • servo_feedback_abort_ms (500ms) → انقطاع CAN
-  #  3) RKT_MPC_SVO_DLY=100ms (lookahead 5 stages) يجعل cmd_now يُمثّل
-  #     زاوية المستقبل +100ms، بينما fb يُمثّل الماضي −transport_delay.
-  #     فالخطأ المتوقّع = slew × (lookahead + transport) ≈ 20° أثناء boost
-  #     حتى مع كل شيء سليم. أي عتبة < 25° تُولّد false-positive.
-  #  4) جودة التتبع تُقاس postrun عبر tracking_mae/p95 في hil_analysis
-  #     (انظر thresholds.servo_tracking أدناه) — أكثر موضوعية ولا تقطع
-  #     جمع البيانات.
-  #
-  # القيمة 0 (أو سالبة) = الحارس معطَّل. ارفعها فقط للتشخيص اليدوي.
-  servo_tracking_abort_deg: 0.0         # 0 = معطَّل (موصى به في /hil)
-  servo_tracking_breach_steps: 50       # 50 × dt_s = ~0.5s مستدام (إن فُعِّل)
+  servo_tracking_abort_deg: 0.0
+  servo_tracking_breach_steps: 50
 scenario:
   sim_config: config/6dof_config_advanced.yaml
   duration_s: 500.0
@@ -114,18 +79,8 @@ scenario:
   random_seed: 42
 thresholds:
   servo_tracking:
-    # fin_act = الزاوية المقاسة من العتاد (fin_can)، fin_cmd = أمر MPC.
-    # العتبة تقيس أداء السيرفو الحقيقي (backlash/slew/jitter). قد
-    # تحتاج لرفعها مع خصائص العتاد الواقعية.
-    #
-    # B3 (Obs-06) 2026-05-08: محاذاة MAE مع lookahead+transport reality.
-    # Lookahead=5 stages × 20ms = 100ms compensation، servo τ ≈ 25-71ms،
-    # transport ≈ 10-20ms. مع RKT_MPC_SVO_DLY=0.100s قد يكون قصيراً
-    # بـ ≈21ms (انظر Obs-02). نتيجة: MAE الفعلي ~1.8-2.0° بدلاً من 1.5°.
-    # الـP95 (3.0°) كان متّسقاً مع slew + τ، لكن MAE 1.5° كانت optimistic.
-    # المحاذاة الجديدة: MAE_max = 0.65 × P95_max لتطابق نسبة طبيعية ~1.5×.
-    tracking_mae_max_deg: 2.0   # MAE (deg) — كان 1.5، رُفع لمحاذاة P95
-    tracking_p95_max_deg: 3.0   # P95 خطأ تتبع (deg) — τ=25ms يسبب ~2.2° عند أمر مفاجئ
+    tracking_mae_max_deg: 2.0
+    tracking_p95_max_deg: 3.0
   timing:
     mpc_p95_max_us: 10000
     mpc_p99_max_us: 15000

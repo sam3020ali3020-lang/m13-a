@@ -61,10 +61,7 @@ struct MpcConfig {
 	// MHE blend
 	float quality_gate_thr = 0.3f;
 
-	// ── Dead-time compensation: lookahead_stage pulls fin commands from
-	// a future MPC stage matching the servo transport delay.
-	// Auto-computed from servo_delay_s: round(servo_delay_s / dt_h).
-	// servo_delay_s is set to 0 (disabled) — lookahead_stage handles delay.
+	// lookahead_stage = round(servo_delay_s / dt_h).
 	int   lookahead_stage = 1;
 };
 

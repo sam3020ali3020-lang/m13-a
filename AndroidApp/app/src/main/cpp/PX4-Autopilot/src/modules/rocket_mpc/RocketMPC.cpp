@@ -299,20 +299,8 @@ bool RocketMPC::init()
 	mpc_cfg.Ixx_full = _param_ixx_f.get(); mpc_cfg.Ixx_dry = _param_ixx_d.get();
 	mpc_cfg.Iyy_full = _param_iyy_f.get(); mpc_cfg.Iyy_dry = _param_iyy_d.get();
 	mpc_cfg.Izz_full = _param_izz_f.get(); mpc_cfg.Izz_dry = _param_izz_d.get();
-	// Servo delay compensation: lookahead_stage pulls fin commands from a
-	// future MPC stage matching the TOTAL plant delay (transport + servo τ).
-	// Replaces the old forward-prediction approach (servo_delay_s) which was
-	// counter-productive with the NX=15 ideal-fin model.
-	//
-	// Formula: lookahead_stage = round(servo_delay_s / dt_h)
-	// where dt_h = tf/N = 1.6/80 = 0.02s and servo_delay_s = RKT_MPC_SVO_DLY.
-	//
-	// CRITICAL: RKT_MPC_SVO_DLY MUST include both transport delay AND servo τ.
-	// Rule: max(pure_delay + tau_servo + 40ms, 100ms). Ignoring τ caused a
-	// 5 Hz pitch-rate limit cycle in 6DOF sim (verified 2026-05-02).
-	//
-	// Example: RKT_MPC_SVO_DLY=0.103 → lookahead_stage=5 (103ms/20ms).
-	mpc_cfg.servo_delay_s   = 0.0f;  // disabled — lookahead_stage handles delay
+	// lookahead_stage = round(servo_delay_s / dt_h), dt_h = tf/N.
+	mpc_cfg.servo_delay_s   = 0.0f;
 	const float servo_delay_s = _param_servo_delay.get();
 	const float dt_h = mpc_cfg.tf / (float)mpc_cfg.N_horizon;
 	mpc_cfg.lookahead_stage  = std::max(1, (int)roundf(servo_delay_s / dt_h));
@@ -413,7 +401,7 @@ void RocketMPC::parameters_update(bool force)
 		mcfg.Iyy_full = _param_iyy_f.get(); mcfg.Iyy_dry = _param_iyy_d.get();
 		mcfg.Izz_full = _param_izz_f.get(); mcfg.Izz_dry = _param_izz_d.get();
 		const float servo_delay_rearm = _param_servo_delay.get();
-		mcfg.servo_delay_s  = 0.0f;  // disabled — lookahead_stage handles delay
+		mcfg.servo_delay_s  = 0.0f;
 		const float dt_h_r = mcfg.tf / (float)mcfg.N_horizon;
 		mcfg.lookahead_stage = std::max(1, (int)roundf(servo_delay_rearm / dt_h_r));
 
@@ -1334,10 +1322,6 @@ void RocketMPC::Run()
 			x_mpc[9]  = (double)(cur_alt / H_SCALE);
 			x_mpc[10] = (double)(cur_x / X_SCALE);
 			x_mpc[11] = (double)(cur_y / Y_SCALE);
-			// Fin deflections in MPC state: use ACTUAL positions when available
-			// (from SRV_FB in HIL or first-order lag in PIL/SITL). With real
-			// servo delay, actual positions differ from commands — using actual
-			// values reduces model-plant mismatch and prevents oscillation.
 			x_mpc[12] = (double)_de_act;
 			x_mpc[13] = (double)_dr_act;
 			x_mpc[14] = (double)_da_act;
